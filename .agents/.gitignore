@@ -1,0 +1,6 @@
+# Ignore all skills installed from remote.
+# Install them with `pnpm skills:install`
+/skills/*/
+
+# Local skills
+# !/skills/local-skill-name/

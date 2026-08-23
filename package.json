@@ -1,0 +1,102 @@
+{
+  "name": "@teages/nitro-drizzle",
+  "type": "module",
+  "version": "0.0.0",
+  "packageManager": "pnpm@11.22.0",
+  "description": "Drizzle ORM integration for Nitro v3",
+  "license": "MIT",
+  "repository": "Teages/nitro-drizzle",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.mts",
+      "import": "./dist/runtime/index.mjs"
+    },
+    "./config": {
+      "types": "./dist/config/loader.d.mts",
+      "import": "./dist/config/loader.mjs"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.mts",
+      "import": "./dist/vite.mjs"
+    }
+  },
+  "module": "./dist/index.mjs",
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/index.d.mts"
+      ],
+      "./runtime": [
+        "./dist/runtime/index.d.mts"
+      ],
+      "./config": [
+        "./dist/config/loader.d.mts"
+      ],
+      "./vite": [
+        "./dist/vite.d.mts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "build": "obuild",
+    "dev": "pnpm -C playground dev",
+    "lint": "eslint --cache .",
+    "lint:fix": "eslint --cache --fix .",
+    "prepack": "pnpm build",
+    "test": "pnpm lint && pnpm typecheck && vitest run --coverage --project unit",
+    "test:integration": "vitest run --project integration",
+    "typecheck": "pnpm tsc --build --noEmit"
+  },
+  "peerDependencies": {
+    "drizzle-kit": "1.0.0-rc.4",
+    "drizzle-orm": "1.0.0-rc.4",
+    "nitro": ">=3.0.260610-beta <4",
+    "vite": ">=6"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "pathe": "^2.0.3"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^9.3.0",
+    "@electric-sql/pglite": "^0.5.5",
+    "@electric-sql/pglite-socket": "^0.2.8",
+    "@libsql/client": "^0.17.4",
+    "@tsconfig/node24": "^24.0.5",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^24.12.4",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "@vitest/coverage-v8": "^4.1.10",
+    "better-sqlite3": "^13.0.3",
+    "consola": "^3.4.2",
+    "drizzle-kit": "1.0.0-rc.4",
+    "drizzle-orm": "1.0.0-rc.4",
+    "eslint": "^10.8.1",
+    "jiti": "2.7.0",
+    "mysql2": "^3.23.3",
+    "nitro": "^3.0.260610-beta",
+    "obuild": "^0.4.38",
+    "postgres": "^3.4.9",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

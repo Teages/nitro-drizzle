@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "skills": {
+    "drizzle": {
+      "source": "drizzle-kit",
+      "sourceType": "node_modules",
+      "computedHash": "1cbae732ee979cebb27a27154e923c1a669a22897c9b01669e2011bfeb8aa804"
+    },
+    "drizzle-generate": {
+      "source": "drizzle-kit",
+      "sourceType": "node_modules",
+      "computedHash": "3d520b8d77221aa72bc7e34dc13cd133ffcd569c32135793ec43add27f42ebec"
+    },
+    "drizzle-hints": {
+      "source": "drizzle-kit",
+      "sourceType": "node_modules",
+      "computedHash": "dc9bc7ed9a0d21f63e540a8702cb4cb34b51c585493507cec86fd21d9c255166"
+    },
+    "drizzle-migrations": {
+      "source": "drizzle-kit",
+      "sourceType": "node_modules",
+      "computedHash": "aa30ca0f9e0a66e4feaa50a08e80b2908c8bb720433d1159107739f3aa2fbb86"
+    },
+    "drizzle-output-modes": {
+      "source": "drizzle-kit",
+      "sourceType": "node_modules",
+      "computedHash": "5ad547aeb18630af024dd026b96364bce0df6274660f1d59ae11f259916b63c2"
+    },
+    "drizzle-pull": {
+      "source": "drizzle-kit",
+      "sourceType": "node_modules",
+      "computedHash": "7be6f2a67aa5a4713352c23284d6cdacdc277e9d2ad8a159899257416327254c"
+    },
+    "drizzle-push": {
+      "source": "drizzle-kit",
+      "sourceType": "node_modules",
+      "computedHash": "ff167ed20bdc051f9f8679a109d7dd065f91605adc1bd6c6af5c1c4d9ce0c7a4"
+    },
+    "drizzle-responses-and-errors": {
+      "source": "drizzle-kit",
+      "sourceType": "node_modules",
+      "computedHash": "fbc0b0d5aa071cf06eee711b5de52ad821a0d1e5bc0c703f0c59b429697331d3"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
+    },
+    "nitro": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nitro/SKILL.md",
+      "computedHash": "f8341eaf6fbdc604c2c8123a275407acea5a74ad3b0870cdd0ed2a3007e36c12"
+    },
+    "pnpm": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/pnpm/SKILL.md",
+      "computedHash": "2ec08c851c6f901d4ed72c21b826416ed074a487db65662b36249418afd728bf"
+    },
+    "vite": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vite/SKILL.md",
+      "computedHash": "867ff66238f3152e9c494339ad08dc432dd0df5bcf5cc7a00b61a72b580eb908"
+    },
+    "vitest": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vitest/SKILL.md",
+      "computedHash": "943d436114c677802426741980146c07560bf375297666b03062444f4b98a785"
+    }
+  }
+}

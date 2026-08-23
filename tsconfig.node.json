@@ -1,0 +1,10 @@
+{
+  "extends": "@tsconfig/node24/tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["src/runtime/**/*.ts"]
+}

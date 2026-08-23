@@ -1,0 +1,12 @@
+{
+  "extends": ["nitro/tsconfig"],
+  "compilerOptions": {
+    "paths": {
+      "~/*": ["./*"]
+    }
+  },
+  "include": [
+    "./**/*.ts",
+    "node_modules/.nitro/drizzle/**/*.d.ts"
+  ]
+}

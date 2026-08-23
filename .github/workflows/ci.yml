@@ -1,0 +1,43 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: nitro_drizzle
+        ports:
+          - 127.0.0.1:3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i -g corepack@latest && corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm vitest run --project unit --coverage
+      - uses: codecov/codecov-action@v3
+      - name: Integration tests (real databases)
+        run: pnpm test:integration
+        env:
+          TEST_MYSQL_URL: mysql://root:root@127.0.0.1:3306/nitro_drizzle
