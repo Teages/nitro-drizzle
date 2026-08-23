@@ -6,6 +6,13 @@
 <!-- [![bundle][bundle-src]][bundle-href] -->
 <!-- [![Codecov][codecov-src]][codecov-href] -->
 
+> [!WARNING]
+> This repository is an AI-generated MVP. It has only passed smoke-level
+> validation and is not production-ready. Substantial human review, design,
+> testing, security analysis, compatibility work, documentation, and ongoing
+> maintenance are still required before it can be considered usable. Use it
+> only for evaluation and experimentation at your own risk.
+
 Drizzle ORM integration for Nitro v3. It generates a typed `#drizzle`
 database client, prepares Drizzle Kit configuration, and applies Drizzle v1
 migrations during development, builds, or the `db:migrate` task.
