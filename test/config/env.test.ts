@@ -1,105 +1,101 @@
 import { describe, expect, it } from 'vitest'
-import {
-  emptyConnectionDefaults,
-  resolveConnectionFromEnv,
-  resolveDrizzleEnvPrefixes,
-} from '../../src/config/env'
+import { applyNitroEnv, findEnvTemplateKeys } from '../../src/config/env'
 
-describe('resolveDrizzleEnvPrefixes', () => {
-  it('defaults to the NITRO_ prefix and underscore alternative', () => {
-    expect(resolveDrizzleEnvPrefixes(undefined, {})).toEqual(['NITRO_', '_'])
+describe('applyNitroEnv', () => {
+  it('applies NITRO_DRIZZLE_CONNECTION_* overrides to defined keys only', () => {
+    const connection = applyNitroEnv(
+      { url: 'file:default.db', host: 'localhost' },
+      { env: { NITRO_DRIZZLE_CONNECTION_URL: 'libsql://from-env' }, envExpansion: false },
+    )
+    expect(connection).toEqual({ url: 'libsql://from-env', host: 'localhost' })
   })
 
-  it('follows the configured nitro env prefix', () => {
-    expect(resolveDrizzleEnvPrefixes('NUITRO_', {})).toEqual([
-      'NITRO_',
-      'NUITRO_',
-    ])
+  it('honors the alternative prefix', () => {
+    const connection = applyNitroEnv(
+      { url: 'file:default.db' },
+      { env: { _DRIZZLE_CONNECTION_URL: 'libsql://alt' }, envExpansion: false },
+    )
+    expect(connection.url).toBe('libsql://alt')
   })
 
-  it('falls back to the NITRO_ENV_PREFIX variable', () => {
-    expect(
-      resolveDrizzleEnvPrefixes(undefined, { NITRO_ENV_PREFIX: 'APP_' }),
-    ).toEqual(['NITRO_', 'APP_'])
+  it('prefers the configured envPrefix over the NITRO_ENV_PREFIX variable', () => {
+    const connection = applyNitroEnv(
+      { url: 'file:default.db' },
+      {
+        env: { NITRO_ENV_PREFIX: 'FROM_ENV_', APP_DRIZZLE_CONNECTION_URL: 'libsql://app' },
+        envPrefix: 'APP_',
+        envExpansion: false,
+      },
+    )
+    expect(connection.url).toBe('libsql://app')
   })
-})
 
-describe('resolveConnectionFromEnv', () => {
-  it('maps snake-cased keys onto connection fields', () => {
-    expect(
-      resolveConnectionFromEnv(
-        {
-          NITRO_DRIZZLE_CONNECTION_URL: 'libsql://db',
-          NITRO_DRIZZLE_CONNECTION_AUTH_TOKEN: 'token',
-          NITRO_DRIZZLE_CONNECTION_HYPERDRIVE_ID: 'hyperdrive',
-          _DRIZZLE_CONNECTION_HOST: 'localhost',
+  it('expands {{VAR}} templates in string values when enabled', () => {
+    const connection = applyNitroEnv(
+      { url: '{{DATABASE_URL}}', host: '{{DB_HOST}}:5432' },
+      { env: { DATABASE_URL: 'postgres://db', DB_HOST: 'db.internal' }, envExpansion: true },
+    )
+    expect(connection.url).toBe('postgres://db')
+    expect(connection.host).toBe('db.internal:5432')
+  })
+
+  it('keeps literal {{VAR}} when the variable is missing or empty', () => {
+    const connection = applyNitroEnv(
+      { url: '{{DATABASE_URL}}', host: '{{DB_HOST}}' },
+      { env: { DB_HOST: '' }, envExpansion: true },
+    )
+    expect(connection.url).toBe('{{DATABASE_URL}}')
+    expect(connection.host).toBe('{{DB_HOST}}')
+  })
+
+  it('does not expand templates when envExpansion is disabled', () => {
+    const connection = applyNitroEnv(
+      { url: '{{DATABASE_URL}}' },
+      { env: { DATABASE_URL: 'postgres://db' }, envExpansion: false },
+    )
+    expect(connection.url).toBe('{{DATABASE_URL}}')
+  })
+
+  it('lets a NITRO_ override win over the expanded template', () => {
+    const connection = applyNitroEnv(
+      { url: '{{DATABASE_URL}}' },
+      {
+        env: {
+          DATABASE_URL: 'postgres://from-template',
+          NITRO_DRIZZLE_CONNECTION_URL: 'postgres://from-override',
         },
-        ['NITRO_', '_'],
-      ),
-    ).toEqual({
-      url: 'libsql://db',
-      authToken: 'token',
-      hyperdriveId: 'hyperdrive',
-      host: 'localhost',
-    })
+        envExpansion: true,
+      },
+    )
+    expect(connection.url).toBe('postgres://from-override')
   })
 
-  it('skips empty env values so static defaults survive', () => {
-    expect(
-      resolveConnectionFromEnv(
-        { NITRO_DRIZZLE_CONNECTION_URL: '' },
-        ['NITRO_'],
-        { url: 'file:default.db' },
-      ),
-    ).toEqual({ url: 'file:default.db' })
+  it('replaces non-string values wholesale, matching Nitro semantics', () => {
+    const connection = applyNitroEnv(
+      { port: 5432, prepare: false },
+      { env: { NITRO_DRIZZLE_CONNECTION_PORT: '6543' }, envExpansion: true },
+    )
+    expect(connection).toEqual({ port: '6543', prepare: false })
   })
 
-  it('lets env values win over static defaults', () => {
-    expect(
-      resolveConnectionFromEnv(
-        { NITRO_DRIZZLE_CONNECTION_PASSWORD: 'from-env' },
-        ['NITRO_', '_'],
-        { user: 'static-user', password: 'static-password' },
-      ),
-    ).toEqual({ user: 'static-user', password: 'from-env' })
-  })
-
-  it('parses port as a number', () => {
-    expect(
-      resolveConnectionFromEnv(
-        { NITRO_DRIZZLE_CONNECTION_PORT: '5433' },
-        ['NITRO_', '_'],
-      ).port,
-    ).toBe(5433)
-  })
-
-  it('rejects non-numeric port values', () => {
-    expect(() =>
-      resolveConnectionFromEnv(
-        { NITRO_DRIZZLE_CONNECTION_PORT: 'http' },
-        ['NITRO_', '_'],
-      ),
-    ).toThrow(/DRIZZLE_CONNECTION_PORT/)
+  it('does not mutate the input connection', () => {
+    const input = { url: '{{DATABASE_URL}}' }
+    applyNitroEnv(input, { env: { DATABASE_URL: 'postgres://db' }, envExpansion: true })
+    expect(input.url).toBe('{{DATABASE_URL}}')
   })
 })
 
-describe('emptyConnectionDefaults', () => {
-  it('covers every env-overridable key with falsy defaults', () => {
-    expect(emptyConnectionDefaults()).toEqual({
-      url: '',
-      uri: '',
-      authToken: '',
-      connectionString: '',
-      host: '',
-      port: 0,
-      user: '',
-      password: '',
-      database: '',
-      accountId: '',
-      apiToken: '',
-      databaseId: '',
-      hyperdriveId: '',
-      dataDir: '',
+describe('findEnvTemplateKeys', () => {
+  it('collects unique template names from string values', () => {
+    const keys = findEnvTemplateKeys({
+      url: '{{DATABASE_URL}}',
+      host: '{{DB_HOST}} {{DB_HOST}}',
+      port: 5432,
     })
+    expect([...keys].sort()).toEqual(['DATABASE_URL', 'DB_HOST'])
+  })
+
+  it('returns an empty list without templates', () => {
+    expect(findEnvTemplateKeys({ url: 'file:default.db', port: 0 })).toEqual([])
   })
 })

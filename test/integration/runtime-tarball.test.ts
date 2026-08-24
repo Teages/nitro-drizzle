@@ -124,6 +124,7 @@ describe('published runtime entries in Nitro dev', () => {
       'nitro',
       'pathe',
       'rolldown',
+      'scule',
     ]) {
       await symlink(
         join(repoRoot, 'node_modules', dependency),
@@ -210,9 +211,7 @@ export default defineConfig({
     driver: 'node-sqlite',
     schemaPath: './server/db/schema.ts',
     dev: { driver: 'node-sqlite', file: ${JSON.stringify(devDatabase)} },
-  },
-  runtimeConfig: {
-    drizzle: { connection: { url: ${JSON.stringify(realDatabase)} } },
+    connection: { url: ${JSON.stringify(realDatabase)} },
   },
 })
 `,

@@ -1,5 +1,5 @@
 import type { SourceImports } from './helpers'
-import { lazyUseDrizzleSource, USE_RUNTIME_CONFIG_IMPORT } from './helpers'
+import { lazyUseDrizzleSource, USE_CONNECTION_IMPORT } from './helpers'
 
 /**
  * d1-http talks to the Cloudflare API over HTTP, so credentials come from
@@ -7,8 +7,8 @@ import { lazyUseDrizzleSource, USE_RUNTIME_CONFIG_IMPORT } from './helpers'
  */
 export function d1HttpSource(imports: SourceImports): string {
   return lazyUseDrizzleSource(
-    { ...imports, extras: [USE_RUNTIME_CONFIG_IMPORT] },
-    `  const { accountId, apiToken, databaseId } = useRuntimeConfig().drizzle?.connection ?? {}
+    { ...imports, extras: [USE_CONNECTION_IMPORT] },
+    `  const { accountId, apiToken, databaseId } = useDrizzleConnection()
   if (!accountId || !apiToken || !databaseId) {
     throw new Error('d1-http requires connection.accountId, apiToken, and databaseId.')
   }

@@ -1,106 +1,84 @@
 import type { DatabaseConnection } from '../types'
+import { snakeCase } from 'scule'
 
-/**
- * Connection keys exposed as `<prefix>DRIZZLE_CONNECTION_<SUFFIX>` environment
- * variables, mirroring the keys nitro's runtime-config env application walks.
- */
-const CONNECTION_ENV_SUFFIXES: Readonly<Record<string, string>> = {
-  url: 'URL',
-  uri: 'URI',
-  authToken: 'AUTH_TOKEN',
-  connectionString: 'CONNECTION_STRING',
-  host: 'HOST',
-  port: 'PORT',
-  user: 'USER',
-  password: 'PASSWORD',
-  database: 'DATABASE',
-  accountId: 'ACCOUNT_ID',
-  apiToken: 'API_TOKEN',
-  databaseId: 'DATABASE_ID',
-  hyperdriveId: 'HYPERDRIVE_ID',
-  dataDir: 'DATA_DIR',
+export interface NitroEnvOptions {
+  readonly env: Readonly<Record<string, string | undefined>>
+  /** Alternative override prefix from `runtimeConfig.nitro.envPrefix`. */
+  readonly envPrefix?: string
+  readonly envExpansion: boolean
 }
 
-export const DEFAULT_DRIZZLE_ENV_PREFIX = 'NITRO_'
-const DEFAULT_ALT_DRIZZLE_ENV_PREFIX = '_'
+const ENV_EXPANSION_PATTERN = /\{\{([^{}]*)\}\}/g
 
-/**
- * Nitro always probes the `NITRO_` prefix first, then the alternative prefix
- * configured via `runtimeConfig.nitro.envPrefix` or `NITRO_ENV_PREFIX`.
- */
-export function resolveDrizzleEnvPrefixes(
-  nitroEnvPrefix: string | undefined,
-  env: Readonly<Record<string, string | undefined>>,
-): readonly string[] {
-  return [
-    DEFAULT_DRIZZLE_ENV_PREFIX,
-    nitroEnvPrefix ?? env.NITRO_ENV_PREFIX ?? DEFAULT_ALT_DRIZZLE_ENV_PREFIX,
-  ]
+function isObject(input: unknown): input is Record<string, unknown> {
+  return input !== null && typeof input === 'object' && !Array.isArray(input)
 }
 
-function readDrizzleEnv(
+/**
+ * Expands `{{VAR}}` references the way Nitro's runtime does: missing (or
+ * empty) variables keep the literal `{{VAR}}` text.
+ */
+function expandFromEnv(
+  value: string,
   env: Readonly<Record<string, string | undefined>>,
-  key: string,
-  prefixes: readonly string[],
-): string | undefined {
-  for (const prefix of prefixes) {
-    const value = env[`${prefix}${key}`]
-    if (value !== undefined && value !== '') {
-      return value
+): string {
+  return value.replace(ENV_EXPANSION_PATTERN, (match, key: string) => {
+    return env[key] || match
+  })
+}
+
+/**
+ * Applies Nitro's runtime-config env semantics to a connection object:
+ * `<prefix>DRIZZLE_CONNECTION_*` overrides first (snake-cased key path,
+ * `NITRO_` prefix with the configured alternative prefix as fallback), then
+ * `{{VAR}}` expansion on string values when enabled. Mirrors `applyEnv`
+ * from Nitro's internal runtime config, which is not publicly exported —
+ * keep the semantics in sync with Nitro when upgrading.
+ */
+export function applyNitroEnv(
+  connection: DatabaseConnection,
+  options: NitroEnvOptions,
+): DatabaseConnection {
+  const altPrefix = options.envPrefix ?? options.env.NITRO_ENV_PREFIX ?? '_'
+
+  const walk = (obj: Record<string, unknown>, parentKey: string): void => {
+    for (const key in obj) {
+      const subKey = parentKey === '' ? key : `${parentKey}_${key}`
+      const envName = snakeCase(subKey).toUpperCase()
+      const envValue
+        = options.env[`NITRO_${envName}`] ?? options.env[`${altPrefix}${envName}`]
+      if (isObject(obj[key])) {
+        walk(obj[key], subKey)
+      }
+      else {
+        obj[key] = envValue ?? obj[key]
+      }
+      if (options.envExpansion && typeof obj[key] === 'string') {
+        obj[key] = expandFromEnv(obj[key] as string, options.env)
+      }
     }
   }
-  return undefined
+
+  const result: Record<string, unknown> = { ...connection }
+  walk(result, 'DRIZZLE_CONNECTION')
+  return result as DatabaseConnection
 }
 
 /**
- * Falsy placeholder for every connection key nitro's runtime-config env
- * application can walk, so `<prefix>DRIZZLE_CONNECTION_*` overrides work
- * even when the user configures no static defaults.
+ * Collects `{{VAR}}` template names used in connection values, used to warn
+ * when env expansion is not enabled and the literals would reach the driver.
  */
-export function emptyConnectionDefaults(): DatabaseConnection {
-  return {
-    url: '',
-    uri: '',
-    authToken: '',
-    connectionString: '',
-    host: '',
-    port: 0,
-    user: '',
-    password: '',
-    database: '',
-    accountId: '',
-    apiToken: '',
-    databaseId: '',
-    hyperdriveId: '',
-    dataDir: '',
-  }
-}
-
-/**
- * Collects connection credentials from `<prefix>DRIZZLE_CONNECTION_*`
- * environment variables. Env values win over the provided defaults.
- */
-export function resolveConnectionFromEnv(
-  env: Readonly<Record<string, string | undefined>>,
-  prefixes: readonly string[],
-  defaults: DatabaseConnection = {},
-): DatabaseConnection {
-  const connection: DatabaseConnection = { ...defaults }
-  for (const [key, suffix] of Object.entries(CONNECTION_ENV_SUFFIXES)) {
-    const raw = readDrizzleEnv(env, `DRIZZLE_CONNECTION_${suffix}`, prefixes)
-    if (raw === undefined) {
+export function findEnvTemplateKeys(
+  connection: DatabaseConnection,
+): readonly string[] {
+  const keys = new Set<string>()
+  for (const value of Object.values(connection)) {
+    if (typeof value !== 'string') {
       continue
     }
-    if (key === 'port') {
-      const port = Number(raw)
-      if (!Number.isFinite(port)) {
-        throw new TypeError(`Invalid DRIZZLE_CONNECTION_PORT environment value: ${raw}`)
-      }
-      connection.port = port
-    }
-    else {
-      connection[key] = raw
+    for (const match of value.matchAll(ENV_EXPANSION_PATTERN)) {
+      keys.add(match[1])
     }
   }
-  return connection
+  return [...keys]
 }

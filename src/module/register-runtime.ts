@@ -54,5 +54,9 @@ export function configureRuntime(
     // package's dist re-export never invalidates in Vite's dev graph, so
     // schema edits would leave `useDrizzle()` importers stale without it.
     nitro.options.alias['@teages/nitro-drizzle/runtime'] = '#drizzle'
+    // The connection helper has no virtual dependencies, so dev resolves it
+    // straight to the shipped entry — without this, the noExternals alias
+    // rewrite cannot map the subpath and the dev build fails to resolve it.
+    nitro.options.alias['@teages/nitro-drizzle/runtime/connection'] = runtimeEntry('connection')
   }
 }
