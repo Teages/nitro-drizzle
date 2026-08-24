@@ -52,6 +52,7 @@ export async function createDrizzleArtifactsLifecycle(
 
   const apply = (): void => {
     nitro.options.runtimeConfig.drizzle = {
+      ...nitro.options.runtimeConfig.drizzle,
       ...createSerializableDrizzleConfig(prepared.config),
       connection: {
         ...emptyConnectionDefaults(),
