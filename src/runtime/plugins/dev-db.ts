@@ -1,19 +1,18 @@
 import type {} from '../augmentations'
 import { consola } from 'consola'
 import { definePlugin } from 'nitro'
-import { useRuntimeConfig } from 'nitro/runtime-config'
 import { useDrizzle } from '#drizzle'
+import { drizzleConfig } from '#drizzle/config'
 import { pushDevSchema } from '../dev-database'
 
 export default definePlugin((nitro) => {
-  const config = useRuntimeConfig().drizzle
-  if (config === undefined || config.dev !== true) {
+  if (drizzleConfig.dev !== true) {
     return
   }
-  if (config.dialect !== 'postgresql' && config.dialect !== 'sqlite') {
+  if (drizzleConfig.dialect !== 'postgresql' && drizzleConfig.dialect !== 'sqlite') {
     return
   }
-  const dialect = config.dialect
+  const dialect = drizzleConfig.dialect
 
   const ready = (async () => {
     const { db, schema } = useDrizzle()
