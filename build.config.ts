@@ -4,7 +4,6 @@ export default defineBuildConfig({
   entries: [
     './src/index.ts',
     './src/config/loader.ts',
-    './src/vite.ts',
     './src/runtime/index.ts',
     './src/runtime/plugins/dev-db.ts',
     './src/runtime/tasks/migrate.ts',

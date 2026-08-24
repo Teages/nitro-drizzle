@@ -1,6 +1,8 @@
+import NitroDrizzle from '../src/index'
 import { defineConfig } from 'nitro'
 
 export default defineConfig({
+  modules: [NitroDrizzle],
   serverDir: './server',
   drizzle: {
     dialect: 'sqlite',
