@@ -1,5 +1,5 @@
-import NitroDrizzle from '../src/index'
 import { defineConfig } from 'nitro'
+import NitroDrizzle from '../src/index'
 
 export default defineConfig({
   modules: [NitroDrizzle],
