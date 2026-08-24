@@ -1,5 +1,5 @@
-import { useRuntimeConfig } from 'nitro/runtime-config'
 import { defineTask } from 'nitro/task'
+import { drizzleConfig, useDrizzleConnection } from '#drizzle/config'
 import { resolveDrizzleConfig } from '../../config/resolve'
 import { createAndApplyDrizzleMigrations } from '../../migrations/apply'
 import { resolveRuntimeMigrationsFolder } from '../../migrations/runtime-paths'
@@ -10,9 +10,10 @@ export default defineTask({
     description: 'Apply Drizzle database migrations',
   },
   async run() {
-    const config = resolveDrizzleConfig(useRuntimeConfig().drizzle, {
-      serverDir: false,
-    })
+    const config = resolveDrizzleConfig(
+      { ...drizzleConfig, connection: useDrizzleConnection() },
+      { serverDir: false },
+    )
     if (config === undefined) {
       throw new Error('Drizzle is not configured.')
     }

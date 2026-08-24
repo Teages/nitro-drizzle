@@ -16,8 +16,10 @@ interface Fixture {
 }
 
 interface FixtureOptions {
+  /** Object literal body for the `drizzle` option (without connection). */
   readonly drizzle?: string
   readonly connection?: string
+  readonly experimental?: string
 }
 
 async function createFixture(
@@ -30,6 +32,12 @@ async function createFixture(
   await mkdir(databaseDir, { recursive: true })
   const schemaPath = join(databaseDir, 'schema.ts')
   const relationsPath = join(databaseDir, 'relations.ts')
+  const drizzleBody = options.drizzle
+    ?? `{ dialect: 'sqlite', driver: 'libsql', schemaPath: './server/db/schema.ts' }`
+  const drizzleWithConnection = drizzleBody.replace(
+    /\}\s*$/,
+    `,\n  connection: ${options.connection ?? '{ url: \'file:./test.db\' }'},\n}`,
+  )
   await Promise.all([
     writeFile(
       schemaPath,
@@ -42,10 +50,8 @@ async function createFixture(
 
 export default defineConfig({
   serverDir: './server',
-  drizzle: ${options.drizzle ?? '{ dialect: \'sqlite\', driver: \'libsql\', schemaPath: \'./server/db/schema.ts\' }'},
-  runtimeConfig: { drizzle: { connection: ${
-    options.connection ?? '{ url: \'file:./test.db\' }'
-  } } },
+  drizzle: ${drizzleWithConnection},
+  ${options.experimental === undefined ? '' : `experimental: ${options.experimental},`}
 })
 `,
     ),
@@ -106,6 +112,51 @@ describe('loadDrizzleConfig', () => {
       url: 'libsql://database.turso.io',
       authToken: 'secret',
     })
+  })
+
+  it('expands {{VAR}} connection templates when envExpansion is enabled', async () => {
+    const fixture = await createFixture({
+      connection: `{ url: '{{TEST_LOADER_DATABASE_URL}}' }`,
+      experimental: '{ envExpansion: true }',
+    })
+    const previous = process.env.TEST_LOADER_DATABASE_URL
+    process.env.TEST_LOADER_DATABASE_URL = 'libsql://expanded'
+    try {
+      const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
+      expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+        url: 'libsql://expanded',
+      })
+    }
+    finally {
+      if (previous === undefined) {
+        delete process.env.TEST_LOADER_DATABASE_URL
+      }
+      else {
+        process.env.TEST_LOADER_DATABASE_URL = previous
+      }
+    }
+  })
+
+  it('keeps {{VAR}} literals when envExpansion is disabled', async () => {
+    const fixture = await createFixture({
+      connection: `{ url: '{{TEST_LOADER_DATABASE_URL}}' }`,
+    })
+    const previous = process.env.TEST_LOADER_DATABASE_URL
+    process.env.TEST_LOADER_DATABASE_URL = 'libsql://expanded'
+    try {
+      const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
+      expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+        url: '{{TEST_LOADER_DATABASE_URL}}',
+      })
+    }
+    finally {
+      if (previous === undefined) {
+        delete process.env.TEST_LOADER_DATABASE_URL
+      }
+      else {
+        process.env.TEST_LOADER_DATABASE_URL = previous
+      }
+    }
   })
 
   it('keeps drizzle-kit pointed at the explicit schema entry', async () => {

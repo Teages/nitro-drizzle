@@ -1,5 +1,5 @@
-import NitroDrizzle from '../src/index'
 import { defineConfig } from 'nitro'
+import NitroDrizzle from '../src/index'
 
 export default defineConfig({
   modules: [NitroDrizzle],
@@ -9,12 +9,8 @@ export default defineConfig({
     driver: 'libsql',
     schemaPath: './server/db/schema.ts',
     dev: true,
-  },
-  runtimeConfig: {
-    drizzle: {
-      connection: {
-        url: 'file:./playground.db',
-      },
+    connection: {
+      url: 'file:./playground.db',
     },
   },
   experimental: {

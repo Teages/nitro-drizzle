@@ -3,9 +3,8 @@ import type { ResolvedDrizzleConfig } from '../config/types'
 import type { DrizzleModuleContext } from './context'
 import { join } from 'node:path'
 import { generateVirtualClientSource } from '../codegen/client/generate'
-import { createSerializableDrizzleConfig } from '../codegen/emit'
+import { createRuntimeConfigModule } from '../codegen/client/runtime-config'
 import { createSchemaEntry } from '../codegen/schema/entry'
-import { emptyConnectionDefaults } from '../config/env'
 import { collectMigrationAssets } from '../migrations/assets'
 import { prepareDrizzleArtifacts } from './prepare-artifacts'
 
@@ -51,16 +50,16 @@ export async function createDrizzleArtifactsLifecycle(
   }
 
   const apply = (): void => {
-    nitro.options.runtimeConfig.drizzle = {
-      ...nitro.options.runtimeConfig.drizzle,
-      ...createSerializableDrizzleConfig(prepared.config),
-      connection: {
-        ...emptyConnectionDefaults(),
-        ...ctx.userConnection,
-      },
+    // Module-owned runtime config: connection values never pass through
+    // Nitro's runtimeConfig. The virtual always carries the real database
+    // config; the dev database only swaps the client driver in `#drizzle`.
+    nitro.options.virtual['#drizzle/config'] = createRuntimeConfigModule({
+      dialect: prepared.config.dialect,
+      driver: prepared.config.driver,
       migrationsDir: migrationsFolder,
-      ...(ctx.devDb === undefined ? {} : { dev: true }),
-    }
+      dev: ctx.devDb !== undefined,
+      connection: ctx.userConnection,
+    })
     nitro.options.virtual['#drizzle/schema'] = createSchemaEntry(
       prepared.schemaPath,
       ctx.relationsExport,

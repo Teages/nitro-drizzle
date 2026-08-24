@@ -1,8 +1,8 @@
 import type {} from '../augmentations'
 import { useNitroHooks } from 'nitro/app'
-import { useRuntimeConfig } from 'nitro/runtime-config'
 import { defineTask } from 'nitro/task'
 import { useDrizzle } from '#drizzle'
+import { drizzleConfig } from '#drizzle/config'
 import { pushDevSchema, resetDevSchema } from '../dev-database'
 
 export default defineTask({
@@ -11,14 +11,13 @@ export default defineTask({
     description: 'Reset the dev database: drop schema, re-push, re-seed',
   },
   async run() {
-    const config = useRuntimeConfig().drizzle
-    if (config === undefined || config.dev !== true) {
+    if (drizzleConfig.dev !== true) {
       throw new Error('The db:reset task requires the dev database to be active.')
     }
-    if (config.dialect !== 'postgresql' && config.dialect !== 'sqlite') {
+    if (drizzleConfig.dialect !== 'postgresql' && drizzleConfig.dialect !== 'sqlite') {
       throw new Error('The db:reset task requires the dev database to be active.')
     }
-    const dialect = config.dialect
+    const dialect = drizzleConfig.dialect
 
     const { db, schema } = useDrizzle()
     await resetDevSchema(dialect, db)

@@ -96,6 +96,13 @@ export interface DrizzleOptions {
    */
   schemaPath: DrizzleSchemaPath
   /**
+   * Static database connection. Values are used as-is by default; `{{VAR}}`
+   * templates expand at runtime when the user enables Nitro's
+   * `experimental.envExpansion`. `<prefix>DRIZZLE_CONNECTION_*` environment
+   * overrides apply at runtime for keys defined here.
+   */
+  connection?: DatabaseConnection
+  /**
    * Name of the Drizzle v1 relations value exported by the schema entry.
    * The generated client always exposes it as `relations`.
    * @default 'relations'

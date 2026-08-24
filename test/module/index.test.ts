@@ -144,7 +144,7 @@ describe('@teages/nitro-drizzle', () => {
     await nitro.close()
   })
 
-  it('merges user runtimeConfig connection defaults instead of clobbering them', async () => {
+  it('serves the module-owned config through #drizzle/config, not runtimeConfig', async () => {
     // Given
     const rootDir = await createTemporaryRoot()
 
@@ -154,70 +154,35 @@ describe('@teages/nitro-drizzle', () => {
       serverDir: './server',
       buildDir: './node_modules/.nitro',
       modules: [NitroDrizzle],
-      drizzle: { dialect: 'sqlite', driver: 'libsql', schemaPath: './server/db/schema.ts' },
-      runtimeConfig: {
-        drizzle: { connection: { url: 'file:custom.db', host: 'static-host' } },
+      drizzle: {
+        dialect: 'sqlite',
+        driver: 'libsql',
+        schemaPath: './server/db/schema.ts',
+        connection: { url: 'file:custom.db', host: 'static-host' },
       },
     })
 
-    // Then
-    const runtime = nitro.options.runtimeConfig.drizzle
-    expect(runtime?.connection).toEqual({
-      ...{
-        url: '',
-        uri: '',
-        authToken: '',
-        connectionString: '',
-        host: '',
-        port: 0,
-        user: '',
-        password: '',
-        database: '',
-        accountId: '',
-        apiToken: '',
-        databaseId: '',
-        hyperdriveId: '',
-        dataDir: '',
-      },
-      url: 'file:custom.db',
-      host: 'static-host',
-    })
-    expect(runtime?.driver).toBe('libsql')
-    expect(runtime?.migrationsDir).toBe(
+    // Then — the static connection lands verbatim in the module-owned
+    // virtual; Nitro's runtimeConfig is never touched.
+    const configModule = virtualSource(nitro, '#drizzle/config')
+    expect(configModule).toContain(`import { resolveDrizzleConnection } from '@teages/nitro-drizzle/runtime/connection'`)
+    expect(configModule).toContain('"driver": "libsql"')
+    expect(configModule).toContain('"url": "file:custom.db"')
+    expect(configModule).toContain('"host": "static-host"')
+    expect(configModule).toContain(
       join(nitro.options.buildDir, 'drizzle/runtime-assets/migrations'),
     )
+    expect(configModule).toContain('export function useDrizzleConnection()')
+    expect(nitro.options.runtimeConfig.drizzle).toBeUndefined()
     expect(virtualSource(nitro, '#drizzle')).toContain('export function useDrizzle()')
     await nitro.close()
   })
 
-  it('keeps user-owned runtimeConfig.drizzle keys when applying module config', async () => {
+  it('passes {{VAR}} connection templates through to the runtime untouched', async () => {
     // Given
     const rootDir = await createTemporaryRoot()
-
-    // When
-    const nitro = await createNitro({
-      rootDir,
-      serverDir: './server',
-      buildDir: './node_modules/.nitro',
-      modules: [NitroDrizzle],
-      drizzle: { dialect: 'sqlite', driver: 'libsql', schemaPath: './server/db/schema.ts' },
-      runtimeConfig: {
-        drizzle: { custom: 'keep-me' } as never,
-      },
-    })
-
-    // Then
-    const runtime = nitro.options.runtimeConfig.drizzle
-    expect((runtime as Record<string, unknown>)?.custom).toBe('keep-me')
-    expect(runtime?.driver).toBe('libsql')
-    await nitro.close()
-  })
-
-  it('does not bake environment credentials into runtimeConfig defaults', async () => {
-    // Given
-    const rootDir = await createTemporaryRoot()
-    const previousUrl = process.env.NITRO_DRIZZLE_CONNECTION_URL
-    process.env.NITRO_DRIZZLE_CONNECTION_URL = 'libsql://from-env'
+    const previousUrl = process.env.DATABASE_URL
+    process.env.DATABASE_URL = 'libsql://from-env'
 
     try {
       // When
@@ -226,23 +191,26 @@ describe('@teages/nitro-drizzle', () => {
         serverDir: './server',
         buildDir: './node_modules/.nitro',
         modules: [NitroDrizzle],
-        drizzle: { dialect: 'sqlite', driver: 'libsql', schemaPath: './server/db/schema.ts' },
-        runtimeConfig: {
-          drizzle: { connection: { url: 'file:custom.db' } },
+        drizzle: {
+          dialect: 'sqlite',
+          driver: 'libsql',
+          schemaPath: './server/db/schema.ts',
+          connection: { url: '{{DATABASE_URL}}' },
         },
       })
 
-      // Then
-      expect(nitro.options.runtimeConfig.drizzle?.connection?.url)
-        .toBe('file:custom.db')
+      // Then — expansion happens in the module's runtime helper, gated by
+      // the user's envExpansion setting; the build never resolves templates.
+      expect(virtualSource(nitro, '#drizzle/config'))
+        .toContain('"url": "{{DATABASE_URL}}"')
       await nitro.close()
     }
     finally {
       if (previousUrl === undefined) {
-        delete process.env.NITRO_DRIZZLE_CONNECTION_URL
+        delete process.env.DATABASE_URL
       }
       else {
-        process.env.NITRO_DRIZZLE_CONNECTION_URL = previousUrl
+        process.env.DATABASE_URL = previousUrl
       }
     }
   })
@@ -286,10 +254,11 @@ describe('@teages/nitro-drizzle', () => {
     // And — no custom directory watcher is added
     expect(nitro.options.devServer.watch).toEqual([])
 
-    // And — runtime config flags the dev database while keeping the real driver
-    const runtime = nitro.options.runtimeConfig.drizzle
-    expect(runtime?.dev).toBe(true)
-    expect(runtime?.driver).toBe('postgres-js')
+    // And — the module-owned config flags the dev database while keeping
+    // the real driver for the toolchain
+    const configModule = virtualSource(nitro, '#drizzle/config')
+    expect(configModule).toContain('"dev": true')
+    expect(configModule).toContain('"driver": "postgres-js"')
 
     // And — the generated types follow the dev engine
     const modules = await readFile(
@@ -394,7 +363,7 @@ describe('@teages/nitro-drizzle', () => {
     })
 
     // Then
-    expect(nitro.options.runtimeConfig.drizzle?.dev).toBeUndefined()
+    expect(virtualSource(nitro, '#drizzle/config')).not.toContain('"dev": true')
     expect(virtualSource(nitro, '#drizzle'))
       .toContain(`from 'drizzle-orm/postgres-js'`)
     expect(nitro.options.virtual['#drizzle/schema']).toBeDefined()
@@ -429,7 +398,7 @@ describe('@teages/nitro-drizzle', () => {
       })
 
       // Then
-      expect(nitro.options.runtimeConfig.drizzle?.dev).toBeUndefined()
+      expect(virtualSource(nitro, '#drizzle/config')).not.toContain('"dev": true')
       expect(virtualSource(nitro, '#drizzle'))
         .toContain(`from 'drizzle-orm/postgres-js'`)
       await nitro.close()
