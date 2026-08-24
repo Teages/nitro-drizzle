@@ -125,6 +125,7 @@ describe('published runtime entries in Nitro dev', () => {
       'pathe',
       'rolldown',
       'scule',
+      'srvx',
     ]) {
       await symlink(
         join(repoRoot, 'node_modules', dependency),
