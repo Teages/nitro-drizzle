@@ -1,4 +1,4 @@
-import NitroDrizzle from '@teages/nitro-drizzle'
+import NitroDrizzle from '../src/index'
 import { defineConfig } from 'nitro'
 
 export default defineConfig({
