@@ -1,10 +1,10 @@
 import type { NitroModule } from 'nitro/types'
-import type { DatabaseConnection, DrizzleClientDriver, DrizzleDevOptions, DrizzleDialect, DrizzleLocalDriver, DrizzleOptions, DrizzleSchemaPath, DrizzleSchemaPaths } from './types'
+import type { DatabaseConnection, DrizzleClientDriver, DrizzleDevOptions, DrizzleDevStudioOptions, DrizzleDialect, DrizzleLocalDriver, DrizzleOptions, DrizzleSchemaPath, DrizzleSchemaPaths } from './types'
 import { findEnvTemplateKeys } from './config/env'
 import { createDrizzleArtifactsLifecycle } from './module/artifacts-lifecycle'
 import { configureCloudflare } from './module/cloudflare/configure'
 import { resolveDrizzleModuleContext } from './module/context'
-import { configureRuntime } from './module/register-runtime'
+import { configureRuntime, configureStudioRuntime } from './module/register-runtime'
 import { configureOutputAssets } from './module/ship-migration-assets'
 
 // Declared inline on the entry: bundlers drop side-effect-only type imports
@@ -41,6 +41,14 @@ export default {
 
     const lifecycle = await createDrizzleArtifactsLifecycle(nitro, ctx)
     configureRuntime(nitro, ctx.devDb)
+    if (ctx.devDb !== undefined && ctx.devStudio !== undefined) {
+      configureStudioRuntime(nitro)
+    }
+    else if (nitro.options.dev && ctx.devDb === undefined) {
+      nitro.logger.withTag('@teages/nitro-drizzle').info(
+        'Drizzle Studio: enable the dev database (drizzle.dev) for the built-in studio, or run `npx drizzle-kit studio` against a real connection.',
+      )
+    }
     configureCloudflare(nitro, lifecycle.config)
     configureOutputAssets(nitro, lifecycle)
 
@@ -56,6 +64,7 @@ export type {
   DatabaseConnection,
   DrizzleClientDriver,
   DrizzleDevOptions,
+  DrizzleDevStudioOptions,
   DrizzleDialect,
   DrizzleLocalDriver,
   DrizzleOptions,
