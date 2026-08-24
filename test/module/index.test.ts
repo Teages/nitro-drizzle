@@ -190,6 +190,29 @@ describe('@teages/nitro-drizzle', () => {
     await nitro.close()
   })
 
+  it('keeps user-owned runtimeConfig.drizzle keys when applying module config', async () => {
+    // Given
+    const rootDir = await createTemporaryRoot()
+
+    // When
+    const nitro = await createNitro({
+      rootDir,
+      serverDir: './server',
+      buildDir: './node_modules/.nitro',
+      modules: [NitroDrizzle],
+      drizzle: { dialect: 'sqlite', driver: 'libsql', schemaPath: './server/db/schema.ts' },
+      runtimeConfig: {
+        drizzle: { custom: 'keep-me' } as never,
+      },
+    })
+
+    // Then
+    const runtime = nitro.options.runtimeConfig.drizzle
+    expect((runtime as Record<string, unknown>)?.custom).toBe('keep-me')
+    expect(runtime?.driver).toBe('libsql')
+    await nitro.close()
+  })
+
   it('does not bake environment credentials into runtimeConfig defaults', async () => {
     // Given
     const rootDir = await createTemporaryRoot()
