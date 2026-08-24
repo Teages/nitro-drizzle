@@ -100,9 +100,7 @@ export default defineHandler(async () => {
         dialect: 'sqlite',
         driver: 'libsql',
         schemaPath: './server/db/schema.ts',
-      },
-      runtimeConfig: {
-        drizzle: { connection: { url: `file:${databaseFile}` } },
+        connection: { url: `file:${databaseFile}` },
       },
     })
     await build(nitro)
