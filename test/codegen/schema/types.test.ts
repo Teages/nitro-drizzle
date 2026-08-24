@@ -105,6 +105,11 @@ context.db.query.users.findMany()
     // Then
     const modulesDeclaration = await readFile(artifacts.modulesFile, 'utf8')
     expect(modulesDeclaration).toContain(`declare module '#drizzle'`)
+    // The schema reference must resolve to the emitted schema.d.mts sitting
+    // next to this declaration — a bare './schema' fails tsc with TS2307.
+    expect(modulesDeclaration).toContain(
+      `typeof import('./schema.d.mts')`,
+    )
     expect(modulesDeclaration).toContain('drizzle-orm/libsql')
     expect(modulesDeclaration).toContain('export function useDrizzle(): DrizzleContext')
     await expect(
