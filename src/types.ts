@@ -154,4 +154,32 @@ export interface DrizzleDevOptions {
    * The `NITRO_DRIZZLE_DEV_FILE` environment variable overrides this value.
    */
   file?: string
+  /**
+   * The built-in Drizzle Studio that ships with dev-database sessions: a
+   * loopback proxy on a random port that the Studio web app connects to.
+   * `false` disables it; an object customizes it; omitted or `true` uses the
+   * defaults.
+   */
+  studio?: boolean | DrizzleDevStudioOptions
+}
+
+export interface DrizzleDevStudioOptions {
+  /**
+   * Fixed port for the local Studio API proxy. When omitted the module picks
+   * a random port in the 20000–65535 range on every start.
+   */
+  port?: number
+  /**
+   * Skip the startup log line pointing at the Studio web app. Startup errors
+   * are still reported.
+   * @default false
+   */
+  silent?: boolean
+  /**
+   * Base URL of the Studio web app. It is used both for the startup link and
+   * as the origin the loopback proxy accepts requests from, so pointing it at
+   * a self-hosted Studio frontend keeps the origin check meaningful.
+   * @default 'https://local.drizzle.studio'
+   */
+  studioUrl?: string
 }
