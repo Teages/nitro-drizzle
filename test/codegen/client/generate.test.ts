@@ -66,7 +66,7 @@ describe('generateVirtualClientSource', () => {
       expect(source).toContain(`import { drizzle } from '${driverImports[typedDriver]}'`)
       expect(source).toContain(`import { schema } from '#drizzle/schema'`)
       expect(source).toContain(`import { relations } from '#drizzle/relations'`)
-      expect(source).toContain('import { useRuntimeConfig } from \'nitro/runtime-config\'')
+      expect(source).toContain(`import { useDrizzleConnection } from '#drizzle/config'`)
       expect(source).toContain('let _db = null')
       expect(source).toContain('_db ??= initDrizzle()')
       expect(source).toContain('export function useDrizzle()')
@@ -111,7 +111,7 @@ describe('generateVirtualClientSource', () => {
     expect(source).toContain('function initDrizzle()')
     expect(source).toContain('requires connection.accountId, apiToken, and databaseId')
     expect(source).toContain('AbortSignal.timeout(30000)')
-    expect(source).toContain('useRuntimeConfig().drizzle?.connection ?? {}')
+    expect(source).toContain('const { accountId, apiToken, databaseId } = useDrizzleConnection()')
   })
 
   it('creates per-request Hyperdrive clients for postgres-js', () => {
@@ -150,7 +150,7 @@ describe('generateVirtualClientSource', () => {
     expect(source).toContain('__nitroDrizzleMysqlDb')
   })
 
-  it('normalizes connection values from runtime config without provider metadata', () => {
+  it('does not bake static connection values into the client source', () => {
     // Given
     const config: DrizzleDriverConfig = {
       dialect: 'postgresql',
@@ -164,8 +164,9 @@ describe('generateVirtualClientSource', () => {
     // When
     const source = generate(config)
 
-    // Then
-    expect(source).toContain('useRuntimeConfig().drizzle')
+    // Then — connection values resolve from #drizzle/config at runtime,
+    // never serialized into the client source
+    expect(source).toContain('useDrizzleConnection()')
     expect(source).not.toContain('postgres://localhost/database')
     expect(source).not.toContain('unrelated-d1-id')
   })

@@ -3,8 +3,8 @@ import {
   lazyUseDrizzleSource,
   requestBindingHelpers,
   sourceHeader,
+  USE_CONNECTION_IMPORT,
   USE_REQUEST_IMPORT,
-  USE_RUNTIME_CONFIG_IMPORT,
 } from './helpers'
 
 export type PostgresJsVariant = 'standard' | 'hyperdrive'
@@ -14,8 +14,7 @@ export interface PostgresJsSourceOptions {
   readonly variant: PostgresJsVariant
 }
 
-const CONNECTION_OPTIONS_DESTRUCTURE = `const drizzleConfig = useRuntimeConfig().drizzle ?? {}
-  const { url, connectionString, hyperdriveId, ...extras } = drizzleConfig.connection ?? {}
+const CONNECTION_OPTIONS_DESTRUCTURE = `const { url, connectionString, hyperdriveId, ...extras } = useDrizzleConnection()
   const options = Object.fromEntries(
     Object.entries(extras).filter(([, value]) => value !== '' && value !== 0 && value !== undefined),
   )`
@@ -28,7 +27,7 @@ export function postgresJsSource(options: PostgresJsSourceOptions): string {
         extras: [
           `import postgres from 'postgres'`,
           USE_REQUEST_IMPORT,
-          USE_RUNTIME_CONFIG_IMPORT,
+          USE_CONNECTION_IMPORT,
         ],
       })}
 
@@ -52,7 +51,7 @@ export function useDrizzle() {
 `
     default:
       return lazyUseDrizzleSource(
-        { ...options.imports, extras: [USE_RUNTIME_CONFIG_IMPORT] },
+        { ...options.imports, extras: [USE_CONNECTION_IMPORT] },
         `  ${CONNECTION_OPTIONS_DESTRUCTURE}
   return drizzle({
     connection: {
