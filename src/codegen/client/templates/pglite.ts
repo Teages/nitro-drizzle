@@ -1,5 +1,5 @@
 import type { DevClientConnection, SourceImports } from './helpers'
-import { lazyUseDrizzleSource, quote, USE_RUNTIME_CONFIG_IMPORT } from './helpers'
+import { lazyUseDrizzleSource, quote, USE_CONNECTION_IMPORT } from './helpers'
 
 export function pgliteSource(imports: SourceImports, dev?: DevClientConnection): string {
   if (dev !== undefined) {
@@ -13,8 +13,8 @@ ${dev.connection === undefined
   })`)
   }
   return lazyUseDrizzleSource(
-    { ...imports, extras: [USE_RUNTIME_CONFIG_IMPORT] },
-    `  const connection = useRuntimeConfig().drizzle?.connection ?? {}
+    { ...imports, extras: [USE_CONNECTION_IMPORT] },
+    `  const connection = useDrizzleConnection()
   return drizzle({
     connection: connection.dataDir || connection.url || connection.connectionString,
     schema,

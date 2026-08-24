@@ -9,10 +9,6 @@ import {
   DEV_ENV_FLAG,
   resolveDevDatabase,
 } from '../config/dev-database'
-import {
-  resolveConnectionFromEnv,
-  resolveDrizzleEnvPrefixes,
-} from '../config/env'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../config/resolve'
 
 export interface DrizzleModuleContext {
@@ -34,18 +30,15 @@ export function resolveDrizzleModuleContext(
   if (nitro.options.drizzle === undefined) {
     return undefined
   }
-  const envPrefixes = resolveDrizzleEnvPrefixes(
-    nitro.options.runtimeConfig.nitro?.envPrefix,
-    env,
-  )
-  const userConnection: DatabaseConnection
-    = nitro.options.runtimeConfig.drizzle?.connection ?? {}
-  const connection = resolveConnectionFromEnv(env, envPrefixes, userConnection)
-  const { dev: _dev, ...drizzleOptions } = nitro.options.drizzle
+  // Build-time resolution stays static: `{{VAR}}` templates pass through
+  // untouched and Nitro's runtime expands them per the user's envExpansion
+  // setting. Only the drizzle-kit loader needs build-time expansion.
+  const userConnection = nitro.options.drizzle.connection ?? {}
+  const { dev: _dev, connection: _connection, ...drizzleOptions } = nitro.options.drizzle
   const config = resolveDrizzleConfig(
     {
       ...drizzleOptions,
-      ...(Object.keys(connection).length > 0 ? { connection } : {}),
+      ...(Object.keys(userConnection).length > 0 ? { connection: userConnection } : {}),
     },
     { serverDir: nitro.options.serverDir },
   )

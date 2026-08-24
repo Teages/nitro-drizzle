@@ -1,5 +1,5 @@
 import type { DevClientConnection, SourceImports } from './helpers'
-import { lazyUseDrizzleSource, quote, USE_RUNTIME_CONFIG_IMPORT } from './helpers'
+import { lazyUseDrizzleSource, quote, USE_CONNECTION_IMPORT } from './helpers'
 
 export function bunSqliteSource(imports: SourceImports, dev?: DevClientConnection): string {
   if (dev !== undefined) {
@@ -10,8 +10,8 @@ export function bunSqliteSource(imports: SourceImports, dev?: DevClientConnectio
   })`)
   }
   return lazyUseDrizzleSource(
-    { ...imports, extras: [USE_RUNTIME_CONFIG_IMPORT] },
-    `  const connection = useRuntimeConfig().drizzle?.connection ?? {}
+    { ...imports, extras: [USE_CONNECTION_IMPORT] },
+    `  const connection = useDrizzleConnection()
   return drizzle({
     connection: connection.url || connection.connectionString || connection,
     schema,

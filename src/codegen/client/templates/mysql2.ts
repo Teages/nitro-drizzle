@@ -3,8 +3,8 @@ import {
   lazyUseDrizzleSource,
   requestBindingHelpers,
   sourceHeader,
+  USE_CONNECTION_IMPORT,
   USE_REQUEST_IMPORT,
-  USE_RUNTIME_CONFIG_IMPORT,
 } from './helpers'
 
 export type Mysql2Variant = 'standard' | 'hyperdrive'
@@ -14,8 +14,7 @@ export interface Mysql2SourceOptions {
   readonly variant: Mysql2Variant
 }
 
-const CONNECTION_OPTIONS_DESTRUCTURE = `const drizzleConfig = useRuntimeConfig().drizzle ?? {}
-  const { url, connectionString, hyperdriveId, ...options } = drizzleConfig.connection ?? {}
+const CONNECTION_OPTIONS_DESTRUCTURE = `const { url, connectionString, hyperdriveId, ...options } = useDrizzleConnection()
   const clientOptions = Object.fromEntries(
     Object.entries(options).filter(([, value]) => value !== '' && value !== 0 && value !== undefined),
   )`
@@ -43,7 +42,7 @@ export function useDrizzle() {
 `
     default:
       return lazyUseDrizzleSource(
-        { ...options.imports, extras: [USE_RUNTIME_CONFIG_IMPORT] },
+        { ...options.imports, extras: [USE_CONNECTION_IMPORT] },
         `  ${CONNECTION_OPTIONS_DESTRUCTURE}
   return drizzle({
     connection: url || connectionString || clientOptions,

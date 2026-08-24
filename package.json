@@ -16,13 +16,13 @@
       "types": "./dist/runtime/index.d.mts",
       "import": "./dist/runtime/index.mjs"
     },
+    "./runtime/connection": {
+      "types": "./dist/runtime/connection.d.mts",
+      "import": "./dist/runtime/connection.mjs"
+    },
     "./config": {
       "types": "./dist/config/loader.d.mts",
       "import": "./dist/config/loader.mjs"
-    },
-    "./vite": {
-      "types": "./dist/vite.d.mts",
-      "import": "./dist/vite.mjs"
     }
   },
   "module": "./dist/index.mjs",
@@ -34,11 +34,11 @@
       "./runtime": [
         "./dist/runtime/index.d.mts"
       ],
+      "./runtime/connection": [
+        "./dist/runtime/connection.d.mts"
+      ],
       "./config": [
         "./dist/config/loader.d.mts"
-      ],
-      "./vite": [
-        "./dist/vite.d.mts"
       ]
     }
   },
@@ -61,16 +61,16 @@
   "peerDependencies": {
     "drizzle-kit": "1.0.0-rc.4",
     "drizzle-orm": "1.0.0-rc.4",
-    "nitro": ">=3.0.260610-beta <4",
-    "vite": ">=6"
+    "nitro": ">=3.0.260610-beta <4"
   },
   "peerDependenciesMeta": {
-    "vite": {
+    "nitro": {
       "optional": true
     }
   },
   "dependencies": {
-    "pathe": "^2.0.3"
+    "pathe": "^2.0.3",
+    "scule": "^1.3.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.3.0",

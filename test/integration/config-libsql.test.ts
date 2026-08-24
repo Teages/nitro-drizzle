@@ -52,9 +52,7 @@ export default defineConfig({
     dialect: 'sqlite',
     driver: 'libsql',
     schemaPath: './server/db/schema.ts',
-  },
-  runtimeConfig: {
-    drizzle: { connection: { url: ${JSON.stringify(`file:${databaseFile}`)} } },
+    connection: { url: ${JSON.stringify(`file:${databaseFile}`)} },
   },
 })
 `,

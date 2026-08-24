@@ -13,8 +13,8 @@ export interface DevClientConnection {
   readonly connection?: string
 }
 
-export const USE_RUNTIME_CONFIG_IMPORT
-  = `import { useRuntimeConfig } from 'nitro/runtime-config'`
+export const USE_CONNECTION_IMPORT
+  = `import { useDrizzleConnection } from '#drizzle/config'`
 
 export const USE_REQUEST_IMPORT = `import { useRequest } from 'nitro/context'`
 

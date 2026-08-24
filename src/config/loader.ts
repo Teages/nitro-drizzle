@@ -2,7 +2,7 @@ import type { Config as DrizzleKitConfig } from 'drizzle-kit'
 import type { DatabaseConnection } from '../types'
 import type { ResolvedDrizzleConfig } from './types'
 import process from 'node:process'
-import { resolveConnectionFromEnv, resolveDrizzleEnvPrefixes } from './env'
+import { applyNitroEnv } from './env'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from './resolve'
 
 export interface LoadDrizzleConfigOptions {
@@ -157,18 +157,16 @@ export async function loadDrizzleConfig(
     )
   }
 
-  const { dev: _dev, ...drizzle } = nitroOptions.drizzle
-  const envPrefixes = resolveDrizzleEnvPrefixes(
-    nitroOptions.runtimeConfig.nitro?.envPrefix,
-    process.env,
-  )
-  const userConnection
-    = nitroOptions.runtimeConfig.drizzle?.connection ?? {}
-  const connection = resolveConnectionFromEnv(
-    process.env,
-    envPrefixes,
-    userConnection,
-  )
+  const { dev: _dev, connection: userConnection, ...drizzle } = nitroOptions.drizzle
+  // The CLI needs real credentials, so it applies Nitro's runtime env
+  // semantics — overrides plus `{{VAR}}` expansion per the user's
+  // envExpansion setting — to the static connection here.
+  const connection = applyNitroEnv(userConnection ?? {}, {
+    env: process.env,
+    envPrefix: nitroOptions.runtimeConfig.nitro?.envPrefix,
+    envExpansion: nitroOptions.experimental?.envExpansion === true
+      || process.env.NITRO_ENV_EXPANSION === 'true',
+  })
   const config = resolveDrizzleConfig(
     {
       ...drizzle,

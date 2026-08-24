@@ -37,8 +37,7 @@ bun add @teages/nitro-drizzle drizzle-orm drizzle-kit @libsql/client
 
 Register the Nitro module with an explicit dialect and driver. The module does
 not infer either value from environment variables. Connection credentials
-belong in `runtimeConfig.drizzle.connection` so Nitro's runtime-config
-environment overrides apply to them:
+live in `drizzle.connection` next to the dialect:
 
 ```ts
 import NitroDrizzle from '@teages/nitro-drizzle'
@@ -50,12 +49,8 @@ export default defineConfig({
     dialect: 'sqlite',
     driver: 'libsql',
     schemaPath: './server/db/schema.ts',
-  },
-  runtimeConfig: {
-    drizzle: {
-      connection: {
-        url: 'file:.data/database.db',
-      },
+    connection: {
+      url: 'file:.data/database.db',
     },
   },
 })
@@ -71,14 +66,36 @@ Supported drivers:
 maintained Node version — so a SQLite application needs no database package at
 all. `bun-sqlite` is its equivalent under Bun.
 
-Static `runtimeConfig.drizzle.connection` values are development defaults. At
-runtime they can be overridden with `NITRO_DRIZZLE_CONNECTION_*` environment
-variables (`NITRO_DRIZZLE_CONNECTION_URL`, `NITRO_DRIZZLE_CONNECTION_PASSWORD`,
-`NITRO_DRIZZLE_CONNECTION_API_TOKEN`, ...). An alternative prefix configured
-via `runtimeConfig.nitro.envPrefix` or `NITRO_ENV_PREFIX` is honored as well.
-drizzle-kit commands resolve the same static defaults and environment
-overrides through `loadDrizzleConfig`. No connection secrets are ever
-baked into generated source or CLI metadata.
+`drizzle.connection` values are static by default — the generated client
+resolves them verbatim on first use. The module owns that resolution end to
+end (connection values never pass through Nitro's `runtimeConfig`); two env
+mechanisms, matching Nitro's own semantics, can replace them:
+
+- `NITRO_DRIZZLE_CONNECTION_*` environment variables override defined keys at
+  runtime (`NITRO_DRIZZLE_CONNECTION_URL`,
+  `NITRO_DRIZZLE_CONNECTION_PASSWORD`, ...). Overrides cannot introduce keys
+  the static connection does not define. An alternative prefix configured via
+  `runtimeConfig.nitro.envPrefix` or `NITRO_ENV_PREFIX` is honored as well.
+- With Nitro's `experimental.envExpansion` enabled, `{{VAR_NAME}}` templates
+  in connection strings expand at runtime, so credentials never need to be in
+  the config file at all:
+
+  ```ts
+  export default defineConfig({
+    experimental: { envExpansion: true },
+    drizzle: {
+      // ...
+      connection: { url: '{{DATABASE_URL}}' },
+    },
+  })
+  ```
+
+  Missing variables keep their literal `{{VAR_NAME}}` text. The module warns
+  at startup when templates are used without env expansion enabled.
+
+drizzle-kit commands resolve the same static values, overrides, and expansion
+through `loadDrizzleConfig`, so the CLI and the running server always agree.
+No connection secrets are ever baked into generated source or CLI metadata.
 
 The database is created lazily on the first `useDrizzle()` call, except for
 `d1` and Hyperdrive drivers, which resolve their Cloudflare binding from the
@@ -198,16 +215,15 @@ is started by the Nitro CLI, invoke tasks through its discovery file:
 nitro task run db:migrate
 ```
 
-In Vite plugin mode, Vite owns the development server and Nitro does not write
-the discovery file required by `nitro task run`. After the Vite server is
-ready, call the Nitro task endpoint instead:
+When another tool owns the development server and the discovery file is not
+written, call the Nitro task endpoint directly once the server is ready:
 
 ```sh
-curl -X POST http://localhost:5173/_nitro/tasks/db:migrate
-curl -X POST http://localhost:5173/_nitro/tasks/db:reset
+curl -X POST http://localhost:3000/_nitro/tasks/db:migrate
+curl -X POST http://localhost:3000/_nitro/tasks/db:reset
 ```
 
-Use `drizzle-kit migrate` when migrations must run before the Vite server is
+Use `drizzle-kit migrate` when migrations must run before the server is
 available. The module enables Nitro tasks when configured; deployed runtimes
 can invoke the same task through their platform integration.
 
@@ -245,10 +261,8 @@ lives in memory by default; set `drizzle.dev.file` to persist it on disk.
 On startup the module pushes the Drizzle schema with drizzle-kit — destructive
 statements apply without confirmation — and requests wait until the schema is
 ready. During development the explicit schema entry and everything it imports
-stay in the host bundler's module graph, so Nitro or Vite reloads normally and
-the dev database is re-pushed and re-seeded without a restart. With the Vite
-builder add the plugin from `@teages/nitro-drizzle/vite` to your vite config;
-it registers the Nitro module and can carry your `drizzle` options directly.
+stay in the host bundler's module graph, so the dev server reloads normally and
+the dev database is re-pushed and re-seeded without a restart.
 
 The drizzle-kit CLI and the `db:migrate` task always target the real database.
 Switching between real databases (local Docker, staging, branches) is a job

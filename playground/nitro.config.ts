@@ -1,18 +1,16 @@
 import { defineConfig } from 'nitro'
+import NitroDrizzle from '../src/index'
 
 export default defineConfig({
+  modules: [NitroDrizzle],
   serverDir: './server',
   drizzle: {
     dialect: 'sqlite',
     driver: 'libsql',
     schemaPath: './server/db/schema.ts',
     dev: true,
-  },
-  runtimeConfig: {
-    drizzle: {
-      connection: {
-        url: 'file:./playground.db',
-      },
+    connection: {
+      url: 'file:./playground.db',
     },
   },
   experimental: {
