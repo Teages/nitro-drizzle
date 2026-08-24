@@ -56,6 +56,11 @@
     "drizzle-orm": "1.0.0-rc.4",
     "nitro": ">=3.0.260610-beta <4"
   },
+  "peerDependenciesMeta": {
+    "nitro": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "pathe": "^2.0.3"
   },
