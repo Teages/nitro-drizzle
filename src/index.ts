@@ -1,6 +1,6 @@
 import type { NitroModule } from 'nitro/types'
-import type { DrizzleConfigInput } from './config/types'
 import type { DatabaseConnection, DrizzleClientDriver, DrizzleDevOptions, DrizzleDialect, DrizzleLocalDriver, DrizzleOptions, DrizzleSchemaPath, DrizzleSchemaPaths } from './types'
+import { findEnvTemplateKeys } from './config/env'
 import { createDrizzleArtifactsLifecycle } from './module/artifacts-lifecycle'
 import { configureCloudflare } from './module/cloudflare/configure'
 import { resolveDrizzleModuleContext } from './module/context'
@@ -13,10 +13,6 @@ import { configureOutputAssets } from './module/ship-migration-assets'
 declare module 'nitro/types' {
   interface NitroOptions {
     drizzle?: DrizzleOptions
-  }
-
-  interface NitroRuntimeConfig {
-    drizzle?: DrizzleConfigInput
   }
 }
 
@@ -32,6 +28,15 @@ export default {
     const ctx = resolveDrizzleModuleContext(nitro)
     if (ctx === undefined) {
       return
+    }
+
+    if (!nitro.options.experimental.envExpansion) {
+      const templates = findEnvTemplateKeys(ctx.userConnection)
+      if (templates.length > 0) {
+        nitro.logger.withTag('@teages/nitro-drizzle').warn(
+          `drizzle.connection contains env templates (${templates.map(t => `{{${t}}}`).join(', ')}) but experimental.envExpansion is disabled; the literals will reach the database driver as-is. Enable experimental.envExpansion or set NITRO_ENV_EXPANSION=true.`,
+        )
+      }
     }
 
     const lifecycle = await createDrizzleArtifactsLifecycle(nitro, ctx)
