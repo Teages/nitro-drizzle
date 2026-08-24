@@ -1,7 +1,7 @@
 {
   "name": "@teages/nitro-drizzle",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "packageManager": "pnpm@11.22.0",
   "description": "Drizzle ORM integration for Nitro v3",
   "license": "MIT",
