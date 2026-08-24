@@ -1,6 +1,8 @@
+import NitroDrizzle from '@teages/nitro-drizzle'
 import { defineConfig } from 'nitro'
 
 export default defineConfig({
+  modules: [NitroDrizzle],
   serverDir: './server',
   drizzle: {
     dialect: 'sqlite',

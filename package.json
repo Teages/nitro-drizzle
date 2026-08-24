@@ -19,10 +19,6 @@
     "./config": {
       "types": "./dist/config/loader.d.mts",
       "import": "./dist/config/loader.mjs"
-    },
-    "./vite": {
-      "types": "./dist/vite.d.mts",
-      "import": "./dist/vite.mjs"
     }
   },
   "module": "./dist/index.mjs",
@@ -36,9 +32,6 @@
       ],
       "./config": [
         "./dist/config/loader.d.mts"
-      ],
-      "./vite": [
-        "./dist/vite.d.mts"
       ]
     }
   },
@@ -61,13 +54,7 @@
   "peerDependencies": {
     "drizzle-kit": "1.0.0-rc.4",
     "drizzle-orm": "1.0.0-rc.4",
-    "nitro": ">=3.0.260610-beta <4",
-    "vite": ">=6"
-  },
-  "peerDependenciesMeta": {
-    "vite": {
-      "optional": true
-    }
+    "nitro": ">=3.0.260610-beta <4"
   },
   "dependencies": {
     "pathe": "^2.0.3"

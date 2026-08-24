@@ -198,16 +198,15 @@ is started by the Nitro CLI, invoke tasks through its discovery file:
 nitro task run db:migrate
 ```
 
-In Vite plugin mode, Vite owns the development server and Nitro does not write
-the discovery file required by `nitro task run`. After the Vite server is
-ready, call the Nitro task endpoint instead:
+When another tool owns the development server and the discovery file is not
+written, call the Nitro task endpoint directly once the server is ready:
 
 ```sh
-curl -X POST http://localhost:5173/_nitro/tasks/db:migrate
-curl -X POST http://localhost:5173/_nitro/tasks/db:reset
+curl -X POST http://localhost:3000/_nitro/tasks/db:migrate
+curl -X POST http://localhost:3000/_nitro/tasks/db:reset
 ```
 
-Use `drizzle-kit migrate` when migrations must run before the Vite server is
+Use `drizzle-kit migrate` when migrations must run before the server is
 available. The module enables Nitro tasks when configured; deployed runtimes
 can invoke the same task through their platform integration.
 
@@ -245,10 +244,8 @@ lives in memory by default; set `drizzle.dev.file` to persist it on disk.
 On startup the module pushes the Drizzle schema with drizzle-kit — destructive
 statements apply without confirmation — and requests wait until the schema is
 ready. During development the explicit schema entry and everything it imports
-stay in the host bundler's module graph, so Nitro or Vite reloads normally and
-the dev database is re-pushed and re-seeded without a restart. With the Vite
-builder add the plugin from `@teages/nitro-drizzle/vite` to your vite config;
-it registers the Nitro module and can carry your `drizzle` options directly.
+stay in the host bundler's module graph, so the dev server reloads normally and
+the dev database is re-pushed and re-seeded without a restart.
 
 The drizzle-kit CLI and the `db:migrate` task always target the real database.
 Switching between real databases (local Docker, staging, branches) is a job

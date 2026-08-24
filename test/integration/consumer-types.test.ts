@@ -52,7 +52,7 @@ describe('published package consumer types', () => {
     expect(shipped).toContain('dist')
 
     // Peer dependencies resolve through symlinks to the repository install.
-    for (const peer of ['nitro', 'vite', 'drizzle-orm']) {
+    for (const peer of ['nitro', 'drizzle-orm']) {
       await symlink(
         resolve(repoRoot, 'node_modules', peer),
         join(rootDir, 'node_modules', peer),
@@ -92,11 +92,8 @@ export const users = sqliteTable('users', {
       schemaPath,
     })
 
-    // And: consumer sources using every public type surface. The vite config
-    // is a separate file that never imports the package root, so it only
-    // typechecks when `dist/vite.d.mts` carries its own augmentations.
+    // And: consumer sources using every public type surface.
     const configFile = join(rootDir, 'nitro.config.ts')
-    const viteConfigFile = join(rootDir, 'vite.config.ts')
     const pluginFile = join(rootDir, 'server', 'plugin.ts')
     const tsconfigFile = join(rootDir, 'tsconfig.json')
     await Promise.all([
@@ -104,7 +101,6 @@ export const users = sqliteTable('users', {
         configFile,
         `import { defineConfig } from 'nitro'
 import NitroDrizzle from '@teages/nitro-drizzle'
-import NitroDrizzleVite from '@teages/nitro-drizzle/vite'
 
 export default defineConfig({
   modules: [NitroDrizzle],
@@ -118,36 +114,6 @@ export default defineConfig({
       connection: { url: 'file:.data/database.db' },
     },
   },
-})
-
-const vitePlugin = NitroDrizzleVite({
-  dialect: 'sqlite',
-  driver: 'libsql',
-  schemaPath: './server/db/schema.ts',
-})
-void vitePlugin
-`,
-      ),
-      writeFile(
-        viteConfigFile,
-        `import type {} from 'nitro/vite'
-import { defineConfig } from 'vite'
-import NitroDrizzle from '@teages/nitro-drizzle/vite'
-
-export default defineConfig({
-  nitro: {
-    drizzle: {
-      dialect: 'sqlite',
-      driver: 'libsql',
-      schemaPath: './server/db/schema.ts',
-    },
-    runtimeConfig: {
-      drizzle: {
-        connection: { url: 'file:.data/database.db' },
-      },
-    },
-  },
-  plugins: [NitroDrizzle()],
 })
 `,
       ),
@@ -174,7 +140,6 @@ useNitroHooks().hook('drizzle:dev:seed', async () => {
           },
           include: [
             configFile,
-            viteConfigFile,
             pluginFile,
             join(artifacts.directory, '**', '*.d.ts'),
             join(artifacts.directory, '**', '*.d.mts'),
