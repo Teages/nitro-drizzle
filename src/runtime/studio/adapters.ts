@@ -119,13 +119,21 @@ export function sqliteSyncExecutor(
         .all(...params)
     }
     if (engine === 'bun-sqlite') {
-      return (statement as SqliteSyncStatement & { values: (...params: unknown[]) => unknown[][] })
-        .values(...params)
+      // Bun keeps .values() (array rows) and .all() (object rows) as distinct
+      // statement APIs; the mode decides which shape the frontend gets.
+      return mode === 'array'
+        ? (statement as SqliteSyncStatement & { values: (...params: unknown[]) => unknown[][] })
+            .values(...params)
+        : statement.all(...params)
     }
-    const rows = statement.all(...params)
-    return mode === 'array'
-      ? (rows as Record<PropertyKey, unknown>[]).map(row => Object.values(row))
-      : rows
+    // node:sqlite: object rows collapse same-named columns, so array mode must
+    // switch the statement to the driver's native array rows instead of
+    // mapping Object.values() over object rows.
+    if (mode === 'array') {
+      (statement as SqliteSyncStatement & { setReturnArrays: (enabled: boolean) => unknown })
+        .setReturnArrays(true)
+    }
+    return statement.all(...params)
   }
 
   const runInTransaction = (queries: readonly { sql: string, method?: StudioQuery['method'] }[]): unknown[] => {
@@ -177,7 +185,9 @@ export function libsqlExecutor(client: LibsqlClient): StudioExecutor {
         args: binaryToBuffer(data.params ?? []),
       })
       if (data.mode === 'array') {
-        return (result.rows as Record<PropertyKey, unknown>[]).map(row => Object.values(row))
+        // libsql rows are array-like: numeric indices survive duplicate
+        // column names, unlike the row's named properties.
+        return result.rows.map(row => Array.from(row as ArrayLike<unknown>))
       }
       return result.rows
     },

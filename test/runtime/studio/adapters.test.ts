@@ -108,6 +108,18 @@ describe.each([
     const data = (rows as Array<{ data: unknown }>)[0].data
     expect(Buffer.from(data as Uint8Array).toString()).toBe('aGVsbG8=')
   })
+
+  it('preserves duplicate column names in array mode', async () => {
+    // Given — object rows collapse same-named columns, so array mode must use
+    // each engine's native array rows rather than Object.values()
+    const executor = createStudioExecutor(engine, createDb())
+
+    // When
+    const rows = await executor.query({ sql: 'SELECT 1 AS x, 2 AS x', method: 'values', mode: 'array' })
+
+    // Then
+    expect(rows).toEqual([[1, 2]])
+  })
 })
 
 describe('pglite studio executor', () => {
