@@ -11,7 +11,7 @@ export async function generateDrizzleArtifacts(
   const directory = join(options.buildDir, 'drizzle')
   const artifacts = {
     directory,
-    schemaTypesFile: join(directory, 'schema.d.mts'),
+    schemaTypesFile: join(directory, 'schema.d.ts'),
     modulesFile: join(directory, 'modules.d.ts'),
     hooksFile: join(directory, 'hooks.d.ts'),
   }

@@ -39,7 +39,7 @@ describe('createSchemaEntry', () => {
   it('requires a configured relations export in generated types', () => {
     // Given
     const schemaPath = join(rootDir, 'server/db/schema.ts')
-    const schemaTypesFile = join(rootDir, '.nitro/drizzle/schema.d.mts')
+    const schemaTypesFile = join(rootDir, '.nitro/drizzle/schema.d.ts')
 
     // When
     const types = createSchemaTypes(
