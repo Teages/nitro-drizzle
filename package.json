@@ -56,7 +56,8 @@
     "prepack": "pnpm build",
     "test": "pnpm lint && pnpm typecheck && vitest run --coverage --project unit",
     "test:integration": "vitest run --project integration",
-    "typecheck": "pnpm tsc --build --noEmit"
+    "typecheck": "pnpm tsc --build --noEmit",
+    "test:bun": "bun test test/runtime/studio/adapters.bun.test.ts"
   },
   "peerDependencies": {
     "drizzle-kit": "1.0.0-rc.4",
