@@ -36,6 +36,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm vitest run --project unit --coverage
+      - uses: oven-sh/setup-bun@v2
+      - run: pnpm test:bun
       - uses: codecov/codecov-action@v3
       - name: Integration tests (real databases)
         run: pnpm test:integration
