@@ -38,11 +38,31 @@ export interface RunningStudioServer {
   close: () => Promise<void>
 }
 
-export async function startStudioServer(
+/**
+ * Start and close share one serial queue: concurrent starts would otherwise
+ * race past each other's close step and leave a listener no later
+ * `closeStudioServer()` can reach. Queueing makes every start observe (and
+ * replace) the previously registered server.
+ */
+let lifecycle: Promise<unknown> = Promise.resolve()
+
+function enqueueLifecycle<T>(run: () => Promise<T>): Promise<T> {
+  const result = lifecycle.then(run, run)
+  lifecycle = result.catch(() => {})
+  return result
+}
+
+export function startStudioServer(
+  options: StartStudioServerOptions,
+): Promise<RunningStudioServer> {
+  return enqueueLifecycle(() => startStudioServerQueued(options))
+}
+
+async function startStudioServerQueued(
   options: StartStudioServerOptions,
 ): Promise<RunningStudioServer> {
   const dispatch = options.dispatch ?? ((request: Request) => serverFetch(request))
-  await closeStudioServer()
+  await closeStudioServerLocked()
 
   // A configured port is a contract: bind it exactly or fail loudly. The
   // default random mode instead retries within the wide range.
@@ -101,7 +121,11 @@ async function forwardStudioRequest(
 }
 
 /** Closes the running proxy if this process still owns one. */
-export async function closeStudioServer(): Promise<void> {
+export function closeStudioServer(): Promise<void> {
+  return enqueueLifecycle(closeStudioServerLocked)
+}
+
+async function closeStudioServerLocked(): Promise<void> {
   await studioServerGlobal.__NITRO_DRIZZLE_STUDIO_SERVER__?.close()
   studioServerGlobal.__NITRO_DRIZZLE_STUDIO_SERVER__ = undefined
 }

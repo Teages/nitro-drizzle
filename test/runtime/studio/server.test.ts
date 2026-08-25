@@ -134,6 +134,27 @@ describe('startStudioServer', () => {
     expect(second.port).not.toBe(first.port)
     expect(previous).toBeInstanceOf(Error)
   })
+
+  it('closes every listener after concurrent starts', async () => {
+    // Given — the plugin does not await startup, so two starts can overlap;
+    // without serialization one listener escapes the global and survives close
+    const [first, second] = await Promise.all([
+      startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch }),
+      startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch }),
+    ])
+
+    // When
+    await closeStudioServer()
+
+    // Then — both ports refuse connections; no leaked listener blocks exit
+    for (const port of [first.port, second.port]) {
+      const probe = await fetch(`http://127.0.0.1:${port}/`, {
+        method: 'POST',
+        headers: { origin: STUDIO_URL },
+      }).then(() => 'open', () => 'closed')
+      expect(probe).toBe('closed')
+    }
+  })
 })
 
 describe('studioLink', () => {
