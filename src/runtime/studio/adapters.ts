@@ -130,8 +130,17 @@ export function sqliteSyncExecutor(
     // switch the statement to the driver's native array rows instead of
     // mapping Object.values() over object rows.
     if (mode === 'array') {
-      (statement as SqliteSyncStatement & { setReturnArrays: (enabled: boolean) => unknown })
-        .setReturnArrays(true)
+      const setReturnArrays
+        = (statement as SqliteSyncStatement & { setReturnArrays?: (enabled: boolean) => unknown })
+          .setReturnArrays
+      if (setReturnArrays === undefined) {
+        // Node 22.13–22.15 (within the supported range) predate
+        // setReturnArrays: degrade to object-row mapping, which collapses
+        // duplicate column names but keeps array queries working.
+        const rows = statement.all(...params) as Record<PropertyKey, unknown>[]
+        return rows.map(row => Object.values(row))
+      }
+      setReturnArrays.call(statement, true)
     }
     return statement.all(...params)
   }

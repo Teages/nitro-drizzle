@@ -5,7 +5,7 @@ import { drizzle as libsqlDrizzle } from 'drizzle-orm/libsql'
 import { drizzle as nodeSqliteDrizzle } from 'drizzle-orm/node-sqlite'
 import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite'
 import { describe, expect, it } from 'vitest'
-import { createStudioExecutor } from '../../../src/runtime/studio/adapters'
+import { createStudioExecutor, sqliteSyncExecutor } from '../../../src/runtime/studio/adapters'
 
 async function seedUsers(executor: StudioExecutor): Promise<void> {
   await executor.query({
@@ -168,5 +168,30 @@ describe('createStudioExecutor', () => {
       .toThrow('does not expose $client')
     expect(() => createStudioExecutor('mysql2' as never, { $client: {} }))
       .toThrow('Unsupported studio engine')
+  })
+})
+
+describe('sqliteSyncExecutor node-sqlite fallback', () => {
+  it('degrades to object-row mapping when setReturnArrays is unavailable', async () => {
+    // Given — a node:sqlite statement as Node 22.13–22.15 provide it, before
+    // setReturnArrays landed in 22.16; duplicate-free rows map cleanly
+    const executor = sqliteSyncExecutor({
+      prepare: () => ({
+        all: () => [{ x: 1 }, { x: 2 }],
+        get: () => undefined,
+        run: () => undefined,
+      }),
+      exec: () => undefined,
+    }, 'node-sqlite')
+
+    // When
+    const rows = await executor.query({
+      sql: 'SELECT 1 AS x UNION ALL SELECT 2',
+      method: 'values',
+      mode: 'array',
+    })
+
+    // Then — no crash; array queries keep working on the older runtimes
+    expect(rows).toEqual([[1], [2]])
   })
 })
