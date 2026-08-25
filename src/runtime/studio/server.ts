@@ -14,10 +14,13 @@ const PORT_ATTEMPTS = 10
 
 interface StudioServerGlobal {
   __NITRO_DRIZZLE_STUDIO_SERVER__?: Server
+  __NITRO_DRIZZLE_STUDIO_LIFECYCLE__?: Promise<unknown>
 }
 
 // Survives nitro dev restarts: a new plugin instance closes the previous
-// proxy before binding a fresh port.
+// proxy before binding a fresh port. The lifecycle queue lives here too —
+// nitro re-evaluates this module in the worker on reload, and separate
+// module-local queues would let two generations race past each other's close.
 const studioServerGlobal = globalThis as unknown as StudioServerGlobal
 
 type Dispatch = (request: Request) => Promise<Response>
@@ -44,11 +47,10 @@ export interface RunningStudioServer {
  * `closeStudioServer()` can reach. Queueing makes every start observe (and
  * replace) the previously registered server.
  */
-let lifecycle: Promise<unknown> = Promise.resolve()
-
 function enqueueLifecycle<T>(run: () => Promise<T>): Promise<T> {
-  const result = lifecycle.then(run, run)
-  lifecycle = result.catch(() => {})
+  const result = (studioServerGlobal.__NITRO_DRIZZLE_STUDIO_LIFECYCLE__ ?? Promise.resolve())
+    .then(run, run)
+  studioServerGlobal.__NITRO_DRIZZLE_STUDIO_LIFECYCLE__ = result.catch(() => {})
   return result
 }
 

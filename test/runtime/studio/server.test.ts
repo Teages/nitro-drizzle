@@ -155,6 +155,30 @@ describe('startStudioServer', () => {
       expect(probe).toBe('closed')
     }
   })
+
+  it('serializes starts across module reload generations', async () => {
+    // Given — nitro dev reloads re-evaluate this module in the worker; the
+    // query suffix forces vitest to create that second generation
+    const specifier = '../../../src/runtime/studio/server?generation=2'
+    const next = await import(specifier) as typeof import('../../../src/runtime/studio/server')
+
+    // When
+    const [first, second] = await Promise.all([
+      startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch }),
+      next.startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch }),
+    ])
+    await next.closeStudioServer()
+
+    // Then — the shared global queue let one close reach both generations'
+    // listeners; module-local queues would leak the loser's port
+    for (const port of [first.port, second.port]) {
+      const probe = await fetch(`http://127.0.0.1:${port}/`, {
+        method: 'POST',
+        headers: { origin: STUDIO_URL },
+      }).then(() => 'open', () => 'closed')
+      expect(probe).toBe('closed')
+    }
+  })
 })
 
 describe('studioLink', () => {
