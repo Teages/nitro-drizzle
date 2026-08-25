@@ -4,7 +4,7 @@ import { resolveDriverAdapterPath } from '../../drivers/registry'
 export function createModulesDeclaration(driver: DrizzleClientDriver): string {
   const driverModule = JSON.stringify(resolveDriverAdapterPath(driver))
 
-  return `type NitroDrizzleGeneratedSchema = typeof import('./schema.d.mts')
+  return `type NitroDrizzleGeneratedSchema = typeof import('./schema.d.ts')
 
 declare module '#drizzle' {
   export type DrizzleDatabase = ReturnType<
