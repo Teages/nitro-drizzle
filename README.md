@@ -14,8 +14,8 @@
 > only for evaluation and experimentation at your own risk.
 
 Drizzle ORM integration for Nitro v3. It generates a typed `#drizzle`
-database client, prepares Drizzle Kit configuration, and applies Drizzle v1
-migrations during development, builds, or the `db:migrate` task.
+database client, prepares Drizzle Kit configuration, and manages Drizzle v1
+migrations through the Drizzle Kit CLI.
 
 ## Usage
 
@@ -204,28 +204,9 @@ the migration chain.
 
 Migrations never run as a side effect of a production build — the build stays
 side-effect free and needs no database credentials. Apply the migration chain
-in your CI/CD pipeline with `drizzle-kit migrate`, or in your deployed runtime
-with the `db:migrate` task. During development, enable the
-[dev database](#dev-database) to push your schema on startup instead.
-
-The `db:migrate` task applies the migration chain. When the development server
-is started by the Nitro CLI, invoke tasks through its discovery file:
-
-```sh
-nitro task run db:migrate
-```
-
-When another tool owns the development server and the discovery file is not
-written, call the Nitro task endpoint directly once the server is ready:
-
-```sh
-curl -X POST http://localhost:3000/_nitro/tasks/db:migrate
-curl -X POST http://localhost:3000/_nitro/tasks/db:reset
-```
-
-Use `drizzle-kit migrate` when migrations must run before the server is
-available. The module enables Nitro tasks when configured; deployed runtimes
-can invoke the same task through their platform integration.
+in your CI/CD pipeline with `drizzle-kit migrate`, before the server starts.
+During development, enable the [dev database](#dev-database) to push your
+schema on startup instead.
 
 ## Dev database
 
@@ -264,12 +245,11 @@ ready. During development the explicit schema entry and everything it imports
 stay in the host bundler's module graph, so the dev server reloads normally and
 the dev database is re-pushed and re-seeded without a restart.
 
-The drizzle-kit CLI and the `db:migrate` task always target the real database.
-Switching between real databases (local Docker, staging, branches) is a job
-for your `.env` files, not for this feature.
+The drizzle-kit CLI always targets the real database. Switching between real
+databases (local Docker, staging, branches) is a job for your `.env` files,
+not for this feature.
 
-Seed data through the `drizzle:dev:seed` runtime hook, called after every push
-and after every reset:
+Seed data through the `drizzle:dev:seed` runtime hook, called after every push:
 
 ```ts
 // server/plugins/db-seed.ts
@@ -281,12 +261,9 @@ export default definePlugin((nitro) => {
 })
 ```
 
-The `db:reset` task drops every object, re-pushes the schema, and re-seeds.
-With a Nitro CLI dev server, run:
-
-```sh
-nitro task run db:reset
-```
+To start from a clean slate, restart the dev server: in-memory databases are
+recreated on startup, and for a `drizzle.dev.file` database it is enough to
+delete the file before restarting.
 
 Two environment variables control the dev database: `NITRO_DRIZZLE_DEV=false`
 disables it for a single run, and `NITRO_DRIZZLE_DEV_FILE` overrides

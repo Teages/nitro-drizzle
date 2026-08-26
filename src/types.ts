@@ -110,7 +110,7 @@ export interface DrizzleOptions {
   relationsExport?: string
   /**
    * The directory holding the Drizzle migration chain. `drizzle-kit generate`
-   * writes new migrations here, and every migration in it is applied in order.
+   * writes new migrations here; apply them with the drizzle-kit CLI.
    * @default '<serverDir>/db/migrations/<dialect>'
    */
   migrationsDir?: string
@@ -118,7 +118,7 @@ export interface DrizzleOptions {
    * Run `nitro dev` against a disposable local dev database instead of the
    * configured connection. The schema is pushed with drizzle-kit on startup,
    * destructive statements apply without confirmation, and the drizzle-kit CLI
-   * plus the `db:migrate` task keep targeting the real database.
+   * keeps targeting the real database.
    *
    * Set `NITRO_DRIZZLE_DEV=false` to opt out for a single run.
    */

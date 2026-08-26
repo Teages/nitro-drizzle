@@ -4,7 +4,6 @@ import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -93,7 +92,7 @@ async function startNitroDev(
 }
 
 describe('published runtime entries in Nitro dev', () => {
-  it('resolves app virtuals and shares runtime config with tasks', { timeout: 600_000 }, async () => {
+  it('resolves app virtuals inside the installed package', { timeout: 600_000 }, async () => {
     // Given an isolated consumer installed from the actual package tarball
     const rootDir = await mkdtemp(join(tmpdir(), 'nitro-drizzle-runtime-tarball-'))
     temporaryDirectories.push(rootDir)
@@ -225,51 +224,12 @@ export default defineConfig({
       waitForJson(`http://127.0.0.1:${devPort}/api/todos`, dev.output),
     ).resolves.toEqual([{ id: 1, title: 'seeded' }])
 
-    // Then reset resolves #drizzle in the consumer graph and re-seeds
-    await execFileAsync(
-      join(rootDir, 'node_modules/.bin/nitro'),
-      ['task', 'run', 'db:reset'],
-      { cwd: rootDir, env: process.env },
-    )
-    await expect(
-      waitForJson(`http://127.0.0.1:${devPort}/api/todos`, dev.output),
-    ).resolves.toEqual([{ id: 1, title: 'seeded' }])
+    // Then #drizzle resolves inside the consumer graph
     const devBundle = await readFile(
       join(rootDir, 'node_modules/.nitro/dev/index.mjs'),
       'utf8',
     )
     expect(devBundle).not.toMatch(/from\s+["']#drizzle["']/)
     await stop(dev.child)
-
-    // And the migrate task receives the server's runtime config, applies the
-    // real migration, and remains idempotent with the dev database disabled
-    const migratePort = await reservePort()
-    const migrate = await startNitroDev(rootDir, migratePort, {
-      ...process.env,
-      NITRO_DRIZZLE_DEV: 'false',
-    })
-    await expect(
-      waitForJson(`http://127.0.0.1:${migratePort}/api/health`, migrate.output),
-    ).resolves.toEqual({ ok: true })
-    for (let attempt = 0; attempt < 2; attempt++) {
-      await execFileAsync(
-        join(rootDir, 'node_modules/.bin/nitro'),
-        ['task', 'run', 'db:migrate'],
-        { cwd: rootDir, env: process.env },
-      )
-    }
-    const database = new DatabaseSync(realDatabase)
-    try {
-      expect(database.prepare(
-        `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'todos'`,
-      ).get()).toEqual({ name: 'todos' })
-      expect(database.prepare(
-        'SELECT COUNT(*) AS count FROM __drizzle_migrations',
-      ).get()).toEqual({ count: 1 })
-    }
-    finally {
-      database.close()
-    }
-    await stop(migrate.child)
   })
 })

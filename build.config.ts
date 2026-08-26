@@ -9,8 +9,6 @@ export default defineBuildConfig({
     './src/runtime/plugins/dev-db.ts',
     './src/runtime/plugins/studio.ts',
     './src/runtime/studio/handler.ts',
-    './src/runtime/tasks/migrate.ts',
-    './src/runtime/tasks/reset.ts',
   ].map(input => ({
     type: 'bundle' as const,
     input,

@@ -37,19 +37,10 @@ export function configureRuntime(
   if (!nitro.options.traceDeps.includes('drizzle-orm*')) {
     nitro.options.traceDeps.push('drizzle-orm*')
   }
-  nitro.options.experimental.tasks = true
-  nitro.options.tasks['db:migrate'] = {
-    handler: runtimeEntry('tasks/migrate'),
-    description: 'Apply Drizzle database migrations',
-  }
   if (devDb !== undefined) {
     nitro.options.plugins.push(
       runtimeEntry('plugins/dev-db'),
     )
-    nitro.options.tasks['db:reset'] = {
-      handler: runtimeEntry('tasks/reset'),
-      description: 'Reset the dev database: drop schema, re-push, re-seed',
-    }
   }
   if (nitro.options.dev) {
     // Resolve the runtime subpath straight to the virtual module: the

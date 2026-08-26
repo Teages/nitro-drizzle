@@ -5,7 +5,6 @@ import { createDrizzleArtifactsLifecycle } from './module/artifacts-lifecycle'
 import { configureCloudflare } from './module/cloudflare/configure'
 import { resolveDrizzleModuleContext } from './module/context'
 import { configureRuntime, configureStudioRuntime } from './module/register-runtime'
-import { configureOutputAssets } from './module/ship-migration-assets'
 
 // Declared inline on the entry: bundlers drop side-effect-only type imports
 // when generating the shipped declarations, which would strip these
@@ -50,7 +49,6 @@ export default {
       )
     }
     configureCloudflare(nitro, lifecycle.config)
-    configureOutputAssets(nitro, lifecycle)
 
     nitro.logger.withTag('@teages/nitro-drizzle').info(
       ctx.devDb === undefined
