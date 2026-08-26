@@ -110,7 +110,7 @@ export interface DrizzleOptions {
   relationsExport?: string
   /**
    * The directory holding the Drizzle migration chain. `drizzle-kit generate`
-   * writes new migrations here, and every migration in it is applied in order.
+   * writes new migrations here; apply them with the drizzle-kit CLI.
    * @default '<serverDir>/db/migrations/<dialect>'
    */
   migrationsDir?: string
@@ -118,7 +118,7 @@ export interface DrizzleOptions {
    * Run `nitro dev` against a disposable local dev database instead of the
    * configured connection. The schema is pushed with drizzle-kit on startup,
    * destructive statements apply without confirmation, and the drizzle-kit CLI
-   * plus the `db:migrate` task keep targeting the real database.
+   * keeps targeting the real database.
    *
    * Set `NITRO_DRIZZLE_DEV=false` to opt out for a single run.
    */
@@ -154,4 +154,32 @@ export interface DrizzleDevOptions {
    * The `NITRO_DRIZZLE_DEV_FILE` environment variable overrides this value.
    */
   file?: string
+  /**
+   * The built-in Drizzle Studio that ships with dev-database sessions: a
+   * loopback proxy on a random port that the Studio web app connects to.
+   * `false` disables it; an object customizes it; omitted or `true` uses the
+   * defaults.
+   */
+  studio?: boolean | DrizzleDevStudioOptions
+}
+
+export interface DrizzleDevStudioOptions {
+  /**
+   * Fixed port for the local Studio API proxy. When omitted the module picks
+   * a random port in the 20000–65535 range on every start.
+   */
+  port?: number
+  /**
+   * Skip the startup log line pointing at the Studio web app. Startup errors
+   * are still reported.
+   * @default false
+   */
+  silent?: boolean
+  /**
+   * Base URL of the Studio web app. It is used both for the startup link and
+   * as the origin the loopback proxy accepts requests from, so pointing it at
+   * a self-hosted Studio frontend keeps the origin check meaningful.
+   * @default 'https://local.drizzle.studio'
+   */
+  studioUrl?: string
 }

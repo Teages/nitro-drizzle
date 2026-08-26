@@ -3,8 +3,7 @@ import { PGLiteSocketServer } from '@electric-sql/pglite-socket'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createDrizzleClient } from '../../src/drivers/create'
-import { createAndApplyDrizzleMigrations } from '../../src/migrations/apply'
-import { createMigrationWorkspace } from './fixtures'
+import { applyMigrationWorkspace, createMigrationWorkspace } from './fixtures'
 
 describe('postgres-js driver integration', () => {
   // A real PostgreSQL wire server backed by an in-process PGlite instance,
@@ -34,8 +33,8 @@ describe('postgres-js driver integration', () => {
       connection: { url: `postgres://postgres@127.0.0.1:${port}/postgres` },
     } as const
 
-    // When migrations are applied twice through the orchestration layer
-    const apply = () => createAndApplyDrizzleMigrations({ config, migrationsFolder })
+    // When migrations are applied twice through the fixture helper
+    const apply = () => applyMigrationWorkspace(config, migrationsFolder)
     await expect(apply()).resolves.toEqual({ ok: true })
     await expect(apply()).resolves.toEqual({ ok: true })
 

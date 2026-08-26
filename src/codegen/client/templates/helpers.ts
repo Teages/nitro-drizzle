@@ -18,6 +18,28 @@ export const USE_CONNECTION_IMPORT
 
 export const USE_REQUEST_IMPORT = `import { useRequest } from 'nitro/context'`
 
+export interface ConnectionSourceVariants {
+  /** Dev-database mode: bake the resolved connection into the source. */
+  readonly dev: (imports: SourceImports, dev: DevClientConnection) => string
+  /** Production mode: resolve the connection from runtime config on first use. */
+  readonly runtime: (imports: SourceImports) => string
+}
+
+/**
+ * Sole owner of the dev-baked vs runtime-resolved connection decision, so
+ * local-engine templates only describe the two source shapes.
+ */
+export function connectionAwareSource(
+  imports: SourceImports,
+  dev: DevClientConnection | undefined,
+  variants: ConnectionSourceVariants,
+): string {
+  if (dev === undefined) {
+    return variants.runtime({ ...imports, extras: [USE_CONNECTION_IMPORT] })
+  }
+  return variants.dev(imports, dev)
+}
+
 export function quote(value: string): string {
   return `'${value.replaceAll('\\', '\\\\').replaceAll('\'', '\\\'')}'`
 }

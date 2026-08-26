@@ -1,4 +1,4 @@
-import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect } from '../../types'
+import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect, DrizzleLocalDriver } from '../../types'
 
 /**
  * Shape of the generated `#drizzle/config` virtual module: the module-owned
@@ -9,8 +9,17 @@ import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect } from '..
 export interface RuntimeDrizzleConfig {
   readonly dialect: DrizzleDialect
   readonly driver: DrizzleClientDriver
-  readonly migrationsDir: string
   readonly dev: boolean
+  /** Engine the dev database runs on; only present in dev-database mode. */
+  readonly devEngine?: DrizzleLocalDriver
+  /** Dev-database connection (`:memory:` style string); absent for in-memory pglite. */
+  readonly devConnection?: string
+  /** Normalized `drizzle.dev.studio`; only present when the studio is enabled. */
+  readonly devStudio?: {
+    readonly port: number | undefined
+    readonly silent: boolean
+    readonly studioUrl: string
+  }
   readonly connection: DatabaseConnection
 }
 

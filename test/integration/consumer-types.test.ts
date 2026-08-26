@@ -116,7 +116,7 @@ export default defineConfig({
       writeFile(
         pluginFile,
         `import { useNitroHooks } from 'nitro/app'
-import { useDrizzle } from '@teages/nitro-drizzle/runtime'
+import { useDrizzle } from '#drizzle'
 
 useNitroHooks().hook('drizzle:dev:seed', async () => {
   const { db } = useDrizzle()
@@ -134,11 +134,13 @@ useNitroHooks().hook('drizzle:dev:seed', async () => {
             skipLibCheck: true,
             strict: true,
           },
+          // The README-documented include for the generated declarations —
+          // `node_modules/.nitro/drizzle/**/*.d.ts`. Every emitted artifact
+          // must match this glob, so no `*.d.mts` companion is added here.
           include: [
             configFile,
             pluginFile,
             join(artifacts.directory, '**', '*.d.ts'),
-            join(artifacts.directory, '**', '*.d.mts'),
           ],
         }),
       ),

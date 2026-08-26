@@ -2,8 +2,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
+import { generateDrizzleArtifacts } from '../../src/codegen/generate'
 import { resolveDrizzleConfig } from '../../src/config/resolve'
-import { prepareDrizzleArtifacts } from '../../src/module/prepare-artifacts'
 
 const temporaryDirectories: string[] = []
 
@@ -21,7 +21,7 @@ afterEach(async () => {
   )
 })
 
-describe('prepareDrizzleArtifacts', () => {
+describe('generateDrizzleArtifacts', () => {
   it('emits artifacts for the explicit schema entry', async () => {
     // Given
     const rootDir = await createTemporaryRoot()
@@ -54,15 +54,15 @@ describe('prepareDrizzleArtifacts', () => {
     }
 
     // When
-    const prepared = await prepareDrizzleArtifacts(
-      nitro,
+    const artifacts = await generateDrizzleArtifacts({
+      buildDir: nitro.options.buildDir,
       config,
-      rootSchemaPath,
-    )
+      schemaPath: rootSchemaPath,
+    })
 
     // Then
-    expect(prepared.schemaPath).toBe(rootSchemaPath)
-    expect(prepared.config.migrationsDir).toBe(
+    expect(artifacts.directory).toBe(join(nitro.options.buildDir, 'drizzle'))
+    expect(config.migrationsDir).toBe(
       join(serverDir, 'db/migrations/sqlite'),
     )
     expect(nitro.options.runtimeConfig.drizzle).toBeUndefined()

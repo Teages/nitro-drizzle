@@ -29,13 +29,15 @@ jobs:
       - run: npm i -g corepack@latest && corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm vitest run --project unit --coverage
+      - uses: oven-sh/setup-bun@v2
+      - run: pnpm test:bun
       - uses: codecov/codecov-action@v3
       - name: Integration tests (real databases)
         run: pnpm test:integration
