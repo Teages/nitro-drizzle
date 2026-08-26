@@ -58,6 +58,10 @@ export async function createDrizzleArtifactsLifecycle(
       driver: prepared.config.driver,
       migrationsDir: migrationsFolder,
       dev: ctx.devDb !== undefined,
+      ...(ctx.devDb === undefined
+        ? {}
+        : { devEngine: ctx.devDb.engine, devConnection: ctx.devDb.connection ?? ':memory:' }),
+      ...(ctx.devStudio === undefined ? {} : { devStudio: ctx.devStudio }),
       connection: ctx.userConnection,
     })
     nitro.options.virtual['#drizzle/schema'] = createSchemaEntry(

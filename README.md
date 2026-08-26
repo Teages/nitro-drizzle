@@ -292,6 +292,40 @@ Two environment variables control the dev database: `NITRO_DRIZZLE_DEV=false`
 disables it for a single run, and `NITRO_DRIZZLE_DEV_FILE` overrides
 `drizzle.dev.file`. Production builds ignore `drizzle.dev` entirely.
 
+## Drizzle Studio
+
+Dev-database sessions get the built-in [Drizzle Studio](https://orm.drizzle.team/drizzle-studio)
+automatically: on startup the module serves a loopback proxy on a random port
+and logs a `https://local.drizzle.studio?port=…` link. The web app talks to
+your in-memory dev database directly — the exact same instance the dev server
+runs on — with an origin check and a per-session auth key guarding the proxy.
+
+Customize it through `drizzle.dev.studio`:
+
+```ts
+export default defineConfig({
+  drizzle: {
+    dialect: 'postgresql',
+    schemaPath: './server/db/schema.ts',
+    dev: {
+      studio: {
+        port: 4983, // fixed port instead of random
+        silent: true, // skip the startup link
+        studioUrl: 'http://localhost:5173/studio', // self-hosted Studio frontend
+      },
+    },
+  },
+})
+```
+
+`studioUrl` drives both the printed link and the origin the proxy accepts, so
+pointing it at a self-hosted Studio frontend keeps the origin check intact.
+Set `dev.studio: false` to disable the built-in studio; without a dev database
+(`drizzle.dev`) it never starts — use `npx drizzle-kit studio` to inspect a
+real connection. On the `node-sqlite` engine, array-shape Studio queries need
+Node 22.16+ (`StatementSync.setReturnArrays`); older runtimes surface an
+explicit error instead of silently wrong rows.
+
 ## Cloudflare
 
 With an explicit `d1` `databaseId`, or a PostgreSQL/MySQL `hyperdriveId`, the

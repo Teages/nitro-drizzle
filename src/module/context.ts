@@ -1,5 +1,6 @@
 import type { Nitro } from 'nitro/types'
 import type { ResolvedDevDatabase } from '../config/dev-database'
+import type { ResolvedDevStudio } from '../config/dev-studio'
 import type { ResolvedDrizzleConfig } from '../config/types'
 import type { DatabaseConnection } from '../types'
 import { env } from 'node:process'
@@ -9,6 +10,7 @@ import {
   DEV_ENV_FLAG,
   resolveDevDatabase,
 } from '../config/dev-database'
+import { resolveDevStudio } from '../config/dev-studio'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../config/resolve'
 
 export interface DrizzleModuleContext {
@@ -16,6 +18,8 @@ export interface DrizzleModuleContext {
   readonly schemaPath: string
   readonly relationsExport: string | undefined
   readonly devDb: ResolvedDevDatabase | undefined
+  /** Normalized `drizzle.dev.studio`; `undefined` means disabled. */
+  readonly devStudio: ResolvedDevStudio | undefined
   readonly userConnection: DatabaseConnection
 }
 
@@ -66,11 +70,20 @@ export function resolveDrizzleModuleContext(
     config.dialect,
     nitro.options.rootDir,
   )
+  const devOptions = nitro.options.drizzle.dev
   return {
     config,
     schemaPath,
     relationsExport: nitro.options.drizzle.relationsExport,
     devDb,
+    // The studio pairs exclusively with the dev database, so production
+    // builds and env-disabled dev sessions skip resolution entirely — an
+    // invalid `drizzle.dev.studio` must not fail builds that ignore dev.
+    devStudio: devDb === undefined
+      ? undefined
+      : resolveDevStudio(
+          devOptions === true || devOptions === undefined ? undefined : devOptions.studio,
+        ),
     userConnection,
   }
 }
