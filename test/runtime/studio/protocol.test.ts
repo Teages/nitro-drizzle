@@ -113,6 +113,21 @@ describe('handleStudioProtocol', () => {
     }
   })
 
+  it('rejects bproxy repeats that are not bounded positive integers', async () => {
+    const executor = fakeExecutor({ query: async () => [] })
+    for (const repeats of [0, -1, 1.5, 101, 1e9]) {
+      const response = await handleStudioProtocol(executor, initContext, {
+        type: 'bproxy',
+        data: { query: { sql: 'SELECT 1' }, repeats },
+      })
+      expect(response.status).toBe(400)
+      await expect(response.json()).resolves.toMatchObject({
+        status: 'error',
+        error: 'Invalid Studio protocol request',
+      })
+    }
+  })
+
   it('reports custom defaults as unsupported', async () => {
     const response = await handleStudioProtocol(fakeExecutor(), initContext, {
       type: 'defaults',

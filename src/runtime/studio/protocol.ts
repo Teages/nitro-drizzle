@@ -22,6 +22,20 @@ export const studioCorsHeaders = {
 } as const
 
 /**
+ * Upper bound for `bproxy` benchmark repeats. A single query per iteration is
+ * cheap, but an unbounded repeat count would monopolize the dev worker for
+ * the whole run.
+ */
+const BPROXY_MAX_REPEATS = 100
+
+function isBproxyRepeats(value: unknown): boolean {
+  return typeof value === 'number'
+    && Number.isInteger(value)
+    && value >= 1
+    && value <= BPROXY_MAX_REPEATS
+}
+
+/**
  * Facts the `init` response is derived from. The engine and dev connection
  * come from the generated `#drizzle/config` virtual module.
  */
@@ -101,7 +115,7 @@ function isStudioRequest(value: unknown): value is StudioRequest {
     case 'bproxy':
       return isRecord(value.data)
         && isStudioProxyData(value.data.query)
-        && (value.data.repeats === undefined || typeof value.data.repeats === 'number')
+        && (value.data.repeats === undefined || isBproxyRepeats(value.data.repeats))
     case 'defaults':
       return Array.isArray(value.data)
         && value.data.every(item => isRecord(item)
@@ -217,7 +231,7 @@ export async function handleStudioProtocol(
         return studioRowsResponse(await executor.transaction(body.data))
       }
       case 'bproxy': {
-        const repeats = body.data.repeats || 1
+        const repeats = body.data.repeats ?? 1
         const timings: number[] = []
         for (let i = 0; i < repeats; i++) {
           const start = performance.now()
