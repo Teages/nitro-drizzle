@@ -243,11 +243,6 @@ describe('@teages/nitro-drizzle', () => {
     expect(virtualSource(nitro, '#drizzle/schema'))
       .toContain(join(rootDir, 'server/db/schema.ts'))
 
-    // And — the runtime subpath resolves straight to the virtual module so
-    // its dist re-export cannot go stale in Vite's dev module graph
-    expect(nitro.options.alias['@teages/nitro-drizzle/runtime'])
-      .toBe('#drizzle')
-
     // And — no custom directory watcher is added
     expect(nitro.options.devServer.watch).toEqual([])
 
@@ -362,7 +357,6 @@ describe('@teages/nitro-drizzle', () => {
     expect(virtualSource(nitro, '#drizzle'))
       .toContain(`from 'drizzle-orm/postgres-js'`)
     expect(nitro.options.virtual['#drizzle/schema']).toBeDefined()
-    expect(nitro.options.alias['@teages/nitro-drizzle/runtime']).toBeUndefined()
     expect(nitro.options.plugins).not.toContainEqual(
       expect.stringContaining('runtime/plugins/dev-db'),
     )

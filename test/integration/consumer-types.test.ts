@@ -116,7 +116,7 @@ export default defineConfig({
       writeFile(
         pluginFile,
         `import { useNitroHooks } from 'nitro/app'
-import { useDrizzle } from '@teages/nitro-drizzle/runtime'
+import { useDrizzle } from '#drizzle'
 
 useNitroHooks().hook('drizzle:dev:seed', async () => {
   const { db } = useDrizzle()
