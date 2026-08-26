@@ -1,6 +1,6 @@
 import type { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
-import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { join, resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -118,14 +118,6 @@ export default defineConfig({
   },
 })
 `)
-    // The default non-vite builder is rolldown, a nitro peer dependency the
-    // throwaway project does not declare; link the repository's copy.
-    await mkdir(join(rootDir, 'node_modules'), { recursive: true })
-    await symlink(
-      resolve(repoRoot, 'node_modules/.pnpm/rolldown@1.0.1/node_modules/rolldown'),
-      join(rootDir, 'node_modules', 'rolldown'),
-      'dir',
-    )
 
     const { child, waitForOutput } = spawnDevServer(rootDir, httpPort)
     try {
