@@ -2,16 +2,14 @@ import type { DrizzleDriverConfig } from '../../drivers/contracts'
 import type { DrizzleClientDriver } from '../../types'
 import type { DevClientConnection, SourceImports } from './templates/helpers'
 import { resolveDriverAdapterPath } from '../../drivers/registry'
-import { betterSqlite3Source } from './templates/better-sqlite3'
-import { bunSqliteSource } from './templates/bun-sqlite'
 import { d1Source } from './templates/d1'
 import { d1HttpSource } from './templates/d1-http'
 import { libsqlSource } from './templates/libsql'
 import { mysql2Source } from './templates/mysql2'
 import { neonHttpSource } from './templates/neon-http'
-import { nodeSqliteSource } from './templates/node-sqlite'
 import { pgliteSource } from './templates/pglite'
 import { postgresJsSource } from './templates/postgres-js'
+import { sqliteFileSource } from './templates/sqlite'
 
 export interface GenerateVirtualClientOptions {
   readonly config: DrizzleDriverConfig
@@ -43,29 +41,23 @@ function assertNever(value: never): never {
   )
 }
 
-export function resolveClientAdapterPath(driver: DrizzleClientDriver): string {
-  return resolveDriverAdapterPath(driver)
-}
-
 export function generateVirtualClientSource(
   options: GenerateVirtualClientOptions,
 ): string {
   const { config } = options
   const imports: SourceImports = {
-    adapter: resolveClientAdapterPath(config.driver),
+    adapter: resolveDriverAdapterPath(config.driver),
     schema: options.schemaImport,
     relations: options.relationsImport,
   }
 
   switch (config.driver) {
     case 'better-sqlite3':
-      return betterSqlite3Source(imports, options.dev)
     case 'bun-sqlite':
-      return bunSqliteSource(imports, options.dev)
+    case 'node-sqlite':
+      return sqliteFileSource(imports, options.dev)
     case 'libsql':
       return libsqlSource(imports, options.dev)
-    case 'node-sqlite':
-      return nodeSqliteSource(imports, options.dev)
     case 'pglite':
       return pgliteSource(imports, options.dev)
     case 'neon-http':

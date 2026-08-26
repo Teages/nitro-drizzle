@@ -20,9 +20,3 @@ export interface DrizzleArtifacts {
   readonly modulesFile: string
   readonly hooksFile: string
 }
-
-export interface PreparedDrizzleArtifacts {
-  readonly config: ResolvedDrizzleConfig
-  readonly schemaPath: string
-  readonly artifacts: DrizzleArtifacts
-}
