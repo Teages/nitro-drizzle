@@ -1,6 +1,7 @@
+import type { RunningStudioServer } from '../../../src/runtime/studio/server'
 import { createServer } from 'node:net'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { closeStudioServer, startStudioServer, studioLink } from '../../../src/runtime/studio/server'
+import { closeStudioServer, startStudioServer, studioLifecycle, studioLink } from '../../../src/runtime/studio/server'
 
 const dispatched: Request[] = []
 
@@ -211,5 +212,47 @@ describe('studioLink', () => {
   it('appends the port as a query parameter without clobbering existing ones', () => {
     expect(studioLink(STUDIO_URL, 1234)).toBe('https://local.drizzle.studio/?port=1234')
     expect(studioLink('http://localhost:5173/studio?token=x', 99)).toBe('http://localhost:5173/studio?token=x&port=99')
+  })
+})
+
+describe('studioLifecycle', () => {
+  it('closes a proxy whose startup resolves after the close hook', async () => {
+    // Given — nitro closes before the queued start finishes binding; the
+    // startup is gated so the hook observably runs first
+    let release: (() => void) | undefined
+    const gate = new Promise<void>(resolvePromise => release = resolvePromise)
+    let started: RunningStudioServer | undefined
+    const lifecycle = studioLifecycle({
+      start: () => gate.then(() =>
+        startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch })),
+      onReady: server => (started = server),
+    })
+
+    // When — the close hook fires, then the startup lands afterwards
+    const closing = lifecycle.onClose()
+    release!()
+    await closing
+
+    // Then — the awaited hook still ownership-closed the late listener;
+    // a synchronous handle read would have leaked it
+    expect(started).toBeDefined()
+    const probe = await fetch(`http://127.0.0.1:${started!.port}/`, {
+      method: 'POST',
+      headers: { origin: STUDIO_URL },
+    }).then(() => 'open', () => 'closed')
+    expect(probe).toBe('closed')
+  })
+
+  it('does not reject the close hook when the startup failed', async () => {
+    // Given — the startup rejects; the error is surfaced through onError
+    const errors: unknown[] = []
+    const lifecycle = studioLifecycle({
+      start: () => Promise.reject(new Error('boom')),
+      onError: error => errors.push(error),
+    })
+
+    // When / Then — the close hook resolves; failures were reported once
+    await expect(lifecycle.onClose()).resolves.toBeUndefined()
+    expect(errors).toHaveLength(1)
   })
 })

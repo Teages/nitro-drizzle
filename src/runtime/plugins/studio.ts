@@ -1,10 +1,9 @@
 import type {} from '../augmentations'
-import type { RunningStudioServer } from '../studio/server'
 import process from 'node:process'
 import { consola } from 'consola'
 import { definePlugin } from 'nitro'
 import { drizzleConfig } from '#drizzle/config'
-import { startStudioServer, studioLink } from '../studio/server'
+import { startStudioServer, studioLifecycle, studioLink } from '../studio/server'
 
 const logger = consola.withTag('@teages/nitro-drizzle/studio')
 
@@ -27,29 +26,29 @@ export default definePlugin((nitro) => {
     return
   }
 
-  // This generation's handle; the close hook closes only the proxy this
-  // worker started, so a superseded worker's late hook cannot kill its
-  // replacement (closing is ownership-checked inside the lifecycle queue).
-  let running: RunningStudioServer | undefined
-
-  startStudioServer({
-    authorization: `Bearer ${authKey}`,
-    studioUrl: studio.studioUrl,
-    ...(studio.port === undefined ? {} : { port: studio.port }),
-  })
-    .then((server) => {
-      running = server
+  // The hook closes only the proxy this worker started — a superseded
+  // worker's late hook cannot kill its replacement — and it waits out the
+  // startup, so a close racing the proxy's readiness cannot orphan a listener
+  // that is still being bound.
+  const lifecycle = studioLifecycle({
+    start: () => startStudioServer({
+      authorization: `Bearer ${authKey}`,
+      studioUrl: studio.studioUrl,
+      ...(studio.port === undefined ? {} : { port: studio.port }),
+    }),
+    onReady: (server) => {
       if (!studio.silent) {
         logger.info(`Drizzle Studio: ${studioLink(studio.studioUrl, server.port)}`)
       }
-    })
-    .catch((error: unknown) => {
+    },
+    onError: (error: unknown) => {
       logger.error('Failed to start the Drizzle Studio proxy:', error)
-    })
+    },
+  })
 
   // Awaited on purpose: nitro restarts the dev worker in-place, and the next
   // worker's proxy must not race this close (fatal with a fixed port).
   nitro.hooks.hook('close', async () => {
-    await running?.close()
+    await lifecycle.onClose()
   })
 })

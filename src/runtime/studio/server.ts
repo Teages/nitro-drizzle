@@ -134,6 +134,44 @@ export function closeStudioServer(): Promise<void> {
   return enqueueLifecycle(closeStudioServerLocked)
 }
 
+export interface StudioLifecycle {
+  /** Waits out the startup, then closes only what this generation started. */
+  onClose: () => Promise<void>
+}
+
+/**
+ * Owns one proxy generation's lifecycle. The close hook must await the
+ * startup: when Nitro closes or reloads before the proxy is ready, a
+ * synchronous read of the handle would no-op and the still-queued start
+ * would land a listener nobody closes. Startup failures are reported through
+ * `onError` and otherwise swallowed, so a failed start cannot reject the
+ * close hook.
+ */
+export function studioLifecycle(options: {
+  start: () => Promise<RunningStudioServer>
+  onReady?: (server: RunningStudioServer) => void
+  onError?: (error: unknown) => void
+}): StudioLifecycle {
+  let running: RunningStudioServer | undefined
+  const startup = options.start().then(
+    (server) => {
+      running = server
+      options.onReady?.(server)
+      return server
+    },
+    (error: unknown) => {
+      options.onError?.(error)
+      return undefined
+    },
+  )
+  return {
+    onClose: async () => {
+      await startup
+      await running?.close()
+    },
+  }
+}
+
 /** Closes `server` only while it is still the registered proxy. */
 function closeStudioServerIfOwner(server: Server): Promise<void> {
   return enqueueLifecycle(async () => {
