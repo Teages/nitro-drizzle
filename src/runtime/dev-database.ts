@@ -1,8 +1,6 @@
 import type { SQLWrapper } from 'drizzle-orm'
-import type { OpaqueDrizzleDatabase } from '../drivers/database'
 import { consola } from 'consola'
 import { sql } from 'drizzle-orm'
-import { createExecutor } from '../drivers/database'
 
 export type DevDialect = 'postgresql' | 'sqlite'
 
@@ -85,50 +83,4 @@ export async function pushDevSchema(context: {
   }
   await apply()
   return { statements: sqlStatements.length, hints: hints.map(h => h.hint) }
-}
-
-interface SqliteMasterRow {
-  readonly name: string
-  readonly type: string
-}
-
-async function readSqliteMaster(db: unknown): Promise<readonly SqliteMasterRow[]> {
-  const all = (db as {
-    all?: (query: SQLWrapper) => MaybePromise<readonly SqliteMasterRow[]>
-  }).all
-  if (all === undefined) {
-    throw new TypeError(
-      'The dev database does not expose all() for sqlite_master introspection.',
-    )
-  }
-  return all.call(
-    db,
-    sql`SELECT name, type FROM sqlite_master WHERE type IN ('trigger', 'view', 'index', 'table') AND name NOT LIKE 'sqlite_%'`,
-  )
-}
-
-/**
- * Drops every user object from the dev database. The caller re-pushes the
- * schema afterwards; `db:reset` additionally re-runs the seed hook.
- */
-export async function resetDevSchema(
-  dialect: DevDialect,
-  db: unknown,
-): Promise<void> {
-  const executor = createExecutor(db as OpaqueDrizzleDatabase, dialect)
-  if (dialect === 'postgresql') {
-    await executor('DROP SCHEMA public CASCADE;')
-    await executor('CREATE SCHEMA public;')
-    return
-  }
-  await executor('PRAGMA foreign_keys = OFF;')
-  try {
-    for (const row of await readSqliteMaster(db)) {
-      const name = row.name.replaceAll('"', '""')
-      await executor(`DROP ${row.type.toUpperCase()} IF EXISTS "${name}";`)
-    }
-  }
-  finally {
-    await executor('PRAGMA foreign_keys = ON;')
-  }
 }
