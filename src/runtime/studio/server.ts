@@ -38,6 +38,10 @@ export interface StartStudioServerOptions {
 
 export interface RunningStudioServer {
   readonly port: number
+  /**
+   * Closes this proxy only while it is still the registered one: a superseded
+   * generation's close hook must not kill its replacement.
+   */
   close: () => Promise<void>
 }
 
@@ -84,7 +88,10 @@ async function startStudioServerQueued(
     try {
       await server.ready()
       studioServerGlobal.__NITRO_DRIZZLE_STUDIO_SERVER__ = server
-      return { port, close: () => server.close() }
+      return {
+        port,
+        close: () => closeStudioServerIfOwner(server),
+      }
     }
     catch (error) {
       if ((error as NodeJS.ErrnoException | undefined)?.code !== 'EADDRINUSE') {
@@ -125,6 +132,15 @@ async function forwardStudioRequest(
 /** Closes the running proxy if this process still owns one. */
 export function closeStudioServer(): Promise<void> {
   return enqueueLifecycle(closeStudioServerLocked)
+}
+
+/** Closes `server` only while it is still the registered proxy. */
+function closeStudioServerIfOwner(server: Server): Promise<void> {
+  return enqueueLifecycle(async () => {
+    if (studioServerGlobal.__NITRO_DRIZZLE_STUDIO_SERVER__ === server) {
+      await closeStudioServerLocked()
+    }
+  })
 }
 
 async function closeStudioServerLocked(): Promise<void> {

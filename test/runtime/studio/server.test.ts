@@ -179,6 +179,32 @@ describe('startStudioServer', () => {
       expect(probe).toBe('closed')
     }
   })
+
+  it('keeps the replacement proxy alive when a superseded generation closes late', async () => {
+    // Given — generation B replaced generation A; A's nitro close hook fires
+    // after B already started
+    const first = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch })
+    const second = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch })
+    expect(second.port).not.toBe(first.port)
+
+    // When — A closes only what it started
+    await first.close()
+
+    // Then — B is unaffected and still serves Studio traffic
+    const bState = await fetch(`http://127.0.0.1:${second.port}/`, {
+      method: 'POST',
+      headers: { origin: STUDIO_URL },
+    }).then(() => 'open', () => 'closed')
+    expect(bState).toBe('open')
+
+    // And B's own close still works
+    await second.close()
+    const afterClose = await fetch(`http://127.0.0.1:${second.port}/`, {
+      method: 'POST',
+      headers: { origin: STUDIO_URL },
+    }).then(() => 'open', () => 'closed')
+    expect(afterClose).toBe('closed')
+  })
 })
 
 describe('studioLink', () => {

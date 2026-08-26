@@ -1,9 +1,10 @@
 import type {} from '../augmentations'
+import type { RunningStudioServer } from '../studio/server'
 import process from 'node:process'
 import { consola } from 'consola'
 import { definePlugin } from 'nitro'
 import { drizzleConfig } from '#drizzle/config'
-import { closeStudioServer, startStudioServer, studioLink } from '../studio/server'
+import { startStudioServer, studioLink } from '../studio/server'
 
 const logger = consola.withTag('@teages/nitro-drizzle/studio')
 
@@ -26,12 +27,18 @@ export default definePlugin((nitro) => {
     return
   }
 
+  // This generation's handle; the close hook closes only the proxy this
+  // worker started, so a superseded worker's late hook cannot kill its
+  // replacement (closing is ownership-checked inside the lifecycle queue).
+  let running: RunningStudioServer | undefined
+
   startStudioServer({
     authorization: `Bearer ${authKey}`,
     studioUrl: studio.studioUrl,
     ...(studio.port === undefined ? {} : { port: studio.port }),
   })
     .then((server) => {
+      running = server
       if (!studio.silent) {
         logger.info(`Drizzle Studio: ${studioLink(studio.studioUrl, server.port)}`)
       }
@@ -43,6 +50,6 @@ export default definePlugin((nitro) => {
   // Awaited on purpose: nitro restarts the dev worker in-place, and the next
   // worker's proxy must not race this close (fatal with a fixed port).
   nitro.hooks.hook('close', async () => {
-    await closeStudioServer()
+    await running?.close()
   })
 })
