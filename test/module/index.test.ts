@@ -169,9 +169,6 @@ describe('@teages/nitro-drizzle', () => {
     expect(configModule).toContain('"driver": "libsql"')
     expect(configModule).toContain('"url": "file:custom.db"')
     expect(configModule).toContain('"host": "static-host"')
-    expect(configModule).toContain(
-      join(nitro.options.buildDir, 'drizzle/runtime-assets/migrations'),
-    )
     expect(configModule).toContain('export function useDrizzleConnection()')
     expect(nitro.options.runtimeConfig.drizzle).toBeUndefined()
     expect(virtualSource(nitro, '#drizzle')).toContain('export function useDrizzle()')
@@ -267,12 +264,10 @@ describe('@teages/nitro-drizzle', () => {
     )
     expect(modules).toContain('drizzle-orm/pglite')
 
-    // And — the dev plugin and reset task are registered
+    // And — the dev plugin is registered
     expect(nitro.options.plugins).toContainEqual(
       expect.stringContaining('runtime/plugins/dev-db'),
     )
-    expect(nitro.options.tasks['db:reset']?.handler)
-      .toContain('runtime/tasks/reset')
     expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
     await nitro.close()
   })
@@ -371,7 +366,6 @@ describe('@teages/nitro-drizzle', () => {
     expect(nitro.options.plugins).not.toContainEqual(
       expect.stringContaining('runtime/plugins/dev-db'),
     )
-    expect(nitro.options.tasks['db:reset']).toBeUndefined()
     await nitro.close()
   })
 
