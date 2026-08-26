@@ -76,9 +76,14 @@ export function resolveDrizzleModuleContext(
     schemaPath,
     relationsExport: nitro.options.drizzle.relationsExport,
     devDb,
-    devStudio: resolveDevStudio(
-      devOptions === true || devOptions === undefined ? undefined : devOptions.studio,
-    ),
+    // The studio pairs exclusively with the dev database, so production
+    // builds and env-disabled dev sessions skip resolution entirely — an
+    // invalid `drizzle.dev.studio` must not fail builds that ignore dev.
+    devStudio: devDb === undefined
+      ? undefined
+      : resolveDevStudio(
+          devOptions === true || devOptions === undefined ? undefined : devOptions.studio,
+        ),
     userConnection,
   }
 }
