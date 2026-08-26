@@ -1,9 +1,10 @@
+import { describe, expect, it } from 'bun:test'
 // Runs under the Bun test runner, not vitest: `bun test` executes this file
 // directly in-process, where `drizzle-orm/bun-sqlite` resolves to `bun:sqlite`.
 // The vitest unit project excludes `*.bun.test.ts` because its workers always
-// run on Node regardless of the launcher.
+// run on Node regardless of the launcher; the test API comes from `bun:test`
+// directly (typed via test/bun-test.d.ts).
 import { drizzle } from 'drizzle-orm/bun-sqlite'
-import { describe, expect, it } from 'vitest'
 import { createStudioExecutor } from '../../../src/runtime/studio/adapters'
 
 describe('bun-sqlite studio executor', () => {
