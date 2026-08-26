@@ -42,13 +42,7 @@ export function configureRuntime(
       runtimeEntry('plugins/dev-db'),
     )
   }
-  if (nitro.options.dev) {
-    // Resolve the runtime subpath straight to the virtual module: the
-    // package's dist re-export never invalidates in Vite's dev graph, so
-    // schema edits would leave `useDrizzle()` importers stale without it.
-    nitro.options.alias['@teages/nitro-drizzle/runtime'] = '#drizzle'
-  }
-  // The generated `#drizzle/config` imports this subpath bare. Alias it to
+  // The generated `#drizzle/config` imports this path bare. Alias it to
   // the real entry in every build: bundlers otherwise resolve it from
   // node_modules, which works for installed consumers but externalizes the
   // import (and breaks the server at runtime) wherever that link is absent.

@@ -135,10 +135,11 @@ const drizzle = {
 A string is the convenient form for a single-dialect project. Generic and
 dialect-specific entries are never combined.
 
-Use the generated client inside handlers:
+Import the client from the generated `#drizzle` virtual module inside
+handlers:
 
 ```ts
-import { useDrizzle } from '@teages/nitro-drizzle/runtime'
+import { useDrizzle } from '#drizzle'
 
 export default defineHandler(() => {
   const { db, schema, relations } = useDrizzle()

@@ -10,19 +10,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
-    },
-    "./runtime": {
-      "types": "./dist/runtime/index.d.mts",
-      "import": "./dist/runtime/index.mjs"
-    },
-    "./runtime/connection": {
-      "types": "./dist/runtime/connection.d.mts",
-      "import": "./dist/runtime/connection.mjs"
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
     },
     "./config": {
       "types": "./dist/config/loader.d.mts",
-      "import": "./dist/config/loader.mjs"
+      "import": "./dist/config/loader.mjs",
+      "default": "./dist/config/loader.mjs"
     }
   },
   "module": "./dist/index.mjs",
@@ -30,12 +24,6 @@
     "*": {
       ".": [
         "./dist/index.d.mts"
-      ],
-      "./runtime": [
-        "./dist/runtime/index.d.mts"
-      ],
-      "./runtime/connection": [
-        "./dist/runtime/connection.d.mts"
       ],
       "./config": [
         "./dist/config/loader.d.mts"
