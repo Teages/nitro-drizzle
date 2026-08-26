@@ -308,3 +308,79 @@ describe('generateVirtualClientSource dev database', () => {
     expect(source).not.toContain('useRuntimeConfig')
   })
 })
+
+describe('generateVirtualClientSource full output', () => {
+  // The connection-aware templates were consolidated from per-driver copies;
+  // these full-output snapshots lock the generated source byte for byte,
+  // including import order and whitespace that substring assertions miss.
+  const localEngines = [
+    'better-sqlite3',
+    'bun-sqlite',
+    'node-sqlite',
+    'libsql',
+  ] as const
+
+  const engineDialects = {
+    'better-sqlite3': 'sqlite',
+    'bun-sqlite': 'sqlite',
+    'node-sqlite': 'sqlite',
+    'libsql': 'sqlite',
+    'pglite': 'postgresql',
+  } as const
+
+  for (const driver of [...localEngines, 'pglite'] as const) {
+    const dialect: DrizzleOptions['dialect'] = engineDialects[driver]
+    const connection
+      = driver === 'pglite' ? '.data/pglite' : 'file:.data/dev.db'
+
+    it(`snapshots the runtime-resolved source for ${driver}`, () => {
+      // Given
+      const config: DrizzleDriverConfig = { dialect, driver }
+
+      // When
+      const source = generateVirtualClientSource({
+        config,
+        schemaImport: '#drizzle/schema',
+        relationsImport: '#drizzle/schema',
+      })
+
+      // Then
+      expect(source).toMatchSnapshot()
+    })
+
+    it(`snapshots the dev-baked source for ${driver}`, () => {
+      // Given
+      const config: DrizzleDriverConfig = { dialect, driver }
+
+      // When
+      const source = generateVirtualClientSource({
+        config,
+        schemaImport: '#drizzle/schema',
+        relationsImport: '#drizzle/schema',
+        dev: { connection },
+      })
+
+      // Then
+      expect(source).toMatchSnapshot()
+    })
+  }
+
+  it('snapshots the dev source for an in-memory pglite', () => {
+    // Given
+    const config: DrizzleDriverConfig = {
+      dialect: 'postgresql',
+      driver: 'pglite',
+    }
+
+    // When
+    const source = generateVirtualClientSource({
+      config,
+      schemaImport: '#drizzle/schema',
+      relationsImport: '#drizzle/schema',
+      dev: {},
+    })
+
+    // Then
+    expect(source).toMatchSnapshot()
+  })
+})

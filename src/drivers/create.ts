@@ -1,5 +1,5 @@
 import type { DatabaseConnection, DrizzleOptions } from '../types'
-import type { DrizzleBuildClientConfig } from './contracts'
+import type { DrizzleDriverConfig } from './contracts'
 import type { OpaqueDrizzleDatabase } from './database'
 import {
   createD1HttpTransport,
@@ -76,7 +76,7 @@ function requireConnectionString(
 }
 
 async function initializeDatabase(
-  config: DrizzleBuildClientConfig,
+  config: DrizzleDriverConfig,
 ): Promise<{
   readonly database: OpaqueDrizzleDatabase
   readonly proxyMigration?: (queries: readonly string[]) => Promise<void>
@@ -174,7 +174,7 @@ export function createDrizzleClientFromDatabase(
 }
 
 export async function createDrizzleClient(
-  config: DrizzleBuildClientConfig,
+  config: DrizzleDriverConfig,
 ): Promise<DrizzleClient> {
   try {
     const initialized = await initializeDatabase(config)

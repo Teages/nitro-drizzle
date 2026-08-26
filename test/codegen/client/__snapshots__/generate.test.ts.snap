@@ -1,0 +1,244 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateVirtualClientSource full output > snapshots the dev source for an in-memory pglite 1`] = `
+"import { drizzle } from 'drizzle-orm/pglite'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  return drizzle({
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the dev-baked source for better-sqlite3 1`] = `
+"import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  return drizzle({
+    connection: 'file:.data/dev.db',
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the dev-baked source for bun-sqlite 1`] = `
+"import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  return drizzle({
+    connection: 'file:.data/dev.db',
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the dev-baked source for libsql 1`] = `
+"import { drizzle } from 'drizzle-orm/libsql'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  return drizzle({
+    connection: { url: 'file:.data/dev.db' },
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the dev-baked source for node-sqlite 1`] = `
+"import { drizzle } from 'drizzle-orm/node-sqlite'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  return drizzle({
+    connection: 'file:.data/dev.db',
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the dev-baked source for pglite 1`] = `
+"import { drizzle } from 'drizzle-orm/pglite'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  return drizzle({
+    connection: '.data/pglite',
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the runtime-resolved source for better-sqlite3 1`] = `
+"import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { useDrizzleConnection } from '#drizzle/config'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  const connection = useDrizzleConnection()
+  return drizzle({
+    connection: connection.url || connection.connectionString || connection,
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the runtime-resolved source for bun-sqlite 1`] = `
+"import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { useDrizzleConnection } from '#drizzle/config'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  const connection = useDrizzleConnection()
+  return drizzle({
+    connection: connection.url || connection.connectionString || connection,
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the runtime-resolved source for libsql 1`] = `
+"import { drizzle } from 'drizzle-orm/libsql'
+import { useDrizzleConnection } from '#drizzle/config'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  const connection = useDrizzleConnection()
+  return drizzle({
+    connection: {
+      url: connection.url,
+      ...(connection.authToken ? { authToken: connection.authToken } : {}),
+    },
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the runtime-resolved source for node-sqlite 1`] = `
+"import { drizzle } from 'drizzle-orm/node-sqlite'
+import { useDrizzleConnection } from '#drizzle/config'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  const connection = useDrizzleConnection()
+  return drizzle({
+    connection: connection.url || connection.connectionString || connection,
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
+
+exports[`generateVirtualClientSource full output > snapshots the runtime-resolved source for pglite 1`] = `
+"import { drizzle } from 'drizzle-orm/pglite'
+import { useDrizzleConnection } from '#drizzle/config'
+import { relations, schema } from '#drizzle/schema'
+
+let _db = null
+
+function initDrizzle() {
+  const connection = useDrizzleConnection()
+  return drizzle({
+    connection: connection.dataDir || connection.url || connection.connectionString,
+    schema,
+    relations,
+  })
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations }
+}
+"
+`;
