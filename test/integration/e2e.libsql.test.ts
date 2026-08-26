@@ -8,7 +8,6 @@ import { createClient } from '@libsql/client'
 import { build, createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import NitroDrizzle from '../../src'
-import { createAndApplyDrizzleMigrations } from '../../src/migrations/apply'
 
 const temporaryDirectories: string[] = []
 const childProcesses: ReturnType<typeof spawn>[] = []
@@ -118,22 +117,18 @@ export default defineHandler(async () => {
       verify.close()
     }
 
-    // And the migration chain ships with the server output for deploy-time migration
-    const outputMigrations = join(rootDir, '.output/server/db/migrations')
-    await expect(
-      readFile(join(outputMigrations, '20260819000000_create_users/migration.sql'), 'utf8'),
-    ).resolves.toContain('CREATE TABLE users')
-
-    // And a deploy-time migration run (the db:migrate task path) applies the shipped chain
-    const result = await createAndApplyDrizzleMigrations({
-      config: {
-        dialect: 'sqlite',
-        driver: 'libsql',
-        connection: { url: `file:${databaseFile}` },
-      },
-      migrationsFolder: outputMigrations,
-    })
-    expect(result.ok).toBe(true)
+    // And applying the migration chain prepares the database for the built server
+    const migrationSql = await readFile(
+      join(rootDir, 'server/db/migrations/sqlite/20260819000000_create_users/migration.sql'),
+      'utf8',
+    )
+    const migrate = createClient({ url: `file:${databaseFile}` })
+    try {
+      await migrate.execute(migrationSql)
+    }
+    finally {
+      migrate.close()
+    }
 
     // And the built server serves queries routed through the virtual #drizzle client
     const port = await reservePort()

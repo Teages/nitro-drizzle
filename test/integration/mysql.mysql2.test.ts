@@ -2,8 +2,7 @@ import type { DatabaseConnection } from '../../src/types'
 import { createConnection } from 'mysql2/promise'
 import { describe, expect, it } from 'vitest'
 import { createDrizzleClient } from '../../src/drivers/create'
-import { createAndApplyDrizzleMigrations } from '../../src/migrations/apply'
-import { createMigrationWorkspace } from './fixtures'
+import { applyMigrationWorkspace, createMigrationWorkspace } from './fixtures'
 
 // Runs only when a MySQL endpoint is provided; CI wires a service container.
 // Locally: docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root
@@ -46,8 +45,8 @@ describe.skipIf(mysql === undefined)('mysql2 driver integration', () => {
       connection: mysql!.connection,
     } as const
 
-    // When migrations are applied twice through the orchestration layer
-    const apply = () => createAndApplyDrizzleMigrations({ config, migrationsFolder })
+    // When migrations are applied twice through the fixture helper
+    const apply = () => applyMigrationWorkspace(config, migrationsFolder)
     await expect(apply()).resolves.toEqual({ ok: true })
     await expect(apply()).resolves.toEqual({ ok: true })
 

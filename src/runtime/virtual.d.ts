@@ -16,7 +16,6 @@ declare module '#drizzle/config' {
   export const drizzleConfig: {
     readonly dialect: 'sqlite' | 'postgresql' | 'mysql'
     readonly driver: DrizzleClientDriver
-    readonly migrationsDir: string
     readonly dev: boolean
     readonly devEngine?: DrizzleLocalDriver
     readonly devConnection?: string

@@ -2,8 +2,7 @@ import { join } from 'node:path'
 import Database from 'better-sqlite3'
 import { describe, expect, it } from 'vitest'
 import { createDrizzleClient } from '../../src/drivers/create'
-import { createAndApplyDrizzleMigrations } from '../../src/migrations/apply'
-import { createMigrationWorkspace } from './fixtures'
+import { applyMigrationWorkspace, createMigrationWorkspace } from './fixtures'
 
 describe('better-sqlite3 driver integration', () => {
   it('applies the migration folder, stays idempotent, and smoke-checks queries', async () => {
@@ -16,8 +15,8 @@ describe('better-sqlite3 driver integration', () => {
       connection: { url: databasePath },
     } as const
 
-    // When migrations are applied twice through the orchestration layer
-    const apply = () => createAndApplyDrizzleMigrations({ config, migrationsFolder })
+    // When migrations are applied twice through the fixture helper
+    const apply = () => applyMigrationWorkspace(config, migrationsFolder)
     await expect(apply()).resolves.toEqual({ ok: true })
     await expect(apply()).resolves.toEqual({ ok: true })
 

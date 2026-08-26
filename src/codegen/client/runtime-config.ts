@@ -9,7 +9,6 @@ import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect, DrizzleLo
 export interface RuntimeDrizzleConfig {
   readonly dialect: DrizzleDialect
   readonly driver: DrizzleClientDriver
-  readonly migrationsDir: string
   readonly dev: boolean
   /** Engine the dev database runs on; only present in dev-database mode. */
   readonly devEngine?: DrizzleLocalDriver
