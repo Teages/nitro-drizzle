@@ -172,26 +172,29 @@ describe('createStudioExecutor', () => {
 })
 
 describe('sqliteSyncExecutor node-sqlite fallback', () => {
-  it('degrades to object-row mapping when setReturnArrays is unavailable', async () => {
-    // Given — a node:sqlite statement as Node 22.13–22.15 provide it, before
-    // setReturnArrays landed in 22.16; duplicate-free rows map cleanly
+  it('fails array mode loudly when setReturnArrays is unavailable', async () => {
+    // Given — a node:sqlite statement as Node 22.13–22.15 provide it: object
+    // rows already collapsed duplicate columns, so no faithful array shape
+    // exists and silently reshaping would return wrong data
     const executor = sqliteSyncExecutor({
       prepare: () => ({
-        all: () => [{ x: 1 }, { x: 2 }],
+        all: () => [{ x: 2 }],
         get: () => undefined,
         run: () => undefined,
       }),
       exec: () => undefined,
     }, 'node-sqlite')
 
-    // When
-    const rows = await executor.query({
-      sql: 'SELECT 1 AS x UNION ALL SELECT 2',
+    // When / Then — the query rejects with an actionable message instead
+    await expect(executor.query({
+      sql: 'SELECT 1 AS x, 2 AS x',
       method: 'values',
       mode: 'array',
-    })
+    })).rejects.toThrow('needs Node >= 22.16')
 
-    // Then — no crash; array queries keep working on the older runtimes
-    expect(rows).toEqual([[1], [2]])
+    // And object-mode queries on the same statement still work
+    await expect(executor.query({ sql: 'SELECT 2 AS x', method: 'all' }))
+      .resolves
+      .toEqual([{ x: 2 }])
   })
 })

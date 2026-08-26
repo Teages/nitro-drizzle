@@ -322,7 +322,9 @@ export default defineConfig({
 pointing it at a self-hosted Studio frontend keeps the origin check intact.
 Set `dev.studio: false` to disable the built-in studio; without a dev database
 (`drizzle.dev`) it never starts — use `npx drizzle-kit studio` to inspect a
-real connection.
+real connection. On the `node-sqlite` engine, array-shape Studio queries need
+Node 22.16+ (`StatementSync.setReturnArrays`); older runtimes surface an
+explicit error instead of silently wrong rows.
 
 ## Cloudflare
 

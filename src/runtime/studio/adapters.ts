@@ -135,10 +135,13 @@ export function sqliteSyncExecutor(
           .setReturnArrays
       if (setReturnArrays === undefined) {
         // Node 22.13–22.15 (within the supported range) predate
-        // setReturnArrays: degrade to object-row mapping, which collapses
-        // duplicate column names but keeps array queries working.
-        const rows = statement.all(...params) as Record<PropertyKey, unknown>[]
-        return rows.map(row => Object.values(row))
+        // setReturnArrays and already collapse duplicate columns into object
+        // rows, so no faithful array shape exists. Fail the query loudly
+        // instead of silently returning wrong data.
+        throw new Error(
+          'The built-in Drizzle Studio needs Node >= 22.16 for node-sqlite array queries '
+          + '(StatementSync.setReturnArrays). Upgrade Node, or inspect this database with `npx drizzle-kit studio`.',
+        )
       }
       setReturnArrays.call(statement, true)
     }
