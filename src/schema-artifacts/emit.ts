@@ -1,11 +1,11 @@
 import type {
   DrizzleArtifacts,
   GenerateDrizzleArtifactsOptions,
-} from './types'
+} from './contracts'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { createSchemaTypes } from './schema/entry'
-import { createRuntimeHooksDeclaration } from './schema/hooks'
-import { createModulesDeclaration } from './schema/modules'
+import { createModulesDeclaration } from './module-declaration'
+import { createRuntimeHooksDeclaration } from './runtime-hooks-declaration'
+import { createSchemaTypes } from './schema-entry'
 
 export async function emitDrizzleArtifacts(
   options: GenerateDrizzleArtifactsOptions,

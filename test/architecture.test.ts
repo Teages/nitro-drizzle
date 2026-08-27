@@ -5,8 +5,8 @@ import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
-import { createRuntimeHooksDeclaration } from '../src/codegen/schema/hooks'
 import { STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/runtime/studio/constants'
+import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 
 const CONNECTION_ALIAS_KEY = '@teages/nitro-drizzle/runtime/connection'
 const CONNECTION_IMPORT = `import { resolveDrizzleConnection } from '${CONNECTION_ALIAS_KEY}'`

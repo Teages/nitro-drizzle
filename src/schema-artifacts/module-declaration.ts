@@ -1,5 +1,5 @@
-import type { DrizzleClientDriver } from '../../contracts/public'
-import { resolveDriverAdapterPath } from '../../database/registry'
+import type { DrizzleClientDriver } from '../contracts/public'
+import { resolveDriverAdapterPath } from '../database/registry'
 
 export function createModulesDeclaration(driver: DrizzleClientDriver): string {
   const driverModule = JSON.stringify(resolveDriverAdapterPath(driver))

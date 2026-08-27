@@ -1,7 +1,7 @@
 import type {
   DrizzleArtifacts,
   GenerateDrizzleArtifactsOptions,
-} from './types'
+} from './contracts'
 import { join } from 'node:path'
 import { emitDrizzleArtifacts } from './emit'
 

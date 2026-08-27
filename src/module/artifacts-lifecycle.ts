@@ -1,8 +1,8 @@
 import type { Nitro } from 'nitro/types'
 import type { ResolvedDrizzleConfig } from '../contracts/configuration'
 import type { DrizzleModuleContext } from './context'
-import { generateDrizzleArtifacts } from '../codegen/generate'
-import { createSchemaEntry } from '../codegen/schema/entry'
+import { generateDrizzleArtifacts } from '../schema-artifacts/generate'
+import { createSchemaEntry } from '../schema-artifacts/schema-entry'
 import { generateVirtualClientSource } from '../virtual-client/generate'
 import { createRuntimeConfigModule } from '../virtual-client/runtime-config'
 

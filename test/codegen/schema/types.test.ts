@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
-import { generateDrizzleArtifacts } from '../../../src/codegen/generate'
 import { resolveDrizzleConfig } from '../../../src/configuration/resolve'
+import { generateDrizzleArtifacts } from '../../../src/schema-artifacts/generate'
 
 const execFileAsync = promisify(execFile)
 const temporaryDirectories: string[] = []
