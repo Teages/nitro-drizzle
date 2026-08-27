@@ -94,10 +94,16 @@ describe('package surface', () => {
       return typeof input === 'string' ? [input] : input
     })
 
-    // Then — the two ABI facades stay at their dist-determining locations
-    expect(entries).toContain('./src/index.ts')
-    expect(entries).toContain('./src/config/loader.ts')
-    expect(entries).toHaveLength(6)
+    // Then — the exact entry set: the two ABI facades at their
+    // dist-determining locations plus the four runtime entries
+    expect([...entries].sort()).toEqual([
+      './src/config/loader.ts',
+      './src/configuration/runtime/connection.ts',
+      './src/dev-database/runtime/plugin.ts',
+      './src/index.ts',
+      './src/studio/runtime/handler.ts',
+      './src/studio/runtime/plugin.ts',
+    ])
     for (const input of entries) {
       expect(existsSync(input), `${input} must exist`).toBe(true)
     }
@@ -133,13 +139,20 @@ describe('runtime wiring', () => {
     expect(moduleFileExists(aliasTarget), `${aliasTarget} must resolve to a file`).toBe(true)
 
     // And — the virtual modules keep their export shapes
-    expect(virtualSource(nitro, '#drizzle')).toContain('useDrizzle')
-    expect(virtualSource(nitro, '#drizzle/schema')).toContain('schema')
-    expect(virtualSource(nitro, '#drizzle/schema')).toContain('relations')
-    expect(virtualSource(nitro, '#drizzle/config')).toContain('drizzleConfig')
-    expect(virtualSource(nitro, '#drizzle/config')).toContain('useDrizzleConnection')
+    expect(virtualSource(nitro, '#drizzle')).toContain('export function useDrizzle()')
+    expect(virtualSource(nitro, '#drizzle')).toContain(`import { relations, schema } from '#drizzle/schema'`)
+    expect(virtualSource(nitro, '#drizzle/schema'))
+      .toContain('export const { ["relations"]: relations = {}, ...schema } = source')
+    expect(virtualSource(nitro, '#drizzle/config')).toContain('export const drizzleConfig = {')
+    expect(virtualSource(nitro, '#drizzle/config')).toContain('export function useDrizzleConnection()')
 
-    // And — every registered plugin and route handler exists on disk
+    // And — both runtime plugins are registered and every registered plugin
+    // and route handler exists on disk
+    for (const expected of ['dev-database/runtime/plugin', 'studio/runtime/plugin']) {
+      const registered = nitro.options.plugins.find(plugin =>
+        plugin.replaceAll('\\', '/').endsWith(expected))
+      expect(registered, `${expected} must be registered`).toBeDefined()
+    }
     for (const plugin of nitro.options.plugins) {
       expect(moduleFileExists(plugin), `${plugin} must resolve to a file`).toBe(true)
     }
@@ -147,7 +160,7 @@ describe('runtime wiring', () => {
     if (typeof studioRoute === 'string' || studioRoute === undefined) {
       throw new Error(`Expected ${STUDIO_ROUTE} to be a handler object.`)
     }
-    expect(studioRoute.handler).toBeTypeOf('string')
+    expect(studioRoute.handler.replaceAll('\\', '/')).toMatch(/studio\/runtime\/handler$/)
     expect(moduleFileExists(studioRoute.handler)).toBe(true)
 
     // And — the externalization escapes survive any file move
