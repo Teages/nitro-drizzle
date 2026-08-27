@@ -20,9 +20,10 @@ export interface DatabaseConnection {
    */
   host?: string
   /**
-   * Database port
+   * Database port; a `{{VAR}}` template expands to its string value, which
+   * the host-credential drivers accept as a numeric string
    */
-  port?: number
+  port?: number | string
   /**
    * Database username
    */

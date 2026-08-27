@@ -32,9 +32,11 @@ function hostCredentials(credentials: DatabaseConnection): {
 } {
   return {
     host: credentials.host ?? '',
-    ...(credentials.port === undefined || credentials.port === 0
+    // drizzle-kit types port as a number; numeric strings — e.g. expanded
+    // `{{VAR}}` templates — coerce here, everything unset-shaped stays out.
+    ...(credentials.port === undefined || credentials.port === 0 || credentials.port === ''
       ? {}
-      : { port: credentials.port }),
+      : { port: Number(credentials.port) }),
     ...(credentials.user === undefined ? {} : { user: credentials.user }),
     ...(credentials.password === undefined ? {} : { password: credentials.password }),
     database: credentials.database ?? '',

@@ -41,6 +41,14 @@ describe('expandNitroEnv', () => {
     expect(connection.url).toBe('file:default.db')
   })
 
+  it('expands a templated port to its string value', () => {
+    const connection = expandNitroEnv(
+      { port: '{{DB_PORT}}' },
+      { env: { DB_PORT: '5432' }, envExpansion: true },
+    )
+    expect(connection.port).toBe('5432')
+  })
+
   it('expands templates inside nested object values', () => {
     const connection = expandNitroEnv(
       { options: { url: '{{DATABASE_URL}}' }, port: 5432 },

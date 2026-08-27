@@ -159,6 +159,30 @@ describe('loadDrizzleConfig', () => {
     }
   })
 
+  it('coerces an expanded templated port to a number for drizzle-kit', async () => {
+    const fixture = await createFixture({
+      drizzle: '{ dialect: \'postgresql\', driver: \'postgres-js\', schemaPath: \'./server/db/schema.ts\' }',
+      connection: '{ host: \'db.local\', port: \'{{TEST_LOADER_DB_PORT}}\', user: \'app\', password: \'secret\', database: \'app\' }',
+      experimental: '{ envExpansion: true }',
+    })
+    const previous = process.env.TEST_LOADER_DB_PORT
+    process.env.TEST_LOADER_DB_PORT = '5432'
+    try {
+      const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
+      expect('dbCredentials' in config ? config.dbCredentials : undefined).toMatchObject({
+        port: 5432,
+      })
+    }
+    finally {
+      if (previous === undefined) {
+        delete process.env.TEST_LOADER_DB_PORT
+      }
+      else {
+        process.env.TEST_LOADER_DB_PORT = previous
+      }
+    }
+  })
+
   it('keeps drizzle-kit pointed at the explicit schema entry', async () => {
     const fixture = await createFixture()
     const extraPath = join(fixture.serverDir, 'db', 'schema', 'posts.ts')
