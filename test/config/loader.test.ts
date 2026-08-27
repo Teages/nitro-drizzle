@@ -81,14 +81,14 @@ describe('loadDrizzleConfig', () => {
     })
   })
 
-  it('lets connection environment variables override the static defaults', async () => {
+  it('ignores NITRO_DRIZZLE_CONNECTION_* environment variables', async () => {
     const fixture = await createFixture()
     const previous = process.env.NITRO_DRIZZLE_CONNECTION_URL
     process.env.NITRO_DRIZZLE_CONNECTION_URL = 'file:./override.db'
     try {
       const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
       expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
-        url: 'file:./override.db',
+        url: 'file:./test.db',
       })
     }
     finally {
@@ -155,6 +155,30 @@ describe('loadDrizzleConfig', () => {
       }
       else {
         process.env.TEST_LOADER_DATABASE_URL = previous
+      }
+    }
+  })
+
+  it('coerces an expanded templated port to a number for drizzle-kit', async () => {
+    const fixture = await createFixture({
+      drizzle: '{ dialect: \'postgresql\', driver: \'postgres-js\', schemaPath: \'./server/db/schema.ts\' }',
+      connection: '{ host: \'db.local\', port: \'{{TEST_LOADER_DB_PORT}}\', user: \'app\', password: \'secret\', database: \'app\' }',
+      experimental: '{ envExpansion: true }',
+    })
+    const previous = process.env.TEST_LOADER_DB_PORT
+    process.env.TEST_LOADER_DB_PORT = '5432'
+    try {
+      const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
+      expect('dbCredentials' in config ? config.dbCredentials : undefined).toMatchObject({
+        port: 5432,
+      })
+    }
+    finally {
+      if (previous === undefined) {
+        delete process.env.TEST_LOADER_DB_PORT
+      }
+      else {
+        process.env.TEST_LOADER_DB_PORT = previous
       }
     }
   })

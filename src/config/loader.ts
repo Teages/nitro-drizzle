@@ -2,7 +2,7 @@ import type { Config as DrizzleKitConfig } from 'drizzle-kit'
 import type { DatabaseConnection } from '../types'
 import type { ResolvedDrizzleConfig } from './types'
 import process from 'node:process'
-import { applyNitroEnv } from './env'
+import { expandNitroEnv } from './env'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from './resolve'
 
 export interface LoadDrizzleConfigOptions {
@@ -32,9 +32,11 @@ function hostCredentials(credentials: DatabaseConnection): {
 } {
   return {
     host: credentials.host ?? '',
-    ...(credentials.port === undefined || credentials.port === 0
+    // drizzle-kit types port as a number; numeric strings — e.g. expanded
+    // `{{VAR}}` templates — coerce here, everything unset-shaped stays out.
+    ...(credentials.port === undefined || credentials.port === 0 || credentials.port === ''
       ? {}
-      : { port: credentials.port }),
+      : { port: Number(credentials.port) }),
     ...(credentials.user === undefined ? {} : { user: credentials.user }),
     ...(credentials.password === undefined ? {} : { password: credentials.password }),
     database: credentials.database ?? '',
@@ -43,8 +45,8 @@ function hostCredentials(credentials: DatabaseConnection): {
 
 /**
  * Maps the resolved runtime connection onto drizzle-kit credentials the same
- * way the runtime applies them: static runtimeConfig defaults with
- * `<prefix>DRIZZLE_CONNECTION_*` environment overrides. Each branch matches
+ * way the runtime applies them: static connection values with `{{VAR}}`
+ * expansion per the user's envExpansion setting. Each branch matches
  * one member of drizzle-kit's discriminated Config union — no casts, so a
  * credential mixup fails to compile here instead of failing inside
  * drizzle-kit at config validation or connect time.
@@ -158,12 +160,11 @@ export async function loadDrizzleConfig(
   }
 
   const { dev: _dev, connection: userConnection, ...drizzle } = nitroOptions.drizzle
-  // The CLI needs real credentials, so it applies Nitro's runtime env
-  // semantics — overrides plus `{{VAR}}` expansion per the user's
-  // envExpansion setting — to the static connection here.
-  const connection = applyNitroEnv(userConnection ?? {}, {
+  // The CLI needs real credentials, so it applies Nitro's env expansion
+  // semantics — `{{VAR}}` templates per the user's envExpansion setting —
+  // to the static connection here.
+  const connection = expandNitroEnv(userConnection ?? {}, {
     env: process.env,
-    envPrefix: nitroOptions.runtimeConfig.nitro?.envPrefix,
     envExpansion: nitroOptions.experimental?.envExpansion === true
       || process.env.NITRO_ENV_EXPANSION === 'true',
   })

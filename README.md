@@ -68,34 +68,34 @@ all. `bun-sqlite` is its equivalent under Bun.
 
 `drizzle.connection` values are static by default — the generated client
 resolves them verbatim on first use. The module owns that resolution end to
-end (connection values never pass through Nitro's `runtimeConfig`); two env
-mechanisms, matching Nitro's own semantics, can replace them:
+end (connection values never pass through Nitro's `runtimeConfig`). With
+Nitro's `experimental.envExpansion` enabled, `{{VAR_NAME}}` templates in
+connection values expand at runtime, so credentials never need to be in the
+config file at all:
 
-- `NITRO_DRIZZLE_CONNECTION_*` environment variables override defined keys at
-  runtime (`NITRO_DRIZZLE_CONNECTION_URL`,
-  `NITRO_DRIZZLE_CONNECTION_PASSWORD`, ...). Overrides cannot introduce keys
-  the static connection does not define. An alternative prefix configured via
-  `runtimeConfig.nitro.envPrefix` or `NITRO_ENV_PREFIX` is honored as well.
-- With Nitro's `experimental.envExpansion` enabled, `{{VAR_NAME}}` templates
-  in connection strings expand at runtime, so credentials never need to be in
-  the config file at all:
+```ts
+export default defineConfig({
+  experimental: { envExpansion: true },
+  drizzle: {
+    // ...
+    connection: { url: '{{DATABASE_URL}}' },
+  },
+})
+```
 
-  ```ts
-  export default defineConfig({
-    experimental: { envExpansion: true },
-    drizzle: {
-      // ...
-      connection: { url: '{{DATABASE_URL}}' },
-    },
-  })
-  ```
+Missing variables keep their literal `{{VAR_NAME}}` text. The module warns
+at startup when templates are used without env expansion enabled.
 
-  Missing variables keep their literal `{{VAR_NAME}}` text. The module warns
-  at startup when templates are used without env expansion enabled.
+> [!NOTE]
+> Earlier versions also applied implicit `NITRO_DRIZZLE_CONNECTION_*`
+> environment overrides. They were removed in favor of the explicit
+> `{{VAR}}` templates — a config file now shows exactly which variables feed
+> which fields. To migrate, enable `experimental.envExpansion` and template
+> the values you used to override.
 
-drizzle-kit commands resolve the same static values, overrides, and expansion
-through `loadDrizzleConfig`, so the CLI and the running server always agree.
-No connection secrets are ever baked into generated source or CLI metadata.
+drizzle-kit commands resolve the same static values and expansion through
+`loadDrizzleConfig`, so the CLI and the running server always agree. No
+connection secrets are ever baked into generated source or CLI metadata.
 
 The database is created lazily on the first `useDrizzle()` call, except for
 `d1` and Hyperdrive drivers, which resolve their Cloudflare binding from the
