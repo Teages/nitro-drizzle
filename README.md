@@ -298,7 +298,7 @@ export default defineConfig({
 
 `studioUrl` drives both the printed link and the origin the proxy accepts, so
 pointing it at a self-hosted Studio frontend keeps the origin check intact.
-Set `dev.studio: false` to disable the built-in studio; without a dev database
+Set `devMock.studio: false` to disable the built-in studio; without a dev database
 (`drizzle.devMock`) it never starts — use `npx drizzle-kit studio` to inspect a
 real connection. On the `node-sqlite` engine, array-shape Studio queries need
 Node 22.16+ (`StatementSync.setReturnArrays`); older runtimes surface an
