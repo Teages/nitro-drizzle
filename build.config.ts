@@ -4,7 +4,7 @@ export default defineBuildConfig({
   entries: [
     './src/index.ts',
     './src/config/loader.ts',
-    './src/runtime/connection.ts',
+    './src/configuration/runtime/connection.ts',
     './src/runtime/plugins/dev-db.ts',
     './src/runtime/plugins/studio.ts',
     './src/runtime/studio/handler.ts',

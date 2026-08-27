@@ -1,6 +1,6 @@
 import type { NitroModule } from 'nitro/types'
 import type { DatabaseConnection, DrizzleClientDriver, DrizzleDevMockOptions, DrizzleDevStudioOptions, DrizzleDialect, DrizzleLocalDriver, DrizzleOptions, DrizzleSchemaPath, DrizzleSchemaPaths } from './contracts/public'
-import { findEnvTemplateKeys } from './config/env'
+import { findEnvTemplateKeys } from './configuration/env'
 import { createDrizzleArtifactsLifecycle } from './module/artifacts-lifecycle'
 import { configureCloudflare } from './module/cloudflare/configure'
 import { resolveDrizzleModuleContext } from './module/context'

@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
 import { generateDrizzleArtifacts } from '../../src/codegen/generate'
-import { resolveDrizzleConfig } from '../../src/config/resolve'
+import { resolveDrizzleConfig } from '../../src/configuration/resolve'
 
 const execFileAsync = promisify(execFile)
 const repoRoot = process.cwd()

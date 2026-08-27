@@ -1,7 +1,7 @@
-import type { DatabaseConnection } from '../contracts/public'
+import type { DatabaseConnection } from '../../contracts/public'
 import { env } from 'node:process'
 import { useRuntimeConfig } from 'nitro/runtime-config'
-import { expandNitroEnv } from '../config/env'
+import { expandNitroEnv } from '../env'
 
 const resolved = new WeakMap<object, DatabaseConnection>()
 

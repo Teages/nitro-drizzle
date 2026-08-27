@@ -13,7 +13,7 @@ function runtimeEntry(path: string): string {
   const packageRoot = basename(import.meta.dirname) === 'module'
     ? resolve(import.meta.dirname, '..')
     : import.meta.dirname
-  return resolve(packageRoot, 'runtime', path)
+  return resolve(packageRoot, path)
 }
 
 export function configureRuntime(
@@ -39,14 +39,14 @@ export function configureRuntime(
   }
   if (devDb !== undefined) {
     nitro.options.plugins.push(
-      runtimeEntry('plugins/dev-db'),
+      runtimeEntry('runtime/plugins/dev-db'),
     )
   }
   // The generated `#drizzle/config` imports this path bare. Alias it to
   // the real entry in every build: bundlers otherwise resolve it from
   // node_modules, which works for installed consumers but externalizes the
   // import (and breaks the server at runtime) wherever that link is absent.
-  nitro.options.alias['@teages/nitro-drizzle/runtime/connection'] = runtimeEntry('connection')
+  nitro.options.alias['@teages/nitro-drizzle/runtime/connection'] = runtimeEntry('configuration/runtime/connection')
 }
 
 /**
@@ -61,9 +61,9 @@ export function configureStudioRuntime(nitro: Nitro): void {
   }
   nitro.options.replace[STUDIO_AUTH_KEY_MARKER] = JSON.stringify(randomUUID())
   nitro.options.routes[STUDIO_ROUTE] = {
-    handler: runtimeEntry('studio/handler'),
+    handler: runtimeEntry('runtime/studio/handler'),
   }
   nitro.options.plugins.push(
-    runtimeEntry('plugins/studio'),
+    runtimeEntry('runtime/plugins/studio'),
   )
 }

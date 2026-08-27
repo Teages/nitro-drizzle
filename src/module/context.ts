@@ -11,7 +11,7 @@ import {
   resolveDevDatabase,
 } from '../config/dev-database'
 import { resolveDevStudio } from '../config/dev-studio'
-import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../config/resolve'
+import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../configuration/resolve'
 
 export interface DrizzleModuleContext {
   readonly config: ResolvedDrizzleConfig

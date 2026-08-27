@@ -115,7 +115,7 @@ describe('published runtime entries in Nitro dev', () => {
     for (const entry of [
       'index',
       'config/loader',
-      'runtime/connection',
+      'configuration/runtime/connection',
       'runtime/plugins/dev-db',
       'runtime/plugins/studio',
       'runtime/studio/handler',
