@@ -98,8 +98,7 @@ export interface DrizzleOptions {
   /**
    * Static database connection. Values are used as-is by default; `{{VAR}}`
    * templates expand at runtime when the user enables Nitro's
-   * `experimental.envExpansion`. `<prefix>DRIZZLE_CONNECTION_*` environment
-   * overrides apply at runtime for keys defined here.
+   * `experimental.envExpansion`.
    */
   connection?: DatabaseConnection
   /**

@@ -1,10 +1,7 @@
 import type { DatabaseConnection } from '../types'
-import { snakeCase } from 'scule'
 
 export interface NitroEnvOptions {
   readonly env: Readonly<Record<string, string | undefined>>
-  /** Alternative override prefix from `runtimeConfig.nitro.envPrefix`. */
-  readonly envPrefix?: string
   readonly envExpansion: boolean
 }
 
@@ -28,39 +25,31 @@ function expandFromEnv(
 }
 
 /**
- * Applies Nitro's runtime-config env semantics to a connection object:
- * `<prefix>DRIZZLE_CONNECTION_*` overrides first (snake-cased key path,
- * `NITRO_` prefix with the configured alternative prefix as fallback), then
- * `{{VAR}}` expansion on string values when enabled. Mirrors `applyEnv`
- * from Nitro's internal runtime config, which is not publicly exported —
- * keep the semantics in sync with Nitro when upgrading.
+ * Expands `{{VAR}}` templates in string connection values, gated by the
+ * user's `experimental.envExpansion` setting exactly like Nitro applies it
+ * to its own runtime config. Mirrors `_expandFromEnv` from Nitro's internal
+ * runtime config, which is not publicly exported — keep the semantics in
+ * sync with Nitro when upgrading.
  */
-export function applyNitroEnv(
+export function expandNitroEnv(
   connection: DatabaseConnection,
   options: NitroEnvOptions,
 ): DatabaseConnection {
-  const altPrefix = options.envPrefix ?? options.env.NITRO_ENV_PREFIX ?? '_'
-
-  const walk = (obj: Record<string, unknown>, parentKey: string): void => {
+  if (!options.envExpansion) {
+    return connection
+  }
+  const walk = (obj: Record<string, unknown>): void => {
     for (const key in obj) {
-      const subKey = parentKey === '' ? key : `${parentKey}_${key}`
-      const envName = snakeCase(subKey).toUpperCase()
-      const envValue
-        = options.env[`NITRO_${envName}`] ?? options.env[`${altPrefix}${envName}`]
       if (isObject(obj[key])) {
-        walk(obj[key], subKey)
+        walk(obj[key])
       }
-      else {
-        obj[key] = envValue ?? obj[key]
-      }
-      if (options.envExpansion && typeof obj[key] === 'string') {
+      else if (typeof obj[key] === 'string') {
         obj[key] = expandFromEnv(obj[key] as string, options.env)
       }
     }
   }
-
   const result: Record<string, unknown> = { ...connection }
-  walk(result, 'DRIZZLE_CONNECTION')
+  walk(result)
   return result as DatabaseConnection
 }
 

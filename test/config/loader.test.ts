@@ -81,14 +81,14 @@ describe('loadDrizzleConfig', () => {
     })
   })
 
-  it('lets connection environment variables override the static defaults', async () => {
+  it('ignores NITRO_DRIZZLE_CONNECTION_* environment variables', async () => {
     const fixture = await createFixture()
     const previous = process.env.NITRO_DRIZZLE_CONNECTION_URL
     process.env.NITRO_DRIZZLE_CONNECTION_URL = 'file:./override.db'
     try {
       const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
       expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
-        url: 'file:./override.db',
+        url: 'file:./test.db',
       })
     }
     finally {
