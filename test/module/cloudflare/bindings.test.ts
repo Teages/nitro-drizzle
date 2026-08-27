@@ -1,8 +1,8 @@
+import type { WranglerConfig } from '../../../src/cloudflare/bindings'
 import type { DrizzleDriverConfig } from '../../../src/contracts/driver'
-import type { WranglerConfig } from '../../../src/module/cloudflare/bindings'
 import { describe, expect, it } from 'vitest'
-import { mutateWranglerBindings } from '../../../src/module/cloudflare/bindings'
-import { requiresRequestContext } from '../../../src/module/cloudflare/request-context'
+import { mutateWranglerBindings } from '../../../src/cloudflare/bindings'
+import { requiresRequestContext } from '../../../src/cloudflare/request-context'
 
 describe('mutateWranglerBindings', () => {
   it('adds an explicitly configured D1 binding once', () => {

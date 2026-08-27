@@ -1,4 +1,4 @@
-import type { DrizzleDriverConfig } from '../../contracts/driver'
+import type { DrizzleDriverConfig } from '../contracts/driver'
 
 /**
  * d1 and Hyperdrive drivers resolve their database from the Nitro request
