@@ -3,7 +3,7 @@ import process from 'node:process'
 import { consola } from 'consola'
 import { definePlugin } from 'nitro'
 import { drizzleConfig } from '#drizzle/config'
-import { startStudioServer, studioLifecycle, studioLink } from '../studio/server'
+import { startStudioServer, studioLifecycle, studioLink } from './proxy-server'
 
 const logger = consola.withTag('@teages/nitro-drizzle/studio')
 

@@ -1,11 +1,11 @@
-import type { StudioExecutor } from '../../../src/runtime/studio/adapters'
+import type { StudioExecutor } from '../../../src/studio/runtime/adapters'
 import { Buffer } from 'node:buffer'
 import { drizzle as betterSqlite3Drizzle } from 'drizzle-orm/better-sqlite3'
 import { drizzle as libsqlDrizzle } from 'drizzle-orm/libsql'
 import { drizzle as nodeSqliteDrizzle } from 'drizzle-orm/node-sqlite'
 import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite'
 import { describe, expect, it } from 'vitest'
-import { createStudioExecutor, sqliteSyncExecutor } from '../../../src/runtime/studio/adapters'
+import { createStudioExecutor, sqliteSyncExecutor } from '../../../src/studio/runtime/adapters'
 
 async function seedUsers(executor: StudioExecutor): Promise<void> {
   await executor.query({

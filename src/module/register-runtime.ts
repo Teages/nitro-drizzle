@@ -2,7 +2,7 @@ import type { Nitro } from 'nitro/types'
 import type { ResolvedDevDatabase } from '../dev-database/contracts'
 import { randomUUID } from 'node:crypto'
 import { basename, resolve } from 'node:path'
-import { STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../runtime/studio/constants'
+import { STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../studio/contracts'
 
 const PACKAGE_NAME = '@teages/nitro-drizzle'
 
@@ -61,9 +61,9 @@ export function configureStudioRuntime(nitro: Nitro): void {
   }
   nitro.options.replace[STUDIO_AUTH_KEY_MARKER] = JSON.stringify(randomUUID())
   nitro.options.routes[STUDIO_ROUTE] = {
-    handler: runtimeEntry('runtime/studio/handler'),
+    handler: runtimeEntry('studio/runtime/handler'),
   }
   nitro.options.plugins.push(
-    runtimeEntry('runtime/plugins/studio'),
+    runtimeEntry('studio/runtime/plugin'),
   )
 }

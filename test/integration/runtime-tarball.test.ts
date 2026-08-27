@@ -117,8 +117,8 @@ describe('published runtime entries in Nitro dev', () => {
       'config/loader',
       'configuration/runtime/connection',
       'dev-database/runtime/plugin',
-      'runtime/plugins/studio',
-      'runtime/studio/handler',
+      'studio/runtime/plugin',
+      'studio/runtime/handler',
     ]) {
       await access(join(packageDir, 'dist', `${entry}.mjs`))
     }

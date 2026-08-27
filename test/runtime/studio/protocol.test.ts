@@ -1,11 +1,11 @@
-import type { StudioExecutor } from '../../../src/runtime/studio/adapters'
+import type { StudioExecutor } from '../../../src/studio/runtime/adapters'
 import { Buffer } from 'node:buffer'
 import { describe, expect, it } from 'vitest'
 import {
   handleStudioProtocol,
   studioDatabaseHash,
   validateStudioAuthorization,
-} from '../../../src/runtime/studio/protocol'
+} from '../../../src/studio/runtime/protocol'
 
 const initContext = {
   dialect: 'sqlite' as const,

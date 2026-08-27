@@ -1,4 +1,4 @@
 {
   "extends": "nitro/tsconfig",
-  "include": ["src/runtime/**/*.ts", "src/*/runtime/**/*.ts"]
+  "include": ["src/*/runtime/**/*.ts"]
 }

@@ -1,7 +1,7 @@
-import type { RunningStudioServer } from '../../../src/runtime/studio/server'
+import type { RunningStudioServer } from '../../../src/studio/runtime/proxy-server'
 import { createServer } from 'node:net'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { closeStudioServer, startStudioServer, studioLifecycle, studioLink } from '../../../src/runtime/studio/server'
+import { closeStudioServer, startStudioServer, studioLifecycle, studioLink } from '../../../src/studio/runtime/proxy-server'
 
 const dispatched: Request[] = []
 
@@ -160,8 +160,8 @@ describe('startStudioServer', () => {
   it('serializes starts across module reload generations', async () => {
     // Given — nitro dev reloads re-evaluate this module in the worker; the
     // query suffix forces vitest to create that second generation
-    const specifier = '../../../src/runtime/studio/server?generation=2'
-    const next = await import(specifier) as typeof import('../../../src/runtime/studio/server')
+    const specifier = '../../../src/studio/runtime/proxy-server?generation=2'
+    const next = await import(specifier) as typeof import('../../../src/studio/runtime/proxy-server')
 
     // When
     const [first, second] = await Promise.all([

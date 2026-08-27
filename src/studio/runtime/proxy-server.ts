@@ -2,7 +2,7 @@ import type { Server } from 'srvx'
 import { randomInt } from 'node:crypto'
 import { serverFetch } from 'nitro/app'
 import { serve } from 'srvx/node'
-import { STUDIO_ROUTE } from './constants'
+import { STUDIO_ROUTE } from '../contracts'
 
 /**
  * Wide random port range: ~15.5 bits of entropy on loopback, so a scanner

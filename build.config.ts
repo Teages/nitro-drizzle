@@ -6,8 +6,8 @@ export default defineBuildConfig({
     './src/config/loader.ts',
     './src/configuration/runtime/connection.ts',
     './src/dev-database/runtime/plugin.ts',
-    './src/runtime/plugins/studio.ts',
-    './src/runtime/studio/handler.ts',
+    './src/studio/runtime/plugin.ts',
+    './src/studio/runtime/handler.ts',
   ].map(input => ({
     type: 'bundle' as const,
     input,
