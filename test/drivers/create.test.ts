@@ -1,10 +1,10 @@
 import type { LibSQLDatabase } from 'drizzle-orm/libsql'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
-import type { OpaqueDrizzleDatabase } from '../../src/drivers/database'
+import type { OpaqueDrizzleDatabase } from '../../src/database/drizzle'
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { createDrizzleClient, createDrizzleClientFromDatabase } from '../../src/drivers/create'
-import { createCloser, createExecutor } from '../../src/drivers/database'
-import { DrizzleClientError } from '../../src/drivers/errors'
+import { createDrizzleClient, createDrizzleClientFromDatabase } from '../../src/database/client'
+import { createCloser, createExecutor } from '../../src/database/drizzle'
+import { DrizzleClientError } from '../../src/database/errors'
 
 describe('createDrizzleClient', () => {
   it('returns an actionable binding-only error for D1', async () => {

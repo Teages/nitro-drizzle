@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { sql } from 'drizzle-orm'
-import { createDrizzleClient } from '../../src/drivers/create'
+import { createDrizzleClient } from '../../src/database/client'
 
 export type IntegrationDialect = 'sqlite' | 'postgresql' | 'mysql'
 

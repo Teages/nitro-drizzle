@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { describe, expect, it } from 'vitest'
-import { createDrizzleClient } from '../../src/drivers/create'
+import { createDrizzleClient } from '../../src/database/client'
 import { applyMigrationWorkspace, createMigrationWorkspace } from './fixtures'
 
 describe('pglite driver integration', () => {

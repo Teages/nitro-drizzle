@@ -1,6 +1,6 @@
 import type { DrizzleDriverConfig } from '../contracts/driver'
 import type { DatabaseConnection, DrizzleOptions } from '../contracts/public'
-import type { OpaqueDrizzleDatabase } from './database'
+import type { OpaqueDrizzleDatabase } from './drizzle'
 import {
   createD1HttpTransport,
   resolveD1HttpCredentials,
@@ -10,7 +10,7 @@ import {
   createExecutor,
   invokeDrizzle,
   loadDrizzle,
-} from './database'
+} from './drizzle'
 import { DrizzleClientError } from './errors'
 
 export interface DrizzleClient {

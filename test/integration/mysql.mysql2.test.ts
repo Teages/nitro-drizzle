@@ -1,7 +1,7 @@
 import type { DatabaseConnection } from '../../src/contracts/public'
 import { createConnection } from 'mysql2/promise'
 import { describe, expect, it } from 'vitest'
-import { createDrizzleClient } from '../../src/drivers/create'
+import { createDrizzleClient } from '../../src/database/client'
 import { applyMigrationWorkspace, createMigrationWorkspace } from './fixtures'
 
 // Runs only when a MySQL endpoint is provided; CI wires a service container.
