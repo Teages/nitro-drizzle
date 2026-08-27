@@ -1,7 +1,7 @@
 import type { Nitro } from 'nitro/types'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DEV_ENV_FLAG } from '../../src/config/dev-database'
 import { DEFAULT_STUDIO_URL, DrizzleDevStudioError, resolveDevStudio } from '../../src/config/dev-studio'
+import { DEV_ENV_FLAG } from '../../src/dev-database/resolve'
 import { resolveDrizzleModuleContext } from '../../src/module/context'
 
 describe('resolveDevStudio', () => {

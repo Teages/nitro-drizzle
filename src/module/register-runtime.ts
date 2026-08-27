@@ -1,5 +1,5 @@
 import type { Nitro } from 'nitro/types'
-import type { ResolvedDevDatabase } from '../config/dev-database'
+import type { ResolvedDevDatabase } from '../dev-database/contracts'
 import { randomUUID } from 'node:crypto'
 import { basename, resolve } from 'node:path'
 import { STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../runtime/studio/constants'
@@ -39,7 +39,7 @@ export function configureRuntime(
   }
   if (devDb !== undefined) {
     nitro.options.plugins.push(
-      runtimeEntry('runtime/plugins/dev-db'),
+      runtimeEntry('dev-database/runtime/plugin'),
     )
   }
   // The generated `#drizzle/config` imports this path bare. Alias it to

@@ -5,7 +5,7 @@ export default defineBuildConfig({
     './src/index.ts',
     './src/config/loader.ts',
     './src/configuration/runtime/connection.ts',
-    './src/runtime/plugins/dev-db.ts',
+    './src/dev-database/runtime/plugin.ts',
     './src/runtime/plugins/studio.ts',
     './src/runtime/studio/handler.ts',
   ].map(input => ({

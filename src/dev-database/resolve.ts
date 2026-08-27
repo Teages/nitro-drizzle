@@ -1,5 +1,6 @@
 import type { DrizzleDialect, DrizzleDriver } from '../contracts/configuration'
 import type { DrizzleDevMockOptions, DrizzleLocalDriver } from '../contracts/public'
+import type { ResolvedDevDatabase } from './contracts'
 import { createRequire } from 'node:module'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
@@ -44,15 +45,6 @@ export interface ResolveDevDatabaseOptions {
   readonly driver: DrizzleDriver
   readonly env: Readonly<Record<string, string | undefined>>
   readonly runtime: DevRuntimeEngines
-}
-
-export interface ResolvedDevDatabase {
-  readonly engine: DrizzleLocalDriver
-  /**
-   * Connection baked into the generated dev client. `undefined` only for an
-   * in-memory pglite, which runs without a data directory.
-   */
-  readonly connection: string | undefined
 }
 
 /**

@@ -3,7 +3,8 @@ import { consola } from 'consola'
 import { definePlugin } from 'nitro'
 import { useDrizzle } from '#drizzle'
 import { drizzleConfig } from '#drizzle/config'
-import { pushDevSchema } from '../dev-database'
+import { DEV_DATABASE_SEED_HOOK } from '../contracts'
+import { pushDevSchema } from './push-schema'
 
 export default definePlugin((nitro) => {
   if (drizzleConfig.devMock !== true) {
@@ -17,7 +18,7 @@ export default definePlugin((nitro) => {
   const ready = (async () => {
     const { db, schema } = useDrizzle()
     await pushDevSchema({ dialect, db, schema: schema as Record<string, unknown> })
-    await nitro.hooks.callHook('drizzle:dev-mock:seed')
+    await nitro.hooks.callHook(DEV_DATABASE_SEED_HOOK)
   })()
   ready.catch((error) => {
     consola.withTag('@teages/nitro-drizzle/dev').error(

@@ -5,6 +5,7 @@ import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
+import { DEV_DATABASE_SEED_HOOK } from '../src/dev-database/contracts'
 import { STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/runtime/studio/constants'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 
@@ -163,11 +164,14 @@ describe('dev-database seed hook', () => {
     // this package's own augmentation) and called once at runtime
     const generated = createRuntimeHooksDeclaration()
     const augmentation = await readFile('src/contracts/runtime/augmentations.d.ts', 'utf8')
-    const plugin = await readFile('src/runtime/plugins/dev-db.ts', 'utf8')
+    const plugin = await readFile('src/dev-database/runtime/plugin.ts', 'utf8')
 
-    // Then — all three spell the exact same hook name
+    // Then — all three spell the exact same hook name: the constant feeds the
+    // generated declaration and the plugin call, while the zero-dependency
+    // augmentation keeps a literal that must stay equal to it
+    expect(DEV_DATABASE_SEED_HOOK).toBe(SEED_HOOK)
     expect(generated).toContain(`'${SEED_HOOK}': () => void | Promise<void>`)
     expect(augmentation).toContain(`'${SEED_HOOK}': () => void | Promise<void>`)
-    expect(plugin).toContain(`callHook('${SEED_HOOK}')`)
+    expect(plugin).toContain('callHook(DEV_DATABASE_SEED_HOOK)')
   })
 })

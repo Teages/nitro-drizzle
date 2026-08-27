@@ -4,7 +4,7 @@ import { integer as pgInteger, pgTable, text as pgText } from 'drizzle-orm/pg-co
 import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite'
 import { integer as sqliteInteger, sqliteTable, text as sqliteText } from 'drizzle-orm/sqlite-core'
 import { describe, expect, it } from 'vitest'
-import { pushDevSchema } from '../../src/runtime/dev-database'
+import { pushDevSchema } from '../../src/dev-database/runtime/push-schema'
 
 const sqliteUsers = sqliteTable('users', {
   id: sqliteInteger('id').primaryKey(),

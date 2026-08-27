@@ -1,17 +1,17 @@
 import type { Nitro } from 'nitro/types'
-import type { ResolvedDevDatabase } from '../config/dev-database'
 import type { ResolvedDevStudio } from '../config/dev-studio'
 import type { ResolvedDrizzleConfig } from '../contracts/configuration'
 import type { DatabaseConnection } from '../contracts/public'
+import type { ResolvedDevDatabase } from '../dev-database/contracts'
 import { env } from 'node:process'
+import { resolveDevStudio } from '../config/dev-studio'
+import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../configuration/resolve'
 import {
   assertLocalDriverInstalled,
   detectDevRuntimeEngines,
   DEV_ENV_FLAG,
   resolveDevDatabase,
-} from '../config/dev-database'
-import { resolveDevStudio } from '../config/dev-studio'
-import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../configuration/resolve'
+} from '../dev-database/resolve'
 
 export interface DrizzleModuleContext {
   readonly config: ResolvedDrizzleConfig

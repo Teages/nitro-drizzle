@@ -8,7 +8,7 @@ import {
   detectDevRuntimeEngines,
   DrizzleDevDatabaseError,
   resolveDevDatabase,
-} from '../../src/config/dev-database'
+} from '../../src/dev-database/resolve'
 
 const noEngines = { bun: false, nodeSqlite: false }
 const emptyEnv: Record<string, string | undefined> = {}
