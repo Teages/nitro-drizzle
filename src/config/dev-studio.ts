@@ -1,4 +1,4 @@
-import type { DrizzleDevStudioOptions } from '../types'
+import type { DrizzleDevStudioOptions } from '../contracts/public'
 
 export const DEFAULT_STUDIO_URL = 'https://local.drizzle.studio'
 

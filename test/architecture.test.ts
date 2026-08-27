@@ -162,7 +162,7 @@ describe('dev-database seed hook', () => {
     // Given — the hook is declared to consumers twice (generated .d.ts plus
     // this package's own augmentation) and called once at runtime
     const generated = createRuntimeHooksDeclaration()
-    const augmentation = await readFile('src/runtime/augmentations.ts', 'utf8')
+    const augmentation = await readFile('src/contracts/runtime/augmentations.d.ts', 'utf8')
     const plugin = await readFile('src/runtime/plugins/dev-db.ts', 'utf8')
 
     // Then — all three spell the exact same hook name

@@ -1,6 +1,6 @@
 import type { Config as DrizzleKitConfig } from 'drizzle-kit'
-import type { DatabaseConnection } from '../types'
-import type { ResolvedDrizzleConfig } from './types'
+import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { DatabaseConnection } from '../contracts/public'
 import process from 'node:process'
 import { expandNitroEnv } from './env'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from './resolve'

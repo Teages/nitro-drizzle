@@ -1,8 +1,8 @@
 import type { Nitro } from 'nitro/types'
 import type { ResolvedDevDatabase } from '../config/dev-database'
 import type { ResolvedDevStudio } from '../config/dev-studio'
-import type { ResolvedDrizzleConfig } from '../config/types'
-import type { DatabaseConnection } from '../types'
+import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { DatabaseConnection } from '../contracts/public'
 import { env } from 'node:process'
 import {
   assertLocalDriverInstalled,

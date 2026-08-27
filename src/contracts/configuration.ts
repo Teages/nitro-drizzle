@@ -1,6 +1,6 @@
-import type { DatabaseConnection, DrizzleDialect, DrizzleOptions } from '../types'
+import type { DatabaseConnection, DrizzleDialect, DrizzleOptions } from './public'
 
-export type { DrizzleDialect } from '../types'
+export type { DrizzleDialect } from './public'
 export type DrizzleDriver = DrizzleOptions['driver']
 
 export interface ResolveDrizzleConfigOptions {

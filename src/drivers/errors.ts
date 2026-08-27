@@ -1,4 +1,4 @@
-import type { DrizzleOptions } from '../types'
+import type { DrizzleOptions } from '../contracts/public'
 
 export class DrizzleClientError extends Error {
   constructor(

@@ -1,4 +1,4 @@
-import type { DrizzleDriverConfig } from '../../drivers/contracts'
+import type { DrizzleDriverConfig } from '../../contracts/driver'
 
 export interface WranglerD1Binding {
   binding: string

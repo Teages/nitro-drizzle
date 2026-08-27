@@ -1,4 +1,4 @@
-import type { DatabaseConnection } from '../types'
+import type { DatabaseConnection } from '../contracts/public'
 
 export interface NitroEnvOptions {
   readonly env: Readonly<Record<string, string | undefined>>

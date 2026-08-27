@@ -1,5 +1,5 @@
-import type { DrizzleDialect, DrizzleSchemaPath } from '../types'
-import type { DrizzleConfigInput, ResolvedDrizzleConfig, ResolveDrizzleConfigOptions } from './types'
+import type { DrizzleConfigInput, ResolvedDrizzleConfig, ResolveDrizzleConfigOptions } from '../contracts/configuration'
+import type { DrizzleDialect, DrizzleSchemaPath } from '../contracts/public'
 import { resolve } from 'node:path'
 
 export function resolveDrizzleSchemaPath(

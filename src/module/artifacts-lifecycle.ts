@@ -1,5 +1,5 @@
 import type { Nitro } from 'nitro/types'
-import type { ResolvedDrizzleConfig } from '../config/types'
+import type { ResolvedDrizzleConfig } from '../contracts/configuration'
 import type { DrizzleModuleContext } from './context'
 import { generateVirtualClientSource } from '../codegen/client/generate'
 import { createRuntimeConfigModule } from '../codegen/client/runtime-config'

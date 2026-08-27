@@ -1,4 +1,4 @@
-import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect, DrizzleLocalDriver } from '../../types'
+import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect, DrizzleLocalDriver } from '../../contracts/public'
 
 /**
  * Shape of the generated `#drizzle/config` virtual module: the module-owned

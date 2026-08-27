@@ -1,5 +1,5 @@
-import type { DrizzleDriverConfig } from '../../drivers/contracts'
-import type { DrizzleClientDriver } from '../../types'
+import type { DrizzleDriverConfig } from '../../contracts/driver'
+import type { DrizzleClientDriver } from '../../contracts/public'
 import type { DevClientConnection, SourceImports } from './templates/helpers'
 import { resolveDriverAdapterPath } from '../../drivers/registry'
 import { d1Source } from './templates/d1'

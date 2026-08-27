@@ -1,4 +1,4 @@
-import type { DrizzleDialect, DrizzleLocalDriver } from '../../types'
+import type { DrizzleDialect, DrizzleLocalDriver } from '../../contracts/public'
 import type { StudioExecutor, StudioQuery } from './adapters'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'

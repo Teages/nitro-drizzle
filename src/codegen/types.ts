@@ -1,5 +1,5 @@
-import type { ResolvedDrizzleConfig } from '../config/types'
-import type { DrizzleClientDriver } from '../types'
+import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { DrizzleClientDriver } from '../contracts/public'
 
 export interface GenerateDrizzleArtifactsOptions {
   readonly buildDir: string

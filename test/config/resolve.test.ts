@@ -1,4 +1,4 @@
-import type { DrizzleConfigInput } from '../../src/config/types'
+import type { DrizzleConfigInput } from '../../src/contracts/configuration'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../../src/config/resolve'

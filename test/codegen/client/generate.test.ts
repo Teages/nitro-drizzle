@@ -1,5 +1,5 @@
-import type { DrizzleDriverConfig } from '../../../src/drivers/contracts'
-import type { DrizzleOptions } from '../../../src/types'
+import type { DrizzleDriverConfig } from '../../../src/contracts/driver'
+import type { DrizzleOptions } from '../../../src/contracts/public'
 import { describe, expect, it } from 'vitest'
 import { generateVirtualClientSource } from '../../../src/codegen/client/generate'
 

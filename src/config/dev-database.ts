@@ -1,5 +1,5 @@
-import type { DrizzleDevMockOptions, DrizzleLocalDriver } from '../types'
-import type { DrizzleDialect, DrizzleDriver } from './types'
+import type { DrizzleDialect, DrizzleDriver } from '../contracts/configuration'
+import type { DrizzleDevMockOptions, DrizzleLocalDriver } from '../contracts/public'
 import { createRequire } from 'node:module'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'

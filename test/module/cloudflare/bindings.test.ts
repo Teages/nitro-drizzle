@@ -1,4 +1,4 @@
-import type { DrizzleDriverConfig } from '../../../src/drivers/contracts'
+import type { DrizzleDriverConfig } from '../../../src/contracts/driver'
 import type { WranglerConfig } from '../../../src/module/cloudflare/bindings'
 import { describe, expect, it } from 'vitest'
 import { mutateWranglerBindings } from '../../../src/module/cloudflare/bindings'

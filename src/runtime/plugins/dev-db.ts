@@ -1,4 +1,4 @@
-import type {} from '../augmentations'
+import type {} from '../../contracts/runtime/augmentations'
 import { consola } from 'consola'
 import { definePlugin } from 'nitro'
 import { useDrizzle } from '#drizzle'

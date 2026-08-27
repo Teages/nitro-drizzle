@@ -11,7 +11,7 @@ declare module '#drizzle' {
 }
 
 declare module '#drizzle/config' {
-  import type { DatabaseConnection, DrizzleClientDriver, DrizzleLocalDriver } from '../types'
+  import type { DatabaseConnection, DrizzleClientDriver, DrizzleLocalDriver } from '../public'
 
   export const drizzleConfig: {
     readonly dialect: 'sqlite' | 'postgresql' | 'mysql'

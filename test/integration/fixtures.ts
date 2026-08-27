@@ -1,4 +1,4 @@
-import type { DrizzleDriverConfig } from '../../src/drivers/contracts'
+import type { DrizzleDriverConfig } from '../../src/contracts/driver'
 import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
