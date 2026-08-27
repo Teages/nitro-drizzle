@@ -122,7 +122,7 @@ context.db.query.users.findMany()
     ).resolves.toBeDefined()
   })
 
-  it('declares the drizzle:dev:seed runtime hook for server code', async () => {
+  it('declares the drizzle:dev-mock:seed runtime hook for server code', async () => {
     // Given
     const rootDir = await createTemporaryRoot()
     const schemaPath = join(rootDir, 'schema.ts')
@@ -147,7 +147,7 @@ context.db.query.users.findMany()
 
     const hooksDeclaration = await readFile(artifacts.hooksFile, 'utf8')
     expect(hooksDeclaration).toContain(`declare module 'nitro/types'`)
-    expect(hooksDeclaration).toContain(`'drizzle:dev:seed': () => void | Promise<void>`)
+    expect(hooksDeclaration).toContain(`'drizzle:dev-mock:seed': () => void | Promise<void>`)
 
     const consumerFile = join(rootDir, 'plugin.ts')
     const tsconfigFile = join(rootDir, 'tsconfig.json')
@@ -156,7 +156,7 @@ context.db.query.users.findMany()
         consumerFile,
         `import { useNitroHooks } from 'nitro/app'
 
-useNitroHooks().hook('drizzle:dev:seed', async () => {
+useNitroHooks().hook('drizzle:dev-mock:seed', async () => {
   console.log('seeded')
 })
 `,

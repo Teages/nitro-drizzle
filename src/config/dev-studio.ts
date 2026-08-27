@@ -20,7 +20,7 @@ export class DrizzleDevStudioError extends Error {
 }
 
 /**
- * Normalizes `drizzle.dev.studio`. `false` disables the studio and resolves to
+ * Normalizes `drizzle.devMock.studio`. `false` disables the studio and resolves to
  * `undefined`; `undefined` and `true` apply the defaults. Values are
  * validated up front so a broken config fails the build, not the dev server.
  */
@@ -36,7 +36,7 @@ export function resolveDevStudio(
     if (!Number.isInteger(config.port) || config.port < 1 || config.port > 65535) {
       throw new DrizzleDevStudioError(
         'invalid_port',
-        `drizzle.dev.studio.port must be an integer between 1 and 65535, got ${JSON.stringify(config.port)}.`,
+        `drizzle.devMock.studio.port must be an integer between 1 and 65535, got ${JSON.stringify(config.port)}.`,
       )
     }
   }
@@ -49,13 +49,13 @@ export function resolveDevStudio(
   catch {
     throw new DrizzleDevStudioError(
       'invalid_url',
-      `drizzle.dev.studio.studioUrl must be an absolute http(s) URL, got ${JSON.stringify(studioUrl)}.`,
+      `drizzle.devMock.studio.studioUrl must be an absolute http(s) URL, got ${JSON.stringify(studioUrl)}.`,
     )
   }
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     throw new DrizzleDevStudioError(
       'invalid_url',
-      `drizzle.dev.studio.studioUrl must use http or https, got ${JSON.stringify(studioUrl)}.`,
+      `drizzle.devMock.studio.studioUrl must use http or https, got ${JSON.stringify(studioUrl)}.`,
     )
   }
 

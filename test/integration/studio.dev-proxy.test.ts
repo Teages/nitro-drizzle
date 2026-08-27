@@ -110,7 +110,7 @@ export default defineConfig({
     dialect: 'sqlite',
     driver: 'libsql',
     schemaPath: './server/db/schema.ts',
-    dev: {
+    devMock: {
       driver: 'node-sqlite',
       studio: { port: ${studioPort} },
     },

@@ -1,11 +1,11 @@
-import type { DrizzleDevOptions, DrizzleLocalDriver } from '../types'
+import type { DrizzleDevMockOptions, DrizzleLocalDriver } from '../types'
 import type { DrizzleDialect, DrizzleDriver } from './types'
 import { createRequire } from 'node:module'
 import { isAbsolute, join, resolve } from 'node:path'
 import process from 'node:process'
 
-export const DEV_ENV_FLAG = 'NITRO_DRIZZLE_DEV'
-export const DEV_ENV_FILE = 'NITRO_DRIZZLE_DEV_FILE'
+export const DEV_ENV_FLAG = 'NITRO_DRIZZLE_DEV_MOCK'
+export const DEV_ENV_FILE = 'NITRO_DRIZZLE_DEV_MOCK_FILE'
 
 const LOCAL_DRIVERS_BY_DIALECT: Readonly<Record<DrizzleDialect, readonly DrizzleLocalDriver[]>> = {
   postgresql: ['pglite'],
@@ -39,7 +39,7 @@ export interface DevRuntimeEngines {
 }
 
 export interface ResolveDevDatabaseOptions {
-  readonly dev: true | DrizzleDevOptions
+  readonly dev: true | DrizzleDevMockOptions
   readonly dialect: DrizzleDialect
   readonly driver: DrizzleDriver
   readonly env: Readonly<Record<string, string | undefined>>
@@ -98,7 +98,7 @@ export function resolveDevDatabase(
     if (!localDrivers.includes(requested)) {
       throw new DrizzleDevDatabaseError(
         'driver_not_local',
-        `drizzle.dev.driver '${requested}' is not a local ${dialect} engine. Available engines: ${localDrivers.join(', ')}.`,
+        `drizzle.devMock.driver '${requested}' is not a local ${dialect} engine. Available engines: ${localDrivers.join(', ')}.`,
       )
     }
     engine = requested
@@ -118,7 +118,7 @@ export function resolveDevDatabase(
   else {
     throw new DrizzleDevDatabaseError(
       'no_local_engine',
-      `No local sqlite engine is available for the dev database. Set drizzle.dev.driver to one of: ${localDrivers.join(', ')}.`,
+      `No local sqlite engine is available for the dev database. Set drizzle.devMock.driver to one of: ${localDrivers.join(', ')}.`,
     )
   }
 

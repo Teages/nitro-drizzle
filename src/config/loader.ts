@@ -159,7 +159,7 @@ export async function loadDrizzleConfig(
     )
   }
 
-  const { dev: _dev, connection: userConnection, ...drizzle } = nitroOptions.drizzle
+  const { devMock: _devMock, connection: userConnection, ...drizzle } = nitroOptions.drizzle
   // The CLI needs real credentials, so it applies Nitro's env expansion
   // semantics — `{{VAR}}` templates per the user's envExpansion setting —
   // to the static connection here.

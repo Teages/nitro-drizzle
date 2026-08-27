@@ -30,7 +30,7 @@ export interface StartStudioServerOptions {
   readonly authorization: string
   /** Base URL of the Studio web app; only its origin may talk to the proxy. */
   readonly studioUrl: string
-  /** Fixed port from `drizzle.dev.studio.port`; random when omitted. */
+  /** Fixed port from `drizzle.devMock.studio.port`; random when omitted. */
   readonly port?: number
   /** Overridable in-process dispatch; defaults to the Nitro app fetch. */
   readonly dispatch?: Dispatch

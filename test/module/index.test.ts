@@ -227,7 +227,7 @@ describe('@teages/nitro-drizzle', () => {
         dialect: 'postgresql',
         driver: 'postgres-js',
         schemaPath: './server/db/schema.ts',
-        dev: { driver: 'pglite' },
+        devMock: { driver: 'pglite' },
       },
     })
 
@@ -249,7 +249,7 @@ describe('@teages/nitro-drizzle', () => {
     // And — the module-owned config flags the dev database while keeping
     // the real driver for the toolchain
     const configModule = virtualSource(nitro, '#drizzle/config')
-    expect(configModule).toContain('"dev": true')
+    expect(configModule).toContain('"devMock": true')
     expect(configModule).toContain('"driver": "postgres-js"')
 
     // And — the generated types follow the dev engine
@@ -348,12 +348,12 @@ describe('@teages/nitro-drizzle', () => {
         dialect: 'postgresql',
         driver: 'postgres-js',
         schemaPath: './server/db/schema.ts',
-        dev: { driver: 'pglite' },
+        devMock: { driver: 'pglite' },
       },
     })
 
     // Then
-    expect(virtualSource(nitro, '#drizzle/config')).not.toContain('"dev": true')
+    expect(virtualSource(nitro, '#drizzle/config')).not.toContain('"devMock": true')
     expect(virtualSource(nitro, '#drizzle'))
       .toContain(`from 'drizzle-orm/postgres-js'`)
     expect(nitro.options.virtual['#drizzle/schema']).toBeDefined()
@@ -363,11 +363,11 @@ describe('@teages/nitro-drizzle', () => {
     await nitro.close()
   })
 
-  it('disables the dev database via NITRO_DRIZZLE_DEV=false', async () => {
+  it('disables the dev database via NITRO_DRIZZLE_DEV_MOCK=false', async () => {
     // Given
     const rootDir = await createTemporaryRoot()
-    const previous = process.env.NITRO_DRIZZLE_DEV
-    process.env.NITRO_DRIZZLE_DEV = 'false'
+    const previous = process.env.NITRO_DRIZZLE_DEV_MOCK
+    process.env.NITRO_DRIZZLE_DEV_MOCK = 'false'
 
     try {
       // When
@@ -381,22 +381,22 @@ describe('@teages/nitro-drizzle', () => {
           dialect: 'postgresql',
           driver: 'postgres-js',
           schemaPath: './server/db/schema.ts',
-          dev: { driver: 'pglite' },
+          devMock: { driver: 'pglite' },
         },
       })
 
       // Then
-      expect(virtualSource(nitro, '#drizzle/config')).not.toContain('"dev": true')
+      expect(virtualSource(nitro, '#drizzle/config')).not.toContain('"devMock": true')
       expect(virtualSource(nitro, '#drizzle'))
         .toContain(`from 'drizzle-orm/postgres-js'`)
       await nitro.close()
     }
     finally {
       if (previous === undefined) {
-        delete process.env.NITRO_DRIZZLE_DEV
+        delete process.env.NITRO_DRIZZLE_DEV_MOCK
       }
       else {
-        process.env.NITRO_DRIZZLE_DEV = previous
+        process.env.NITRO_DRIZZLE_DEV_MOCK = previous
       }
     }
   })
@@ -416,7 +416,7 @@ describe('@teages/nitro-drizzle', () => {
         dialect: 'mysql',
         driver: 'mysql2',
         schemaPath: './server/db/schema.ts',
-        dev: true,
+        devMock: true,
       },
     })
 

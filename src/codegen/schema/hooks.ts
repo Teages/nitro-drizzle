@@ -12,7 +12,7 @@ export function createRuntimeHooksDeclaration(): string {
      * The dev database is ready: schema pushed, migrations applied. Seed
      * test data here; only fired when the dev database is enabled.
      */
-    'drizzle:dev:seed': () => void | Promise<void>
+    'drizzle:dev-mock:seed': () => void | Promise<void>
   }
 }
 `

@@ -169,7 +169,7 @@ export const todos = sqliteTable('todos', {
 import { useDrizzle } from '#drizzle'
 
 export default definePlugin((nitro) => {
-  nitro.hooks.hook('drizzle:dev:seed', async () => {
+  nitro.hooks.hook('drizzle:dev-mock:seed', async () => {
     const { db, schema } = useDrizzle()
     await db.insert(schema.todos)
       .values({ id: 1, title: 'seeded' })
@@ -210,7 +210,7 @@ export default defineConfig({
     dialect: 'sqlite',
     driver: 'node-sqlite',
     schemaPath: './server/db/schema.ts',
-    dev: { driver: 'node-sqlite', file: ${JSON.stringify(devDatabase)} },
+    devMock: { driver: 'node-sqlite', file: ${JSON.stringify(devDatabase)} },
     connection: { url: ${JSON.stringify(realDatabase)} },
   },
 })

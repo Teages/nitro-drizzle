@@ -1,5 +1,5 @@
 import type { NitroModule } from 'nitro/types'
-import type { DatabaseConnection, DrizzleClientDriver, DrizzleDevOptions, DrizzleDevStudioOptions, DrizzleDialect, DrizzleLocalDriver, DrizzleOptions, DrizzleSchemaPath, DrizzleSchemaPaths } from './types'
+import type { DatabaseConnection, DrizzleClientDriver, DrizzleDevMockOptions, DrizzleDevStudioOptions, DrizzleDialect, DrizzleLocalDriver, DrizzleOptions, DrizzleSchemaPath, DrizzleSchemaPaths } from './types'
 import { findEnvTemplateKeys } from './config/env'
 import { createDrizzleArtifactsLifecycle } from './module/artifacts-lifecycle'
 import { configureCloudflare } from './module/cloudflare/configure'
@@ -45,7 +45,7 @@ export default {
     }
     else if (nitro.options.dev && ctx.devDb === undefined) {
       nitro.logger.withTag('@teages/nitro-drizzle').info(
-        'Drizzle Studio: enable the dev database (drizzle.dev) for the built-in studio, or run `npx drizzle-kit studio` against a real connection.',
+        'Drizzle Studio: enable the dev database (drizzle.devMock) for the built-in studio, or run `npx drizzle-kit studio` against a real connection.',
       )
     }
     configureCloudflare(nitro, lifecycle.config)
@@ -61,7 +61,7 @@ export default {
 export type {
   DatabaseConnection,
   DrizzleClientDriver,
-  DrizzleDevOptions,
+  DrizzleDevMockOptions,
   DrizzleDevStudioOptions,
   DrizzleDialect,
   DrizzleLocalDriver,

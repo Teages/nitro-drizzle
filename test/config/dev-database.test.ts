@@ -1,4 +1,4 @@
-import type { DrizzleDevOptions } from '../../src/types'
+import type { DrizzleDevMockOptions } from '../../src/types'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -14,7 +14,7 @@ const noEngines = { bun: false, nodeSqlite: false }
 const emptyEnv: Record<string, string | undefined> = {}
 
 function resolveDev(
-  dev: true | DrizzleDevOptions,
+  dev: true | DrizzleDevMockOptions,
   dialect: 'postgresql' | 'sqlite',
   driver: string,
   runtime = noEngines,
@@ -74,7 +74,7 @@ describe('resolveDevDatabase', () => {
     expect(() => resolveDev(true, 'sqlite', 'd1-http'))
       .toThrow(DrizzleDevDatabaseError)
     expect(() => resolveDev(true, 'sqlite', 'd1-http'))
-      .toThrow(/drizzle\.dev\.driver/)
+      .toThrow(/drizzle\.devMock\.driver/)
   })
 
   it('rejects the mysql dialect outright', () => {
@@ -111,7 +111,7 @@ describe('resolveDevDatabase', () => {
 
   it('rejects an explicit non-local driver', () => {
     // Given
-    const driver = 'neon-http' as unknown as DrizzleDevOptions['driver']
+    const driver = 'neon-http' as unknown as DrizzleDevMockOptions['driver']
 
     // When / Then
     expect(() => resolveDev({ driver }, 'postgresql', 'postgres-js'))
@@ -156,14 +156,14 @@ describe('resolveDevDatabase', () => {
     expect(postgres.connection).toBe('.data/dev')
   })
 
-  it('lets NITRO_DRIZZLE_DEV_FILE override the configured file', () => {
+  it('lets NITRO_DRIZZLE_DEV_MOCK_FILE override the configured file', () => {
     // Given / When
     const resolved = resolveDev(
       { file: '.data/configured.db' },
       'sqlite',
       'libsql',
       noEngines,
-      { NITRO_DRIZZLE_DEV_FILE: '.data/from-env.db' },
+      { NITRO_DRIZZLE_DEV_MOCK_FILE: '.data/from-env.db' },
     )
 
     // Then
