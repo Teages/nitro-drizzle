@@ -35,7 +35,7 @@ export async function createDrizzleArtifactsLifecycle(
     nitro.options.virtual['#drizzle/config'] = createRuntimeConfigModule({
       dialect: ctx.config.dialect,
       driver: ctx.config.driver,
-      dev: ctx.devDb !== undefined,
+      devMock: ctx.devDb !== undefined,
       ...(ctx.devDb === undefined
         ? {}
         : { devEngine: ctx.devDb.engine, devConnection: ctx.devDb.connection ?? ':memory:' }),

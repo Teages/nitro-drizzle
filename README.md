@@ -223,7 +223,7 @@ export default defineConfig({
     dialect: 'postgresql',
     driver: 'postgres-js',
     schemaPath: './server/db/schema.postgresql.ts',
-    dev: true,
+    devMock: true,
   },
 })
 ```
@@ -237,8 +237,8 @@ The local engine resolves per dialect:
 - MySQL: not supported
 
 When the cascade cannot resolve (for example a `d1` main driver on a runtime
-without built-in sqlite), set `drizzle.dev.driver` explicitly. The database
-lives in memory by default; set `drizzle.dev.file` to persist it on disk.
+without built-in sqlite), set `drizzle.devMock.driver` explicitly. The database
+lives in memory by default; set `drizzle.devMock.file` to persist it on disk.
 
 On startup the module pushes the Drizzle schema with drizzle-kit — destructive
 statements apply without confirmation — and requests wait until the schema is
@@ -250,12 +250,12 @@ The drizzle-kit CLI always targets the real database. Switching between real
 databases (local Docker, staging, branches) is a job for your `.env` files,
 not for this feature.
 
-Seed data through the `drizzle:dev:seed` runtime hook, called after every push:
+Seed data through the `drizzle:dev-mock:seed` runtime hook, called after every push:
 
 ```ts
 // server/plugins/db-seed.ts
 export default definePlugin((nitro) => {
-  nitro.hooks.hook('drizzle:dev:seed', async () => {
+  nitro.hooks.hook('drizzle:dev-mock:seed', async () => {
     const { db, schema } = useDrizzle()
     // insert fixture rows — keep it idempotent
   })
@@ -263,12 +263,12 @@ export default definePlugin((nitro) => {
 ```
 
 To start from a clean slate, restart the dev server: in-memory databases are
-recreated on startup, and for a `drizzle.dev.file` database it is enough to
+recreated on startup, and for a `drizzle.devMock.file` database it is enough to
 delete the file before restarting.
 
-Two environment variables control the dev database: `NITRO_DRIZZLE_DEV=false`
-disables it for a single run, and `NITRO_DRIZZLE_DEV_FILE` overrides
-`drizzle.dev.file`. Production builds ignore `drizzle.dev` entirely.
+Two environment variables control the dev database: `NITRO_DRIZZLE_DEV_MOCK=false`
+disables it for a single run, and `NITRO_DRIZZLE_DEV_MOCK_FILE` overrides
+`drizzle.devMock.file`. Production builds ignore `drizzle.devMock` entirely.
 
 ## Drizzle Studio
 
@@ -278,14 +278,14 @@ and logs a `https://local.drizzle.studio?port=…` link. The web app talks to
 your in-memory dev database directly — the exact same instance the dev server
 runs on — with an origin check and a per-session auth key guarding the proxy.
 
-Customize it through `drizzle.dev.studio`:
+Customize it through `drizzle.devMock.studio`:
 
 ```ts
 export default defineConfig({
   drizzle: {
     dialect: 'postgresql',
     schemaPath: './server/db/schema.ts',
-    dev: {
+    devMock: {
       studio: {
         port: 4983, // fixed port instead of random
         silent: true, // skip the startup link
@@ -298,8 +298,8 @@ export default defineConfig({
 
 `studioUrl` drives both the printed link and the origin the proxy accepts, so
 pointing it at a self-hosted Studio frontend keeps the origin check intact.
-Set `dev.studio: false` to disable the built-in studio; without a dev database
-(`drizzle.dev`) it never starts — use `npx drizzle-kit studio` to inspect a
+Set `devMock.studio: false` to disable the built-in studio; without a dev database
+(`drizzle.devMock`) it never starts — use `npx drizzle-kit studio` to inspect a
 real connection. On the `node-sqlite` engine, array-shape Studio queries need
 Node 22.16+ (`StatementSync.setReturnArrays`); older runtimes surface an
 explicit error instead of silently wrong rows.

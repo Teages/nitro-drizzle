@@ -18,7 +18,7 @@ export interface DrizzleModuleContext {
   readonly schemaPath: string
   readonly relationsExport: string | undefined
   readonly devDb: ResolvedDevDatabase | undefined
-  /** Normalized `drizzle.dev.studio`; `undefined` means disabled. */
+  /** Normalized `drizzle.devMock.studio`; `undefined` means disabled. */
   readonly devStudio: ResolvedDevStudio | undefined
   readonly userConnection: DatabaseConnection
 }
@@ -38,7 +38,7 @@ export function resolveDrizzleModuleContext(
   // untouched and Nitro's runtime expands them per the user's envExpansion
   // setting. Only the drizzle-kit loader needs build-time expansion.
   const userConnection = nitro.options.drizzle.connection ?? {}
-  const { dev: _dev, connection: _connection, ...drizzleOptions } = nitro.options.drizzle
+  const { devMock: _devMock, connection: _connection, ...drizzleOptions } = nitro.options.drizzle
   const config = resolveDrizzleConfig(
     {
       ...drizzleOptions,
@@ -51,10 +51,10 @@ export function resolveDrizzleModuleContext(
   }
 
   const devDb = nitro.options.dev
-    && nitro.options.drizzle.dev !== undefined
+    && nitro.options.drizzle.devMock !== undefined
     && env[DEV_ENV_FLAG] !== 'false'
     ? resolveDevDatabase({
-        dev: nitro.options.drizzle.dev,
+        dev: nitro.options.drizzle.devMock,
         dialect: config.dialect,
         driver: config.driver,
         env,
@@ -70,7 +70,7 @@ export function resolveDrizzleModuleContext(
     config.dialect,
     nitro.options.rootDir,
   )
-  const devOptions = nitro.options.drizzle.dev
+  const devOptions = nitro.options.drizzle.devMock
   return {
     config,
     schemaPath,
@@ -78,7 +78,7 @@ export function resolveDrizzleModuleContext(
     devDb,
     // The studio pairs exclusively with the dev database, so production
     // builds and env-disabled dev sessions skip resolution entirely — an
-    // invalid `drizzle.dev.studio` must not fail builds that ignore dev.
+    // invalid `drizzle.devMock.studio` must not fail builds that ignore dev.
     devStudio: devDb === undefined
       ? undefined
       : resolveDevStudio(

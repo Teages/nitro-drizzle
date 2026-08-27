@@ -119,9 +119,9 @@ export interface DrizzleOptions {
    * destructive statements apply without confirmation, and the drizzle-kit CLI
    * keeps targeting the real database.
    *
-   * Set `NITRO_DRIZZLE_DEV=false` to opt out for a single run.
+   * Set `NITRO_DRIZZLE_DEV_MOCK=false` to opt out for a single run.
    */
-  dev?: true | DrizzleDevOptions
+  devMock?: true | DrizzleDevMockOptions
 }
 
 /**
@@ -140,7 +140,7 @@ export type DrizzleLocalDriver
  */
 export type DrizzleClientDriver = DrizzleOptions['driver']
 
-export interface DrizzleDevOptions {
+export interface DrizzleDevMockOptions {
   /**
    * Local engine for the dev database. When omitted the module resolves one
    * per dialect: `postgresql` uses `pglite`; `sqlite` prefers the built-in
@@ -150,7 +150,7 @@ export interface DrizzleDevOptions {
   driver?: DrizzleLocalDriver
   /**
    * Persist the dev database at this path instead of keeping it in memory.
-   * The `NITRO_DRIZZLE_DEV_FILE` environment variable overrides this value.
+   * The `NITRO_DRIZZLE_DEV_MOCK_FILE` environment variable overrides this value.
    */
   file?: string
   /**

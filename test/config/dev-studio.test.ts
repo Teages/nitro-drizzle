@@ -35,14 +35,14 @@ describe('resolveDevStudio', () => {
     for (const port of [0, -1, 65536, 4983.5, Number.NaN]) {
       expect(() => resolveDevStudio({ port }))
         .toThrow(DrizzleDevStudioError)
-      expect(() => resolveDevStudio({ port })).toThrow('dev.studio.port')
+      expect(() => resolveDevStudio({ port })).toThrow('devMock.studio.port')
     }
   })
 
   it('rejects studio URLs that are not absolute http(s) URLs', () => {
     for (const studioUrl of ['local.drizzle.studio', 'ftp://example.com', '']) {
       expect(() => resolveDevStudio({ studioUrl })).toThrow(DrizzleDevStudioError)
-      expect(() => resolveDevStudio({ studioUrl })).toThrow('dev.studio.studioUrl')
+      expect(() => resolveDevStudio({ studioUrl })).toThrow('devMock.studio.studioUrl')
     }
   })
 })
@@ -58,7 +58,7 @@ function fakeNitro(dev: boolean): Nitro {
         dialect: 'sqlite',
         driver: 'libsql',
         schemaPath: './server/db/schema.ts',
-        dev: { driver: 'node-sqlite', studio: { port: 99999 } },
+        devMock: { driver: 'node-sqlite', studio: { port: 99999 } },
       },
     },
   } as unknown as Nitro
@@ -75,14 +75,14 @@ describe('studio resolution in module context', () => {
 
     // When / Then — the build fails on the invalid dev-only option
     expect(() => resolveDrizzleModuleContext(fakeNitro(true)))
-      .toThrow('dev.studio.port')
+      .toThrow('devMock.studio.port')
   })
 
   it('ignores an invalid studio config in production builds', () => {
     // When — a production build carries a broken dev-only studio option
     const context = resolveDrizzleModuleContext(fakeNitro(false))
 
-    // Then — dev options are ignored entirely, exactly like `drizzle.dev`
+    // Then — dev options are ignored entirely, exactly like `drizzle.devMock`
     expect(context?.devDb).toBeUndefined()
     expect(context?.devStudio).toBeUndefined()
   })

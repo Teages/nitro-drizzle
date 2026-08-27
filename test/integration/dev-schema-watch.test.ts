@@ -123,7 +123,7 @@ export default defineConfig({
     // When the dev server boots with the dev database disabled
     const child = spawn(nitroBin, ['dev', '--port', String(port)], {
       cwd: rootDir,
-      env: { ...process.env, NITRO_DRIZZLE_DEV: 'false' },
+      env: { ...process.env, NITRO_DRIZZLE_DEV_MOCK: 'false' },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     try {

@@ -9,12 +9,12 @@ import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect, DrizzleLo
 export interface RuntimeDrizzleConfig {
   readonly dialect: DrizzleDialect
   readonly driver: DrizzleClientDriver
-  readonly dev: boolean
+  readonly devMock: boolean
   /** Engine the dev database runs on; only present in dev-database mode. */
   readonly devEngine?: DrizzleLocalDriver
   /** Dev-database connection (`:memory:` style string); absent for in-memory pglite. */
   readonly devConnection?: string
-  /** Normalized `drizzle.dev.studio`; only present when the studio is enabled. */
+  /** Normalized `drizzle.devMock.studio`; only present when the studio is enabled. */
   readonly devStudio?: {
     readonly port: number | undefined
     readonly silent: boolean
