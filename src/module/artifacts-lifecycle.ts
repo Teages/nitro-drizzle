@@ -1,10 +1,10 @@
 import type { Nitro } from 'nitro/types'
 import type { ResolvedDrizzleConfig } from '../contracts/configuration'
 import type { DrizzleModuleContext } from './context'
-import { generateVirtualClientSource } from '../codegen/client/generate'
-import { createRuntimeConfigModule } from '../codegen/client/runtime-config'
 import { generateDrizzleArtifacts } from '../codegen/generate'
 import { createSchemaEntry } from '../codegen/schema/entry'
+import { generateVirtualClientSource } from '../virtual-client/generate'
+import { createRuntimeConfigModule } from '../virtual-client/runtime-config'
 
 export interface DrizzleArtifactsLifecycle {
   /** Resolved build-time Drizzle config. */

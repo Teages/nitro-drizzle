@@ -1,7 +1,7 @@
 import type { DrizzleDriverConfig } from '../../../src/contracts/driver'
 import type { DrizzleOptions } from '../../../src/contracts/public'
 import { describe, expect, it } from 'vitest'
-import { generateVirtualClientSource } from '../../../src/codegen/client/generate'
+import { generateVirtualClientSource } from '../../../src/virtual-client/generate'
 
 const driverImports = {
   'better-sqlite3': 'drizzle-orm/better-sqlite3',
