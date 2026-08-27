@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net'
 import { execFile, spawn } from 'node:child_process'
-import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -110,6 +110,18 @@ describe('published runtime entries in Nitro dev', () => {
       'tar',
       ['-xzf', join(rootDir, tarball), '-C', packageDir, '--strip-components=1'],
     )
+    // Every obuild entry ships a file: obuild mirrors src/ paths into dist/,
+    // so an entry pointing at a moved-away source silently drops its output.
+    for (const entry of [
+      'index',
+      'config/loader',
+      'runtime/connection',
+      'runtime/plugins/dev-db',
+      'runtime/plugins/studio',
+      'runtime/studio/handler',
+    ]) {
+      await access(join(packageDir, 'dist', `${entry}.mjs`))
+    }
     await writeFile(
       join(rootDir, 'package.json'),
       `${JSON.stringify({
