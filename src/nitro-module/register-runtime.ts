@@ -7,10 +7,10 @@ import { STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../studio/contracts'
 const PACKAGE_NAME = '@teages/nitro-drizzle'
 
 function runtimeEntry(path: string): string {
-  // In source builds this file lives under `src/module`; in the published
-  // bundle its code is folded into `dist/index.mjs`. Normalize both layouts
-  // before resolving the separately built runtime entries.
-  const packageRoot = basename(import.meta.dirname) === 'module'
+  // In source builds this file lives under `src/nitro-module`; in the
+  // published bundle its code is folded into `dist/index.mjs`. Normalize both
+  // layouts before resolving the separately built runtime entries.
+  const packageRoot = basename(import.meta.dirname) === 'nitro-module'
     ? resolve(import.meta.dirname, '..')
     : import.meta.dirname
   return resolve(packageRoot, path)
