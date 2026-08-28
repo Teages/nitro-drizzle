@@ -1,4 +1,4 @@
-import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 
 export interface WranglerD1Binding {
   binding: string

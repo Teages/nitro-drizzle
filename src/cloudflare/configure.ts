@@ -1,5 +1,5 @@
 import type { Nitro } from 'nitro/types'
-import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { WranglerConfig } from './bindings'
 import { mutateWranglerBindings } from './bindings'
 import { requiresRequestContext } from './request-context'

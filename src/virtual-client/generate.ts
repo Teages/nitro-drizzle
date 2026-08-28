@@ -1,4 +1,4 @@
-import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { DrizzleClientDriver } from '../types'
 import type { DevClientConnection, SourceImports } from './templates/helpers'
 import { resolveDriverAdapterPath } from '../database/registry'

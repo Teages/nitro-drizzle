@@ -1,4 +1,4 @@
-import type { ResolvedDrizzleConfig } from '../../src/contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../../src/configuration/resolve'
 import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

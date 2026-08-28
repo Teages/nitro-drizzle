@@ -1,4 +1,4 @@
-import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { DatabaseConnection, DrizzleOptions } from '../types'
 import type { OpaqueDrizzleDatabase } from './drizzle'
 import {

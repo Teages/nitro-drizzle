@@ -1,5 +1,5 @@
 import type { Nitro } from 'nitro/types'
-import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { ResolvedDevDatabase } from '../dev-database/contracts'
 import type { ResolvedDevStudio } from '../studio/resolve'
 import type { DatabaseConnection } from '../types'

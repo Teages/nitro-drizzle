@@ -1,4 +1,4 @@
-import type { ResolvedDrizzleConfig } from '../../../src/contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../../../src/configuration/resolve'
 import type { DrizzleOptions } from '../../../src/types'
 import { describe, expect, it } from 'vitest'
 import { generateVirtualClientSource } from '../../../src/virtual-client/generate'

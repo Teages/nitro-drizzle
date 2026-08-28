@@ -1,5 +1,5 @@
 import type { WranglerConfig } from '../../../src/cloudflare/bindings'
-import type { ResolvedDrizzleConfig } from '../../../src/contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../../../src/configuration/resolve'
 import { describe, expect, it } from 'vitest'
 import { mutateWranglerBindings } from '../../../src/cloudflare/bindings'
 import { requiresRequestContext } from '../../../src/cloudflare/request-context'

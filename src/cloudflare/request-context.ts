@@ -1,4 +1,4 @@
-import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 
 /**
  * d1 and Hyperdrive drivers resolve their database from the Nitro request

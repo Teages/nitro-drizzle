@@ -1,5 +1,5 @@
 import type { Nitro } from 'nitro/types'
-import type { ResolvedDrizzleConfig } from '../contracts/configuration'
+import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { DrizzleModuleContext } from './context'
 import { generateDrizzleArtifacts } from '../schema-artifacts/generate'
 import { createSchemaEntry } from '../schema-artifacts/schema-entry'
