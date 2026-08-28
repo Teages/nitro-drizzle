@@ -1,4 +1,3 @@
-import type {} from '../../contracts/runtime/augmentations'
 import process from 'node:process'
 import { consola } from 'consola'
 import { definePlugin } from 'nitro'
