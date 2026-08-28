@@ -2,8 +2,8 @@ import type { Config as DrizzleKitConfig } from 'drizzle-kit'
 import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { DatabaseConnection } from '../types'
 import process from 'node:process'
-import { expandNitroEnv } from './env'
-import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from './resolve'
+import { expandNitroEnv } from '../configuration/env'
+import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../configuration/resolve'
 
 export interface LoadDrizzleConfigOptions {
   /** Project root the Nitro config is loaded from. Defaults to process.cwd(). */

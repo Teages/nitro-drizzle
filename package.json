@@ -14,9 +14,9 @@
       "default": "./dist/index.mjs"
     },
     "./config": {
-      "types": "./dist/config/loader.d.mts",
-      "import": "./dist/config/loader.mjs",
-      "default": "./dist/config/loader.mjs"
+      "types": "./dist/config/index.d.mts",
+      "import": "./dist/config/index.mjs",
+      "default": "./dist/config/index.mjs"
     }
   },
   "module": "./dist/index.mjs",
@@ -26,7 +26,7 @@
         "./dist/index.d.mts"
       ],
       "./config": [
-        "./dist/config/loader.d.mts"
+        "./dist/config/index.d.mts"
       ]
     }
   },
