@@ -6,11 +6,11 @@
  * `src/virtual-client/runtime-config.ts`.
  */
 declare module '#drizzle/config' {
-  import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect, DrizzleLocalDriver } from '@teages/nitro-drizzle'
+  import type { DatabaseConnection, DrizzleDialect, DrizzleDriver, DrizzleLocalDriver } from '@teages/nitro-drizzle'
 
   export interface DrizzleRuntimeConfig {
     readonly dialect: DrizzleDialect
-    readonly driver: DrizzleClientDriver
+    readonly driver: DrizzleDriver
     readonly devMock: boolean
     readonly devEngine?: DrizzleLocalDriver
     readonly devConnection?: string

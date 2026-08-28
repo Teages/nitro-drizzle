@@ -1,7 +1,7 @@
-import type { DrizzleClientDriver } from '../types'
+import type { DrizzleDriver } from '../types'
 import { resolveDriverAdapterPath } from '../database/registry'
 
-export function createModulesDeclaration(driver: DrizzleClientDriver): string {
+export function createModulesDeclaration(driver: DrizzleDriver): string {
   const driverModule = JSON.stringify(resolveDriverAdapterPath(driver))
 
   return `type NitroDrizzleGeneratedSchema = typeof import('./schema.d.ts')

@@ -1,11 +1,11 @@
-import type { DrizzleClientDriver, DrizzleOptions } from '../types'
+import type { DrizzleDriver, DrizzleOptions } from '../types'
 
 export interface NativeMigratorResolution {
   readonly modulePath: string
   readonly invocation: 'standard' | 'proxy'
 }
 
-const ADAPTER_PATHS: Readonly<Record<DrizzleClientDriver, string>> = {
+const ADAPTER_PATHS: Readonly<Record<DrizzleDriver, string>> = {
   'better-sqlite3': 'drizzle-orm/better-sqlite3',
   'libsql': 'drizzle-orm/libsql',
   'bun-sqlite': 'drizzle-orm/bun-sqlite',
@@ -64,7 +64,7 @@ const NATIVE_MIGRATORS: Readonly<Record<
   },
 }
 
-export function resolveDriverAdapterPath(driver: DrizzleClientDriver): string {
+export function resolveDriverAdapterPath(driver: DrizzleDriver): string {
   return ADAPTER_PATHS[driver]
 }
 

@@ -1,5 +1,5 @@
 import type { ResolvedDrizzleConfig } from '../configuration/resolve'
-import type { DrizzleClientDriver } from '../types'
+import type { DrizzleDriver } from '../types'
 
 export interface GenerateDrizzleArtifactsOptions {
   readonly buildDir: string
@@ -11,7 +11,7 @@ export interface GenerateDrizzleArtifactsOptions {
    * driver; the dev database overrides it with the resolved local engine
    * while the drizzle-kit config keeps targeting the real database.
    */
-  readonly clientDriver?: DrizzleClientDriver
+  readonly clientDriver?: DrizzleDriver
 }
 
 export interface DrizzleArtifacts {

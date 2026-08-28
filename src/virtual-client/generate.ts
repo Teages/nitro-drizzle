@@ -1,5 +1,5 @@
 import type { ResolvedDrizzleConfig } from '../configuration/resolve'
-import type { DrizzleClientDriver } from '../types'
+import type { DrizzleDriver } from '../types'
 import type { DevClientConnection, SourceImports } from './templates/helpers'
 import { resolveDriverAdapterPath } from '../database/registry'
 import { d1Source } from './templates/d1'
@@ -25,7 +25,7 @@ export interface GenerateVirtualClientOptions {
 export class VirtualClientGenerationError extends Error {
   constructor(
     readonly code: 'dialect_mismatch',
-    readonly driver: DrizzleClientDriver,
+    readonly driver: DrizzleDriver,
     message: string,
   ) {
     super(message)

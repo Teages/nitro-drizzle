@@ -1,4 +1,4 @@
-import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect, DrizzleLocalDriver } from '../types'
+import type { DatabaseConnection, DrizzleDialect, DrizzleDriver, DrizzleLocalDriver } from '../types'
 
 /**
  * Shape of the generated `#drizzle/config` virtual module: the module-owned
@@ -8,7 +8,7 @@ import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect, DrizzleLo
  */
 export interface RuntimeDrizzleConfig {
   readonly dialect: DrizzleDialect
-  readonly driver: DrizzleClientDriver
+  readonly driver: DrizzleDriver
   readonly devMock: boolean
   /** Engine the dev database runs on; only present in dev-database mode. */
   readonly devEngine?: DrizzleLocalDriver

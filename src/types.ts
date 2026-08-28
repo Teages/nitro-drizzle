@@ -4,10 +4,6 @@ export type DrizzleDriver
   = | 'better-sqlite3' | 'libsql' | 'bun-sqlite' | 'node-sqlite' | 'd1' | 'd1-http'
     | 'postgres-js' | 'pglite' | 'neon-http'
     | 'mysql2'
-/**
- * Any driver a `#drizzle` virtual client can be generated for.
- */
-export type DrizzleClientDriver = DrizzleDriver
 
 /**
  * Local engines the dev database can run on: every public driver that embeds
