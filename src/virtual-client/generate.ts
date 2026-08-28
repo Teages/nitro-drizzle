@@ -1,4 +1,4 @@
-import type { DrizzleDriverConfig } from '../contracts/driver'
+import type { ResolvedDrizzleConfig } from '../contracts/configuration'
 import type { DrizzleClientDriver } from '../types'
 import type { DevClientConnection, SourceImports } from './templates/helpers'
 import { resolveDriverAdapterPath } from '../database/registry'
@@ -12,7 +12,7 @@ import { postgresJsSource } from './templates/postgres-js'
 import { sqliteFileSource } from './templates/sqlite'
 
 export interface GenerateVirtualClientOptions {
-  readonly config: DrizzleDriverConfig
+  readonly config: ResolvedDrizzleConfig
   readonly schemaImport: string
   readonly relationsImport: string
   /**

@@ -35,7 +35,7 @@ export function resolveDrizzleConfig(
   return {
     dialect: config.dialect,
     driver: config.driver,
-    ...(config.connection === undefined ? {} : { connection: config.connection }),
-    ...(migrationsDir === undefined ? {} : { migrationsDir }),
+    connection: config.connection,
+    migrationsDir,
   }
 }

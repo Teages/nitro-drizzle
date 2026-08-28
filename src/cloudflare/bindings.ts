@@ -1,4 +1,4 @@
-import type { DrizzleDriverConfig } from '../contracts/driver'
+import type { ResolvedDrizzleConfig } from '../contracts/configuration'
 
 export interface WranglerD1Binding {
   binding: string
@@ -59,7 +59,7 @@ function upsertHyperdriveBinding(
 
 export function mutateWranglerBindings(
   wrangler: WranglerConfig,
-  config: DrizzleDriverConfig,
+  config: ResolvedDrizzleConfig,
 ): WranglerBindingMutation {
   const databaseId = config.connection?.databaseId
   const usesD1Binding = config.driver === 'd1' && databaseId !== undefined

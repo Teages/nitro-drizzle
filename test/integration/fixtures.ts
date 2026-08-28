@@ -1,4 +1,4 @@
-import type { DrizzleDriverConfig } from '../../src/contracts/driver'
+import type { ResolvedDrizzleConfig } from '../../src/contracts/configuration'
 import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -86,7 +86,7 @@ const migrationsRow: Record<IntegrationDialect, string> = {
  * tests verify them.
  */
 export async function applyMigrationWorkspace(
-  config: DrizzleDriverConfig,
+  config: ResolvedDrizzleConfig,
   migrationsFolder: string,
 ): Promise<{ ok: true }> {
   const client = await createDrizzleClient(config)

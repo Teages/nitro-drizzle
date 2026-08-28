@@ -1,5 +1,5 @@
 import type { WranglerConfig } from '../../../src/cloudflare/bindings'
-import type { DrizzleDriverConfig } from '../../../src/contracts/driver'
+import type { ResolvedDrizzleConfig } from '../../../src/contracts/configuration'
 import { describe, expect, it } from 'vitest'
 import { mutateWranglerBindings } from '../../../src/cloudflare/bindings'
 import { requiresRequestContext } from '../../../src/cloudflare/request-context'
@@ -8,7 +8,7 @@ describe('mutateWranglerBindings', () => {
   it('adds an explicitly configured D1 binding once', () => {
     // Given
     const wrangler: WranglerConfig = {}
-    const config: DrizzleDriverConfig = {
+    const config: ResolvedDrizzleConfig = {
       dialect: 'sqlite',
       driver: 'd1',
       connection: { databaseId: 'database-id' },
@@ -29,7 +29,7 @@ describe('mutateWranglerBindings', () => {
   it('adds an explicitly configured Hyperdrive binding', () => {
     // Given
     const wrangler: WranglerConfig = {}
-    const config: DrizzleDriverConfig = {
+    const config: ResolvedDrizzleConfig = {
       dialect: 'postgresql',
       driver: 'postgres-js',
       connection: { hyperdriveId: 'hyperdrive-id' },
@@ -48,7 +48,7 @@ describe('mutateWranglerBindings', () => {
   it('does not infer bindings from dialect or driver alone', () => {
     // Given
     const wrangler: WranglerConfig = {}
-    const config: DrizzleDriverConfig = {
+    const config: ResolvedDrizzleConfig = {
       dialect: 'postgresql',
       driver: 'postgres-js',
       connection: { url: 'postgres://localhost/database' },
@@ -66,17 +66,17 @@ describe('mutateWranglerBindings', () => {
 describe('requiresRequestContext', () => {
   it('holds only for explicit binding-only configurations', () => {
     // Given
-    const boundConfig: DrizzleDriverConfig = {
+    const boundConfig: ResolvedDrizzleConfig = {
       dialect: 'postgresql',
       driver: 'postgres-js',
       connection: { hyperdriveId: 'hyperdrive-id' },
     }
-    const directConfig: DrizzleDriverConfig = {
+    const directConfig: ResolvedDrizzleConfig = {
       dialect: 'postgresql',
       driver: 'postgres-js',
       connection: { url: 'postgres://localhost/database' },
     }
-    const d1Config: DrizzleDriverConfig = {
+    const d1Config: ResolvedDrizzleConfig = {
       dialect: 'sqlite',
       driver: 'd1',
     }
