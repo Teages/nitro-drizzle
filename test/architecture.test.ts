@@ -172,19 +172,22 @@ describe('runtime wiring', () => {
 })
 
 describe('dev-database seed hook', () => {
-  it('uses the drizzle:dev-mock:seed name in every declaration', async () => {
-    // Given — the hook is declared to consumers twice (generated .d.ts plus
-    // this package's own augmentation) and called once at runtime
+  it('derives the generated declaration and the plugin call from one constant', async () => {
+    // Given — the hook reaches consumers through exactly one declaration:
+    // the generated .nitro/drizzle/hooks.d.ts. The runtime plugin never
+    // names the hook literally; both sides derive from the constant.
     const generated = createRuntimeHooksDeclaration()
-    const augmentation = await readFile('src/contracts/runtime/augmentations.d.ts', 'utf8')
     const plugin = await readFile('src/dev-database/runtime/plugin.ts', 'utf8')
 
-    // Then — all three spell the exact same hook name: the constant feeds the
-    // generated declaration and the plugin call, while the zero-dependency
-    // augmentation keeps a literal that must stay equal to it
+    // Then — constant, declaration, and call site agree on the name
     expect(DEV_DATABASE_SEED_HOOK).toBe(SEED_HOOK)
     expect(generated).toContain(`'${SEED_HOOK}': () => void | Promise<void>`)
-    expect(augmentation).toContain(`'${SEED_HOOK}': () => void | Promise<void>`)
     expect(plugin).toContain('callHook(DEV_DATABASE_SEED_HOOK)')
+
+    // And — the declaration must be a module: without the leading `export {}`
+    // the file is a global script and `declare module 'nitro/types'` turns
+    // from an augmentation into an ambient declaration that shadows the real
+    // package, typing every `definePlugin` callback parameter as implicit any
+    expect(generated.startsWith('export {}')).toBe(true)
   })
 })

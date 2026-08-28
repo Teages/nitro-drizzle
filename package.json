@@ -38,6 +38,7 @@
   },
   "scripts": {
     "build": "obuild",
+    "dev:prepare": "pnpm -C playground prepare",
     "dev": "pnpm -C playground dev",
     "lint": "eslint --cache .",
     "lint:fix": "eslint --cache --fix .",

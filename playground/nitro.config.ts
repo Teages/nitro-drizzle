@@ -4,6 +4,7 @@ import NitroDrizzle from '../src/index'
 export default defineConfig({
   modules: [NitroDrizzle],
   serverDir: './server',
+  buildDir: './.nitro',
   drizzle: {
     dialect: 'sqlite',
     driver: 'libsql',

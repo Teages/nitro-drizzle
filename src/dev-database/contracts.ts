@@ -3,9 +3,8 @@ import type { DrizzleLocalDriver } from '../types'
 /**
  * Runtime hook this package fires once the dev database is ready: schema
  * pushed, migrations applied. The plugin call and the generated consumer
- * declaration derive from this constant; the package's own augmentation in
- * contracts/runtime/augmentations.d.ts keeps the literal (contracts has zero
- * internal dependencies) and is pinned equal by test/architecture.test.ts.
+ * declaration both derive from this constant, so the hook name exists
+ * exactly once in source.
  */
 export const DEV_DATABASE_SEED_HOOK = 'drizzle:dev-mock:seed' as const
 
