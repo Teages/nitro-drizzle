@@ -1,4 +1,4 @@
-import type { DrizzleClientDriver } from '../contracts/public'
+import type { DrizzleClientDriver } from '../types'
 import { resolveDriverAdapterPath } from '../database/registry'
 
 export function createModulesDeclaration(driver: DrizzleClientDriver): string {

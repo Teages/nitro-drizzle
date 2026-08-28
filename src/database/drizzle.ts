@@ -1,5 +1,5 @@
 import type { SQLWrapper } from 'drizzle-orm'
-import type { DrizzleOptions } from '../contracts/public'
+import type { DrizzleOptions } from '../types'
 import { sql } from 'drizzle-orm'
 import { resolveDriverAdapterPath } from './registry'
 

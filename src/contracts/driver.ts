@@ -1,4 +1,4 @@
-import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect } from './public'
+import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect } from '../types'
 
 /**
  * Read-only projection of the public driver contract: the dialect, the

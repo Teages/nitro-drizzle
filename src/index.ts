@@ -1,4 +1,4 @@
-import type { DrizzleOptions } from './contracts/public'
+import type { DrizzleOptions } from './types'
 
 // ABI facade: this file's source path determines the public dist/index.mjs
 // export. The NitroOptions augmentation stays declared inline here — bundlers
@@ -11,14 +11,4 @@ declare module 'nitro/types' {
 }
 
 export { default } from './nitro-module/module'
-export type {
-  DatabaseConnection,
-  DrizzleClientDriver,
-  DrizzleDevMockOptions,
-  DrizzleDevStudioOptions,
-  DrizzleDialect,
-  DrizzleLocalDriver,
-  DrizzleOptions,
-  DrizzleSchemaPath,
-  DrizzleSchemaPaths,
-} from './nitro-module/module'
+export type * from './types'

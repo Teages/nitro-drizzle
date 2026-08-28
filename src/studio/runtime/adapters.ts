@@ -1,4 +1,4 @@
-import type { DrizzleLocalDriver } from '../../contracts/public'
+import type { DrizzleLocalDriver } from '../../types'
 import { Buffer } from 'node:buffer'
 
 /**

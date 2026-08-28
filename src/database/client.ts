@@ -1,5 +1,5 @@
 import type { DrizzleDriverConfig } from '../contracts/driver'
-import type { DatabaseConnection, DrizzleOptions } from '../contracts/public'
+import type { DatabaseConnection, DrizzleOptions } from '../types'
 import type { OpaqueDrizzleDatabase } from './drizzle'
 import {
   createD1HttpTransport,

@@ -1,6 +1,6 @@
 import type { Config as DrizzleKitConfig } from 'drizzle-kit'
 import type { ResolvedDrizzleConfig } from '../contracts/configuration'
-import type { DatabaseConnection } from '../contracts/public'
+import type { DatabaseConnection } from '../types'
 import process from 'node:process'
 import { expandNitroEnv } from './env'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from './resolve'
@@ -133,6 +133,10 @@ function kitConfig(
           : { url },
       }
     }
+    default:
+      throw new DrizzleConfigError(
+        `No drizzle-kit config mapping for driver "${config.driver}".`,
+      )
   }
 }
 

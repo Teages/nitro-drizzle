@@ -1,4 +1,4 @@
-import type { DatabaseConnection } from '../../contracts/public'
+import type { DatabaseConnection } from '../../types'
 import { env } from 'node:process'
 import { useRuntimeConfig } from 'nitro/runtime-config'
 import { expandNitroEnv } from '../env'

@@ -1,6 +1,4 @@
-import type { DatabaseConnection, DrizzleDialect, DrizzleDriver, DrizzleOptions } from './public'
-
-export type { DrizzleDialect } from './public'
+import type { DatabaseConnection, DrizzleDialect, DrizzleDriver, DrizzleOptions } from '../types'
 
 export interface ResolveDrizzleConfigOptions {
   readonly serverDir: string | false

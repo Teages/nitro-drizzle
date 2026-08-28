@@ -1,4 +1,4 @@
-import type { DrizzleLocalDriver } from '../contracts/public'
+import type { DrizzleLocalDriver } from '../types'
 
 /**
  * Runtime hook this package fires once the dev database is ready: schema

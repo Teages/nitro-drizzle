@@ -1,5 +1,4 @@
-import type { DrizzleDialect } from '../contracts/configuration'
-import type { DrizzleDevMockOptions, DrizzleDriver, DrizzleLocalDriver } from '../contracts/public'
+import type { DrizzleDevMockOptions, DrizzleDialect, DrizzleDriver, DrizzleLocalDriver } from '../types'
 import type { ResolvedDevDatabase } from './contracts'
 import { createRequire } from 'node:module'
 import { isAbsolute, join, resolve } from 'node:path'

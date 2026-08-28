@@ -1,4 +1,4 @@
-import type { DatabaseConnection } from '../../src/contracts/public'
+import type { DatabaseConnection } from '../../src/types'
 import { createConnection } from 'mysql2/promise'
 import { describe, expect, it } from 'vitest'
 import { createDrizzleClient } from '../../src/database/client'

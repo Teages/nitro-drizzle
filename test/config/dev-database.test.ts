@@ -1,4 +1,4 @@
-import type { DrizzleDevMockOptions } from '../../src/contracts/public'
+import type { DrizzleDevMockOptions } from '../../src/types'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

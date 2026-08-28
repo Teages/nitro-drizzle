@@ -1,4 +1,4 @@
-import type { DrizzleClientDriver, DrizzleOptions } from '../contracts/public'
+import type { DrizzleClientDriver, DrizzleOptions } from '../types'
 
 export interface NativeMigratorResolution {
   readonly modulePath: string

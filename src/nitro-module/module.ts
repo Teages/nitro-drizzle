@@ -49,15 +49,3 @@ export default {
     )
   },
 } satisfies NitroModule
-
-export type {
-  DatabaseConnection,
-  DrizzleClientDriver,
-  DrizzleDevMockOptions,
-  DrizzleDevStudioOptions,
-  DrizzleDialect,
-  DrizzleLocalDriver,
-  DrizzleOptions,
-  DrizzleSchemaPath,
-  DrizzleSchemaPaths,
-} from '../contracts/public'
