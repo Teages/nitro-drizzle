@@ -1,9 +1,5 @@
 import type { DatabaseConnection, DrizzleDialect, DrizzleDriver, DrizzleOptions } from '../types'
 
-export interface ResolveDrizzleConfigOptions {
-  readonly serverDir: string | false
-}
-
 /**
  * The runtime `runtimeConfig.drizzle` shape. The module fills in the
  * resolved fields at build time; `connection` carries the raw user values

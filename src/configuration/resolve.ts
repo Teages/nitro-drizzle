@@ -1,4 +1,4 @@
-import type { DrizzleConfigInput, ResolvedDrizzleConfig, ResolveDrizzleConfigOptions } from '../contracts/configuration'
+import type { DrizzleConfigInput, ResolvedDrizzleConfig } from '../contracts/configuration'
 import type { DrizzleDialect, DrizzleSchemaPath } from '../types'
 import { resolve } from 'node:path'
 
@@ -20,7 +20,7 @@ export function resolveDrizzleSchemaPath(
 
 export function resolveDrizzleConfig(
   config: DrizzleConfigInput | undefined,
-  options: ResolveDrizzleConfigOptions,
+  options: { serverDir: string | false },
 ): ResolvedDrizzleConfig | undefined {
   if (config?.dialect === undefined || config.driver === undefined) {
     return undefined
