@@ -1,4 +1,4 @@
-import type { DatabaseConnection, DrizzleClientDriver, DrizzleOptions } from './public'
+import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect } from './public'
 
 /**
  * Read-only projection of the public driver contract: the dialect, the
@@ -6,7 +6,7 @@ import type { DatabaseConnection, DrizzleClientDriver, DrizzleOptions } from './
  * CLI-side clients, and the module's immutable resolved config alike.
  */
 export interface DrizzleDriverConfig {
-  readonly dialect: DrizzleOptions['dialect']
+  readonly dialect: DrizzleDialect
   readonly driver: DrizzleClientDriver
   readonly connection?: DatabaseConnection
 }

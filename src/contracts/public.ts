@@ -1,3 +1,8 @@
+export type DrizzleDriver
+  = | 'better-sqlite3' | 'libsql' | 'bun-sqlite' | 'node-sqlite' | 'd1' | 'd1-http'
+    | 'postgres-js' | 'pglite' | 'neon-http'
+    | 'mysql2'
+
 export interface DatabaseConnection {
   /**
    * Database connection URL
@@ -87,7 +92,7 @@ export interface DrizzleOptions {
    * PostgreSQL drivers: 'postgres-js', 'pglite', 'neon-http'
    * MySQL drivers: 'mysql2'
    */
-  driver: 'better-sqlite3' | 'libsql' | 'bun-sqlite' | 'node-sqlite' | 'd1' | 'd1-http' | 'postgres-js' | 'pglite' | 'neon-http' | 'mysql2'
+  driver: DrizzleDriver
   /**
    * The single schema entry module. A string is convenient for applications
    * using one dialect; a dialect map selects exactly one entry for the
