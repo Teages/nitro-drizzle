@@ -9,19 +9,30 @@ export default antfu(
   // file class is owned by exactly one config — later flat configs override
   // the same rule for the same file, so the classes must not overlap. Tests
   // and the playground are unbounded.
-  {
-    // Server slices: own domain + contracts only.
-    name: 'domain-boundaries/runtime-code',
-    files: ['src/*/runtime/**/*.ts'],
+  // Server slices: own domain + contracts only. no-restricted-imports cannot
+  // express "every domain except my own" in one shared config, so each slice
+  // with a runtime tree gets its own entry that bans every other domain.
+  ...(['configuration', 'dev-database', 'studio'] as const).map(slice => ({
+    name: `domain-boundaries/runtime-code/${slice}`,
+    files: [`src/${slice}/runtime/**/*.ts`],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
-          group: ['**/nitro-module/**', '**/cloudflare/**', '**/schema-artifacts/**', '**/virtual-client/**', '**/database/**'],
+          group: [
+            '**/nitro-module/**',
+            '**/cloudflare/**',
+            '**/schema-artifacts/**',
+            '**/virtual-client/**',
+            '**/database/**',
+            ...(['configuration', 'dev-database', 'studio'] as const)
+              .filter(other => other !== slice)
+              .map(other => `**/${other}/**`),
+          ],
           message: 'Server slices may only import their own domain and contracts.',
         }],
       }],
     },
-  },
+  })),
   {
     // Cross-domain vocabulary: zero internal dependencies.
     name: 'domain-boundaries/contracts',

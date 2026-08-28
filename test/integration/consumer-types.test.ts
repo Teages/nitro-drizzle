@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
 import { resolveDrizzleConfig } from '../../src/configuration/resolve'
 import { generateDrizzleArtifacts } from '../../src/schema-artifacts/generate'
+import { packRepository } from './pack'
 
 const execFileAsync = promisify(execFile)
 const repoRoot = process.cwd()
@@ -39,15 +40,10 @@ describe('published package consumer types', () => {
   it('typechecks Nitro augmentations from the real tarball', async () => {
     // Given: a packed tarball laid out like an installed dependency
     const rootDir = await createTemporaryRoot()
-    await execFileAsync('pnpm', [
-      'pack',
-      `--pack-destination=${rootDir}`,
-    ], { cwd: repoRoot })
-    const [tarball] = (await readdir(rootDir)).filter(file => file.endsWith('.tgz'))
-    expect(tarball).toBeDefined()
+    const tarballPath = await packRepository(rootDir)
     const packageDir = join(rootDir, 'node_modules', '@teages', 'nitro-drizzle')
     await mkdir(packageDir, { recursive: true })
-    await execFileAsync('tar', ['-xzf', join(rootDir, tarball), '-C', packageDir, '--strip-components=1'])
+    await execFileAsync('tar', ['-xzf', tarballPath, '-C', packageDir, '--strip-components=1'])
     const shipped = await readdir(packageDir)
     expect(shipped).toContain('dist')
 
