@@ -6,10 +6,10 @@
  * `src/virtual-client/runtime-config.ts`.
  */
 declare module '#drizzle/config' {
-  import type { DatabaseConnection, DrizzleClientDriver, DrizzleLocalDriver } from '../public'
+  import type { DatabaseConnection, DrizzleClientDriver, DrizzleDialect, DrizzleLocalDriver } from '@teages/nitro-drizzle'
 
-  export const drizzleConfig: {
-    readonly dialect: 'sqlite' | 'postgresql' | 'mysql'
+  export interface DrizzleRuntimeConfig {
+    readonly dialect: DrizzleDialect
     readonly driver: DrizzleClientDriver
     readonly devMock: boolean
     readonly devEngine?: DrizzleLocalDriver
@@ -21,5 +21,7 @@ declare module '#drizzle/config' {
     }
     readonly connection: DatabaseConnection
   }
+
+  export const drizzleConfig: DrizzleRuntimeConfig
   export function useDrizzleConnection(): DatabaseConnection
 }
