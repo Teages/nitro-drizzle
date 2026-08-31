@@ -2,7 +2,7 @@ import type {} from '@nuxt/nitro-server'
 import type { DrizzleOptions } from '../types'
 
 import { env } from 'node:process'
-import { addVitePlugin, createResolver, defineNuxtModule } from '@nuxt/kit'
+import { addVitePlugin, createResolver, defineNuxtModule, logger } from '@nuxt/kit'
 import { DEV_ENV_FLAG } from '../dev-database/resolve'
 import drizzleDevtool from '../devtool'
 import DrizzleModule from '../nitro-module/module'
@@ -18,10 +18,10 @@ export default defineNuxtModule<DrizzleOptions>({
     nuxt.hook('nitro:config', (config) => {
       config.modules ??= []
       config.modules.push(DrizzleModule)
-      // An explicit `drizzle` block in nitro config takes precedence over the Nuxt module options.
-      if (!config.drizzle) {
-        config.drizzle = options
+      if (config.drizzle) {
+        logger.warn('drizzle config in `nitro.drizzle` will be ignored')
       }
+      config.drizzle = options
     })
 
     // The Vite DevTools dock is only usable when the studio route will
