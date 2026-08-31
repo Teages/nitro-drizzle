@@ -64,7 +64,7 @@ afterEach(async () => {
 })
 
 describe('package surface', () => {
-  it('exposes exactly the three public entries with a default condition', async () => {
+  it('exposes exactly the four public entries with a default condition', async () => {
     // Given — the published contract consumed by nitro.config.ts loading
     const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as {
       exports: Record<string, Record<string, string>>
@@ -73,8 +73,8 @@ describe('package surface', () => {
 
     // Then — jiti reloads nitro.config.ts through CJS require.resolve, which
     // throws ERR_PACKAGE_PATH_NOT_EXPORTED without the default condition
-    expect(Object.keys(packageJson.exports)).toEqual(['.', './nuxt', './config'])
-    for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config']] as const) {
+    expect(Object.keys(packageJson.exports)).toEqual(['.', './nuxt', './config', './types'])
+    for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config'], ['./types', 'types']] as const) {
       expect(packageJson.exports[entry]).toEqual({
         types: `./dist/${distFile}.d.mts`,
         import: `./dist/${distFile}.mjs`,
@@ -108,7 +108,7 @@ describe('package surface', () => {
       return typeof input === 'string' ? [input] : input
     })
 
-    // Then — the exact entry set: the three ABI facades at their
+    // Then — the exact entry set: the four ABI facades at their
     // dist-determining locations plus the four runtime entries
     expect([...entries].sort()).toEqual([
       './src/config.ts',
@@ -118,6 +118,7 @@ describe('package surface', () => {
       './src/nuxt.ts',
       './src/studio/runtime/handler.ts',
       './src/studio/runtime/plugin.ts',
+      './src/types.ts',
     ])
     for (const input of entries) {
       expect(existsSync(input), `${input} must exist`).toBe(true)

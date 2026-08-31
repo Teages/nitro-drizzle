@@ -22,6 +22,11 @@
       "types": "./dist/config.d.mts",
       "import": "./dist/config.mjs",
       "default": "./dist/config.mjs"
+    },
+    "./types": {
+      "types": "./dist/types.d.mts",
+      "import": "./dist/types.mjs",
+      "default": "./dist/types.mjs"
     }
   },
   "module": "./dist/index.mjs",
@@ -35,6 +40,9 @@
       ],
       "./config": [
         "./dist/config.d.mts"
+      ],
+      "./types": [
+        "./dist/types.d.mts"
       ]
     }
   },
