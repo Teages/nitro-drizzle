@@ -1,10 +1,22 @@
-import { defineHandler, HTTPError } from 'nitro/h3'
+import { defineHandler, getQuery, HTTPError, redirect } from 'nitro/h3'
 import { useDrizzle } from '#drizzle'
 import { drizzleConfig } from '#drizzle/config'
 import { createStudioExecutor } from './adapters'
-import { handleStudioProtocol, studioCorsHeaders, validateStudioAuthorization } from './protocol'
+import { handleStudioProtocol, studioCorsHeaders, studioDevtoolsRedirect, validateStudioAuthorization } from './protocol'
 
 export default defineHandler(async (event) => {
+  // The devtools iframe navigates here without credentials, so its keyed GET
+  // is settled before the bearer gate that governs the Studio proxy traffic.
+  const redirectUrl = studioDevtoolsRedirect({
+    key: import.meta.DRIZZLE_DEVTOOLS_KEY,
+    method: event.req.method,
+    open: getQuery(event).open,
+    studio: drizzleConfig.devStudio,
+  })
+  if (redirectUrl !== undefined) {
+    return redirect(redirectUrl)
+  }
+
   const authError = validateStudioAuthorization(
     import.meta.DRIZZLE_STUDIO_KEY,
     event.req.headers.get('authorization'),
