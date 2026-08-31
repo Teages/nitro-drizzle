@@ -15,7 +15,8 @@ declare module '#drizzle/config' {
     readonly devEngine?: DrizzleLocalDriver
     readonly devConnection?: string
     readonly devStudio?: {
-      readonly port: number | undefined
+      /** Port the proxy binds: the configured one, or an ephemeral port probed by the module. */
+      readonly port: number
       readonly silent: boolean
       readonly studioUrl: string
     }

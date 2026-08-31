@@ -1,7 +1,8 @@
 import type { RunningStudioServer } from '../../../src/studio/runtime/proxy-server'
 import { createServer } from 'node:net'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { closeStudioServer, startStudioServer, studioLifecycle, studioLink } from '../../../src/studio/runtime/proxy-server'
+import { studioLink } from '../../../src/studio/link'
+import { closeStudioServer, startStudioServer, studioLifecycle } from '../../../src/studio/runtime/proxy-server'
 
 const dispatched: Request[] = []
 
@@ -27,12 +28,6 @@ async function reservePort(): Promise<number> {
 }
 
 describe('startStudioServer', () => {
-  it('listens on a random port inside the wide range', async () => {
-    const server = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch })
-    expect(server.port).toBeGreaterThanOrEqual(20000)
-    expect(server.port).toBeLessThan(65536)
-  })
-
   it('honors a fixed port when one is configured', async () => {
     const port = await reservePort()
     const server = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port, dispatch })
@@ -54,7 +49,7 @@ describe('startStudioServer', () => {
 
   it('rejects requests whose origin is not the Studio web app', async () => {
     // Given
-    const server = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch })
+    const server = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port: await reservePort(), dispatch })
 
     // When
     const evil = await fetch(`http://127.0.0.1:${server.port}/`, {
@@ -78,6 +73,7 @@ describe('startStudioServer', () => {
     const server = await startStudioServer({
       authorization: 'Bearer test',
       studioUrl: 'http://localhost:5173/studio/',
+      port: await reservePort(),
       dispatch,
     })
 
@@ -100,7 +96,7 @@ describe('startStudioServer', () => {
 
   it('forwards Studio requests to the internal route with the auth key attached', async () => {
     // Given
-    const server = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch })
+    const server = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port: await reservePort(), dispatch })
 
     // When — a request shaped like the Studio frontend's own traffic
     const response = await fetch(`http://127.0.0.1:${server.port}/`, {
@@ -121,10 +117,10 @@ describe('startStudioServer', () => {
 
   it('replaces the previous proxy on restart', async () => {
     // Given
-    const first = await startStudioServer({ authorization: 'Bearer one', studioUrl: STUDIO_URL, dispatch })
+    const first = await startStudioServer({ authorization: 'Bearer one', studioUrl: STUDIO_URL, port: await reservePort(), dispatch })
 
     // When
-    const second = await startStudioServer({ authorization: 'Bearer two', studioUrl: STUDIO_URL, dispatch })
+    const second = await startStudioServer({ authorization: 'Bearer two', studioUrl: STUDIO_URL, port: await reservePort(), dispatch })
     const previous = await fetch(`http://127.0.0.1:${first.port}/`, {
       method: 'POST',
       headers: { origin: STUDIO_URL },
@@ -140,8 +136,8 @@ describe('startStudioServer', () => {
     // Given — the plugin does not await startup, so two starts can overlap;
     // without serialization one listener escapes the global and survives close
     const [first, second] = await Promise.all([
-      startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch }),
-      startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch }),
+      startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port: await reservePort(), dispatch }),
+      startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port: await reservePort(), dispatch }),
     ])
 
     // When
@@ -165,8 +161,8 @@ describe('startStudioServer', () => {
 
     // When
     const [first, second] = await Promise.all([
-      startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch }),
-      next.startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch }),
+      startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port: await reservePort(), dispatch }),
+      next.startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port: await reservePort(), dispatch }),
     ])
     await next.closeStudioServer()
 
@@ -184,8 +180,8 @@ describe('startStudioServer', () => {
   it('keeps the replacement proxy alive when a superseded generation closes late', async () => {
     // Given — generation B replaced generation A; A's nitro close hook fires
     // after B already started
-    const first = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch })
-    const second = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch })
+    const first = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port: await reservePort(), dispatch })
+    const second = await startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port: await reservePort(), dispatch })
     expect(second.port).not.toBe(first.port)
 
     // When — A closes only what it started
@@ -221,10 +217,11 @@ describe('studioLifecycle', () => {
     // startup is gated so the hook observably runs first
     let release: (() => void) | undefined
     const gate = new Promise<void>(resolvePromise => release = resolvePromise)
+    const port = await reservePort()
     let started: RunningStudioServer | undefined
     const lifecycle = studioLifecycle({
       start: () => gate.then(() =>
-        startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, dispatch })),
+        startStudioServer({ authorization: 'Bearer test', studioUrl: STUDIO_URL, port, dispatch })),
       onReady: server => (started = server),
     })
 

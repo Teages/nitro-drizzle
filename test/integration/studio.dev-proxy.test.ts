@@ -83,6 +83,44 @@ async function postStudio(url: string, body: unknown, origin?: string): Promise<
   })
 }
 
+/**
+ * Polls the studio proxy until a query returns the expected rows — the
+ * signal that the reloaded worker generation has pushed the new schema and
+ * rebound the same port.
+ */
+async function pollProxyQuery(
+  proxyUrl: string,
+  sql: string,
+  expected: unknown[][],
+  timeoutMs: number,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  let lastFailure = 'request never ran'
+  while (Date.now() < deadline) {
+    try {
+      const response = await postStudio(proxyUrl, {
+        type: 'proxy',
+        data: { sql, method: 'values', mode: 'array' },
+      }, 'https://local.drizzle.studio')
+      if (response.ok) {
+        const rows = await response.json()
+        if (JSON.stringify(rows) === JSON.stringify(expected)) {
+          return
+        }
+        lastFailure = `rows were ${JSON.stringify(rows)}`
+      }
+      else {
+        lastFailure = `HTTP ${response.status}`
+      }
+    }
+    catch (error) {
+      lastFailure = String(error)
+    }
+    await new Promise(resolvePromise => setTimeout(resolvePromise, 500))
+  }
+  throw new Error(`Studio proxy never served ${JSON.stringify(sql)}: ${lastFailure}`)
+}
+
 describe('studio dev proxy end to end', () => {
   it('serves, guards, reloads, and shuts down the studio proxy', { timeout: 300_000 }, async () => {
     // Given — a throwaway Nitro app with the dev database and a fixed studio
@@ -155,13 +193,20 @@ export default defineConfig({
       // it: the superseded generation's close hook must not kill the new one
       await writeFile(schemaFile, `import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// reload marker
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey(),
   name: text('name').notNull(),
 })
+
+export const reloadMarkers = sqliteTable('reload_markers', {
+  id: integer('id').primaryKey(),
+})
 `)
-      await waitForOutput(new RegExp(`(?:[\\s\\S]*Drizzle Studio: \\S+port=${studioPort}){2}`), 90_000)
+      // The link prints once per dev-server run (the module resolves the
+      // port, so it is stable across worker generations); the reload itself
+      // is observed through the proxy: only the new generation pushes and
+      // serves the new table on the same port.
+      await pollProxyQuery(proxyUrl, 'SELECT count(*) AS n FROM reload_markers', [[0]], 90_000)
       const afterReload = await postStudio(proxyUrl, { type: 'init' }, 'https://local.drizzle.studio')
       expect(afterReload.status).toBe(200)
 

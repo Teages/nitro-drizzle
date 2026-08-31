@@ -1,10 +1,7 @@
 import process from 'node:process'
-import { consola } from 'consola'
 import { definePlugin } from 'nitro'
 import { drizzleConfig } from '#drizzle/config'
-import { startStudioServer, studioLifecycle, studioLink } from './proxy-server'
-
-const logger = consola.withTag('@teages/nitro-drizzle/studio')
+import { startStudioServer, studioLifecycle } from './proxy-server'
 
 /**
  * Starts the local Drizzle Studio proxy for the dev database. The web app at
@@ -32,16 +29,11 @@ export default definePlugin((nitro) => {
   const lifecycle = studioLifecycle({
     start: () => startStudioServer({
       authorization: `Bearer ${authKey}`,
+      port: studio.port,
       studioUrl: studio.studioUrl,
-      ...(studio.port === undefined ? {} : { port: studio.port }),
     }),
-    onReady: (server) => {
-      if (!studio.silent) {
-        logger.info(`Drizzle Studio: ${studioLink(studio.studioUrl, server.port)}`)
-      }
-    },
     onError: (error: unknown) => {
-      logger.error('Failed to start the Drizzle Studio proxy:', error)
+      console.error('Failed to start the Drizzle Studio proxy:', error)
     },
   })
 
