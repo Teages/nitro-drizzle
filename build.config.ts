@@ -9,6 +9,7 @@ export default defineBuildConfig({
         './src/nuxt.ts',
         './src/types.ts',
         './src/config.ts',
+        './src/devtool.ts',
       ],
       rolldown: { external: ['@nuxt/schema'] },
       dts: { build: true },

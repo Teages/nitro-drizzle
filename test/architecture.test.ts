@@ -7,7 +7,7 @@ import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
 import { DEV_DATABASE_SEED_HOOK } from '../src/dev-database/contracts'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
-import { STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
+import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
 
 const CONNECTION_ALIAS_KEY = '@teages/nitro-drizzle/runtime/connection'
 const CONNECTION_IMPORT = `import { resolveDrizzleConnection } from '${CONNECTION_ALIAS_KEY}'`
@@ -64,7 +64,7 @@ afterEach(async () => {
 })
 
 describe('package surface', () => {
-  it('exposes exactly the four public entries with a default condition', async () => {
+  it('exposes exactly the five public entries with a default condition', async () => {
     // Given — the published contract consumed by nitro.config.ts loading
     const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as {
       exports: Record<string, Record<string, string>>
@@ -73,8 +73,8 @@ describe('package surface', () => {
 
     // Then — jiti reloads nitro.config.ts through CJS require.resolve, which
     // throws ERR_PACKAGE_PATH_NOT_EXPORTED without the default condition
-    expect(Object.keys(packageJson.exports)).toEqual(['.', './nuxt', './config', './types'])
-    for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config'], ['./types', 'types']] as const) {
+    expect(Object.keys(packageJson.exports)).toEqual(['.', './nuxt', './config', './types', './devtool'])
+    for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config'], ['./types', 'types'], ['./devtool', 'devtool']] as const) {
       expect(packageJson.exports[entry]).toEqual({
         types: `./dist/${distFile}.d.mts`,
         import: `./dist/${distFile}.mjs`,
@@ -108,12 +108,13 @@ describe('package surface', () => {
       return typeof input === 'string' ? [input] : input
     })
 
-    // Then — the exact entry set: the four ABI facades at their
+    // Then — the exact entry set: the five ABI facades at their
     // dist-determining locations plus the four runtime entries
     expect([...entries].sort()).toEqual([
       './src/config.ts',
       './src/configuration/runtime/connection.ts',
       './src/dev-database/runtime/plugin.ts',
+      './src/devtool.ts',
       './src/index.ts',
       './src/nuxt.ts',
       './src/studio/runtime/handler.ts',
@@ -183,6 +184,9 @@ describe('runtime wiring', () => {
     expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
     expect(nitro.options.traceDeps).toContain('drizzle-orm*')
     expect(nitro.options.replace[STUDIO_AUTH_KEY_MARKER]).toBeTypeOf('string')
+    // And — without the `devtool` Vite plugin in this process, the keyed GET
+    // redirect on the studio route stays closed
+    expect(nitro.options.replace[DEVTOOLS_KEY_MARKER]).toBeUndefined()
     await nitro.close()
   })
 })

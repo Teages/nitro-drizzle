@@ -27,6 +27,11 @@
       "types": "./dist/types.d.mts",
       "import": "./dist/types.mjs",
       "default": "./dist/types.mjs"
+    },
+    "./devtool": {
+      "types": "./dist/devtool.d.mts",
+      "import": "./dist/devtool.mjs",
+      "default": "./dist/devtool.mjs"
     }
   },
   "module": "./dist/index.mjs",
@@ -43,6 +48,9 @@
       ],
       "./types": [
         "./dist/types.d.mts"
+      ],
+      "./devtool": [
+        "./dist/devtool.d.mts"
       ]
     }
   },
