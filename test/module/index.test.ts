@@ -3,6 +3,8 @@ import { join } from 'node:path'
 import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import NitroDrizzle from '../../src'
+import { DEVTOOLS_KEY_MARKER } from '../../src/studio/contracts'
+import { provideDevtoolsKey } from '../../src/studio/devtools-key'
 
 const temporaryDirectories: string[] = []
 
@@ -401,6 +403,33 @@ describe('@teages/nitro-drizzle', () => {
         process.env.NITRO_DRIZZLE_DEV_MOCK = previous
       }
     }
+  })
+
+  it('injects the devtool plugin session key into the studio route', async () => {
+    // Given — the `devtool` Vite plugin minted this key before any build
+    // started; the studio route's keyed GET redirect only exists when the
+    // module bakes the same value into the build
+    const openKey = provideDevtoolsKey()
+    const rootDir = await createTemporaryRoot()
+
+    // When
+    const nitro = await createNitro({
+      rootDir,
+      serverDir: './server',
+      buildDir: './node_modules/.nitro',
+      dev: true,
+      modules: [NitroDrizzle],
+      drizzle: {
+        dialect: 'sqlite',
+        driver: 'node-sqlite',
+        schemaPath: './server/db/schema.ts',
+        devMock: true,
+      },
+    })
+
+    // Then — the marker carries the published key as a JSON string literal
+    expect(JSON.parse(nitro.options.replace[DEVTOOLS_KEY_MARKER] as string)).toBe(openKey)
+    await nitro.close()
   })
 
   it('rejects the dev database for the mysql dialect', async () => {
