@@ -38,8 +38,8 @@
   },
   "scripts": {
     "build": "obuild",
-    "dev:prepare": "pnpm -C playground prepare",
-    "dev": "pnpm -C playground dev",
+    "dev:prepare": "pnpm -F './playgrounds/*' prepare",
+    "dev": "pnpm -C playgrounds/nitro dev",
     "lint": "eslint --cache .",
     "lint:fix": "eslint --cache --fix .",
     "prepack": "pnpm build",

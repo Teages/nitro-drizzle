@@ -1,5 +1,5 @@
 import { defineConfig } from 'nitro'
-import NitroDrizzle from '../src/index'
+import NitroDrizzle from '../../src/index'
 
 export default defineConfig({
   modules: [NitroDrizzle],
@@ -18,7 +18,16 @@ export default defineConfig({
       url: 'file:./playground.db',
     },
   },
-  experimental: {
-    tasks: true,
+  typescript: {
+    generatedTypesDir: './.nitro',
+    generateTsConfig: true,
+    tsConfig: {
+      compilerOptions: {
+        noEmit: true,
+        paths: {
+          '~/*': ['./*'],
+        },
+      },
+    },
   },
 })
