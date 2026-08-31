@@ -9,7 +9,7 @@ export default defineConfig({
     dialect: 'sqlite',
     driver: 'libsql',
     schemaPath: './server/db/schema.ts',
-    dev: {
+    devMock: {
       studio: {
         port: 4983,
       },
