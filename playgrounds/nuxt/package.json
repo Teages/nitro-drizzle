@@ -10,6 +10,8 @@
     "preview": "nuxt preview"
   },
   "dependencies": {
+    "drizzle-orm": "1.0.0-rc.4",
+    "nitro": "^3.0.260610-beta",
     "nuxt": "npm:nuxt-nightly@5.0.0-29801588.e458891d",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0"
