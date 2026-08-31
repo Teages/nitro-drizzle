@@ -126,10 +126,9 @@ describe('published runtime entries in Nitro dev', () => {
     for (const dependency of [
       'drizzle-kit',
       'drizzle-orm',
+      'get-port-please',
       'nitro',
-      'pathe',
       'rolldown',
-      'scule',
       'srvx',
     ]) {
       await symlink(
