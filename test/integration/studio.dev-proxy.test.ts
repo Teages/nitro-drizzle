@@ -72,7 +72,7 @@ function spawnDevServer(rootDir: string, port: number) {
   }
 }
 
-async function postStudio(url: string, body: unknown, origin?: string): Promise<Response> {
+async function postStudio(url: string, body: unknown, origin?: string, signal?: AbortSignal): Promise<Response> {
   return fetch(url, {
     method: 'POST',
     headers: {
@@ -80,6 +80,7 @@ async function postStudio(url: string, body: unknown, origin?: string): Promise<
       ...(origin === undefined ? {} : { origin }),
     },
     body: JSON.stringify(body),
+    signal,
   })
 }
 
@@ -101,7 +102,7 @@ async function pollProxyQuery(
       const response = await postStudio(proxyUrl, {
         type: 'proxy',
         data: { sql, method: 'values', mode: 'array' },
-      }, 'https://local.drizzle.studio')
+      }, 'https://local.drizzle.studio', AbortSignal.timeout(deadline - Date.now()))
       if (response.ok) {
         const rows = await response.json()
         if (JSON.stringify(rows) === JSON.stringify(expected)) {
@@ -132,7 +133,7 @@ async function waitUntilRouteAnswers(url: string, timeoutMs: number): Promise<Re
   let lastFailure = 'request never ran'
   while (Date.now() < deadline) {
     try {
-      const response = await postStudio(url, { type: 'init' })
+      const response = await postStudio(url, { type: 'init' }, undefined, AbortSignal.timeout(deadline - Date.now()))
       if (response.status !== 503) {
         return response
       }
