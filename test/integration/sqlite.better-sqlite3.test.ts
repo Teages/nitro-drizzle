@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import Database from 'better-sqlite3'
 import { describe, expect, it } from 'vitest'
-import { createDrizzleClient } from '../../src/drivers/create'
+import { createDrizzleClient } from '../../src/database/client'
 import { applyMigrationWorkspace, createMigrationWorkspace } from './fixtures'
 
 describe('better-sqlite3 driver integration', () => {

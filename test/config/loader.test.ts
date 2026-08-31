@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   DrizzleConfigError,
   loadDrizzleConfig,
-} from '../../src/config/loader'
+} from '../../src/config'
 
 const temporaryDirectories: string[] = []
 

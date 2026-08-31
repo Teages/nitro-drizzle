@@ -1,7 +1,7 @@
-import type { DrizzleDriverConfig } from '../../../src/drivers/contracts'
+import type { ResolvedDrizzleConfig } from '../../../src/configuration/resolve'
 import type { DrizzleOptions } from '../../../src/types'
 import { describe, expect, it } from 'vitest'
-import { generateVirtualClientSource } from '../../../src/codegen/client/generate'
+import { generateVirtualClientSource } from '../../../src/virtual-client/generate'
 
 const driverImports = {
   'better-sqlite3': 'drizzle-orm/better-sqlite3',
@@ -29,7 +29,7 @@ const dialects = {
   'mysql2': 'mysql',
 } as const satisfies Record<DrizzleOptions['driver'], DrizzleOptions['dialect']>
 
-function generate(config: DrizzleDriverConfig): string {
+function generate(config: ResolvedDrizzleConfig): string {
   return generateVirtualClientSource({
     config,
     schemaImport: '#drizzle/schema',
@@ -54,7 +54,7 @@ describe('generateVirtualClientSource', () => {
     it(`generates a lazy singleton useDrizzle for ${driver}`, () => {
       // Given
       const typedDriver: DrizzleOptions['driver'] = driver
-      const config: DrizzleDriverConfig = {
+      const config = {
         dialect: dialects[typedDriver],
         driver: typedDriver,
       }
@@ -78,10 +78,7 @@ describe('generateVirtualClientSource', () => {
 
   it('resolves the D1 binding per request via useRequest', () => {
     // Given
-    const config: DrizzleDriverConfig = {
-      dialect: 'sqlite',
-      driver: 'd1',
-    }
+    const config = { dialect: 'sqlite', driver: 'd1' } as const
 
     // When
     const source = generate(config)
@@ -99,10 +96,7 @@ describe('generateVirtualClientSource', () => {
 
   it('validates d1-http credentials on first use instead of module load', () => {
     // Given
-    const config: DrizzleDriverConfig = {
-      dialect: 'sqlite',
-      driver: 'd1-http',
-    }
+    const config = { dialect: 'sqlite', driver: 'd1-http' } as const
 
     // When
     const source = generate(config)
@@ -116,11 +110,11 @@ describe('generateVirtualClientSource', () => {
 
   it('creates per-request Hyperdrive clients for postgres-js', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'postgresql',
       driver: 'postgres-js',
       connection: { hyperdriveId: 'hyperdrive-id' },
-    }
+    } as const
 
     // When
     const source = generate(config)
@@ -136,11 +130,11 @@ describe('generateVirtualClientSource', () => {
 
   it('creates per-request Hyperdrive clients for mysql2', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'mysql',
       driver: 'mysql2',
       connection: { hyperdriveId: 'hyperdrive-id' },
-    }
+    } as const
 
     // When
     const source = generate(config)
@@ -152,14 +146,14 @@ describe('generateVirtualClientSource', () => {
 
   it('does not bake static connection values into the client source', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'postgresql',
       driver: 'postgres-js',
       connection: {
         connectionString: 'postgres://localhost/database',
         databaseId: 'unrelated-d1-id',
       },
-    }
+    } as const
 
     // When
     const source = generate(config)
@@ -173,7 +167,7 @@ describe('generateVirtualClientSource', () => {
 
   it('does not serialize D1 HTTP credentials into generated source', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'sqlite',
       driver: 'd1-http',
       connection: {
@@ -181,7 +175,7 @@ describe('generateVirtualClientSource', () => {
         apiToken: 'CANARY_D1_SECRET',
         databaseId: 'CANARY_D1_DATABASE',
       },
-    }
+    } as const
 
     // When
     const source = generate(config)
@@ -194,10 +188,10 @@ describe('generateVirtualClientSource', () => {
 
   it('does not require driver and dialect to match', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'sqlite',
       driver: 'postgres-js',
-    }
+    } as const
 
     // When
     const source = generate(config)
@@ -208,10 +202,10 @@ describe('generateVirtualClientSource', () => {
 
   it('combines schema and relations imported from one generated artifact', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'sqlite',
       driver: 'libsql',
-    }
+    } as const
 
     // When
     const source = generateVirtualClientSource({
@@ -230,10 +224,10 @@ describe('generateVirtualClientSource', () => {
 describe('generateVirtualClientSource dev database', () => {
   it('bakes the resolved memory connection into sqlite engines', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'sqlite',
       driver: 'node-sqlite',
-    }
+    } as const
 
     // When
     const source = generateVirtualClientSource({
@@ -250,10 +244,10 @@ describe('generateVirtualClientSource dev database', () => {
 
   it('bakes a file connection for libsql', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'sqlite',
       driver: 'libsql',
-    }
+    } as const
 
     // When
     const source = generateVirtualClientSource({
@@ -270,10 +264,10 @@ describe('generateVirtualClientSource dev database', () => {
 
   it('omits the connection for an in-memory pglite', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'postgresql',
       driver: 'pglite',
-    }
+    } as const
 
     // When
     const source = generateVirtualClientSource({
@@ -290,10 +284,10 @@ describe('generateVirtualClientSource dev database', () => {
 
   it('bakes a data directory for pglite', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'postgresql',
       driver: 'pglite',
-    }
+    } as const
 
     // When
     const source = generateVirtualClientSource({
@@ -335,7 +329,7 @@ describe('generateVirtualClientSource full output', () => {
 
     it(`snapshots the runtime-resolved source for ${driver}`, () => {
       // Given
-      const config: DrizzleDriverConfig = { dialect, driver }
+      const config = { dialect, driver }
 
       // When
       const source = generateVirtualClientSource({
@@ -350,7 +344,7 @@ describe('generateVirtualClientSource full output', () => {
 
     it(`snapshots the dev-baked source for ${driver}`, () => {
       // Given
-      const config: DrizzleDriverConfig = { dialect, driver }
+      const config = { dialect, driver }
 
       // When
       const source = generateVirtualClientSource({
@@ -367,10 +361,10 @@ describe('generateVirtualClientSource full output', () => {
 
   it('snapshots the dev source for an in-memory pglite', () => {
     // Given
-    const config: DrizzleDriverConfig = {
+    const config = {
       dialect: 'postgresql',
       driver: 'pglite',
-    }
+    } as const
 
     // When
     const source = generateVirtualClientSource({

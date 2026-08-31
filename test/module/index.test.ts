@@ -261,7 +261,7 @@ describe('@teages/nitro-drizzle', () => {
 
     // And — the dev plugin is registered
     expect(nitro.options.plugins).toContainEqual(
-      expect.stringContaining('runtime/plugins/dev-db'),
+      expect.stringContaining('dev-database/runtime/plugin'),
     )
     expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
     await nitro.close()
@@ -358,7 +358,7 @@ describe('@teages/nitro-drizzle', () => {
       .toContain(`from 'drizzle-orm/postgres-js'`)
     expect(nitro.options.virtual['#drizzle/schema']).toBeDefined()
     expect(nitro.options.plugins).not.toContainEqual(
-      expect.stringContaining('runtime/plugins/dev-db'),
+      expect.stringContaining('dev-database/runtime/plugin'),
     )
     await nitro.close()
   })

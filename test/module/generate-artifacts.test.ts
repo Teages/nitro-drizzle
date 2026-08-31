@@ -2,8 +2,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
-import { generateDrizzleArtifacts } from '../../src/codegen/generate'
-import { resolveDrizzleConfig } from '../../src/config/resolve'
+import { resolveDrizzleConfig } from '../../src/configuration/resolve'
+import { generateDrizzleArtifacts } from '../../src/schema-artifacts/generate'
 
 const temporaryDirectories: string[] = []
 

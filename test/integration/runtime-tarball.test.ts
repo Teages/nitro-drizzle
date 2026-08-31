@@ -1,11 +1,12 @@
 import type { AddressInfo } from 'node:net'
 import { execFile, spawn } from 'node:child_process'
-import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
+import { packRepository } from './pack'
 
 const execFileAsync = promisify(execFile)
 const repoRoot = process.cwd()
@@ -96,20 +97,25 @@ describe('published runtime entries in Nitro dev', () => {
     // Given an isolated consumer installed from the actual package tarball
     const rootDir = await mkdtemp(join(tmpdir(), 'nitro-drizzle-runtime-tarball-'))
     temporaryDirectories.push(rootDir)
-    await execFileAsync('pnpm', ['pack', '--pack-destination', rootDir], {
-      cwd: repoRoot,
-      env: process.env,
-    })
-    const tarball = (await readdir(rootDir)).find(name => name.endsWith('.tgz'))
-    if (tarball === undefined) {
-      throw new Error('pnpm pack did not create a tarball.')
-    }
+    const tarball = await packRepository(rootDir)
     const packageDir = join(rootDir, 'node_modules/@teages/nitro-drizzle')
     await mkdir(packageDir, { recursive: true })
     await execFileAsync(
       'tar',
-      ['-xzf', join(rootDir, tarball), '-C', packageDir, '--strip-components=1'],
+      ['-xzf', tarball, '-C', packageDir, '--strip-components=1'],
     )
+    // Every obuild entry ships a file: obuild mirrors src/ paths into dist/,
+    // so an entry pointing at a moved-away source silently drops its output.
+    for (const entry of [
+      'index',
+      'config/index',
+      'configuration/runtime/connection',
+      'dev-database/runtime/plugin',
+      'studio/runtime/plugin',
+      'studio/runtime/handler',
+    ]) {
+      await access(join(packageDir, 'dist', `${entry}.mjs`))
+    }
     await writeFile(
       join(rootDir, 'package.json'),
       `${JSON.stringify({

@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
-import { loadDrizzleConfig } from '../../src/config/loader'
+import { loadDrizzleConfig } from '../../src/config'
 
 const execFileAsync = promisify(execFile)
 const temporaryDirectories: string[] = []

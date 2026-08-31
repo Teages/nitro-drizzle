@@ -1,7 +1,7 @@
-import type { DrizzleConfigInput } from '../../src/config/types'
+import type { DrizzleConfigInput } from '../../src/configuration/resolve'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../../src/config/resolve'
+import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../../src/configuration/resolve'
 
 const serverDir = '/workspace/server'
 const originalDatabaseUrl = process.env.DATABASE_URL

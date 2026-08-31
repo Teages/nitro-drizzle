@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { expandNitroEnv, findEnvTemplateKeys } from '../../src/config/env'
+import { expandNitroEnv, findEnvTemplateKeys } from '../../src/configuration/env'
 
 describe('expandNitroEnv', () => {
   it('expands {{VAR}} templates in string values when enabled', () => {

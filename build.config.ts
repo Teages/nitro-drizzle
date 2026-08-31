@@ -3,11 +3,11 @@ import { defineBuildConfig } from 'obuild/config'
 export default defineBuildConfig({
   entries: [
     './src/index.ts',
-    './src/config/loader.ts',
-    './src/runtime/connection.ts',
-    './src/runtime/plugins/dev-db.ts',
-    './src/runtime/plugins/studio.ts',
-    './src/runtime/studio/handler.ts',
+    './src/config/index.ts',
+    './src/configuration/runtime/connection.ts',
+    './src/dev-database/runtime/plugin.ts',
+    './src/studio/runtime/plugin.ts',
+    './src/studio/runtime/handler.ts',
   ].map(input => ({
     type: 'bundle' as const,
     input,

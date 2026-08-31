@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createD1HttpTransport } from '../../src/drivers/d1-http'
+import { createD1HttpTransport } from '../../src/database/d1-http'
 
 const credentials = {
   accountId: 'account-id',

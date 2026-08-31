@@ -5,7 +5,7 @@ import { describe, expect, it } from 'bun:test'
 // run on Node regardless of the launcher; the test API comes from `bun:test`
 // directly (typed via test/bun-test.d.ts).
 import { drizzle } from 'drizzle-orm/bun-sqlite'
-import { createStudioExecutor } from '../../../src/runtime/studio/adapters'
+import { createStudioExecutor } from '../../../src/studio/runtime/adapters'
 
 describe('bun-sqlite studio executor', () => {
   it('returns object rows in object mode and array rows in array mode', async () => {

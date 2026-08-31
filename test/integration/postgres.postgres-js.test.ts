@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite'
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { createDrizzleClient } from '../../src/drivers/create'
+import { createDrizzleClient } from '../../src/database/client'
 import { applyMigrationWorkspace, createMigrationWorkspace } from './fixtures'
 
 describe('postgres-js driver integration', () => {

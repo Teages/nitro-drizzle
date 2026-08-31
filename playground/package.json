@@ -1,4 +1,5 @@
 {
+  "name": "playground",
   "type": "module",
   "scripts": {
     "prepare": "nitro prepare",

@@ -1,8 +1,8 @@
 import type { Nitro } from 'nitro/types'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DEV_ENV_FLAG } from '../../src/config/dev-database'
-import { DEFAULT_STUDIO_URL, DrizzleDevStudioError, resolveDevStudio } from '../../src/config/dev-studio'
-import { resolveDrizzleModuleContext } from '../../src/module/context'
+import { DEV_ENV_FLAG } from '../../src/dev-database/resolve'
+import { resolveDrizzleModuleContext } from '../../src/nitro-module/context'
+import { DEFAULT_STUDIO_URL, DrizzleDevStudioError, resolveDevStudio } from '../../src/studio/resolve'
 
 describe('resolveDevStudio', () => {
   it('applies defaults for undefined and true', () => {

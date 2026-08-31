@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { createSchemaEntry, createSchemaTypes } from '../../../src/codegen/schema/entry'
+import { createSchemaEntry, createSchemaTypes } from '../../../src/schema-artifacts/schema-entry'
 
 const rootDir = '/workspace/project'
 
