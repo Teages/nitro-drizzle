@@ -48,6 +48,7 @@
     "build": "obuild",
     "dev:prepare": "pnpm -F './playgrounds/*' prepare",
     "dev": "pnpm -C playgrounds/nitro dev",
+    "dev:nuxt": "pnpm -C playgrounds/nuxt dev",
     "lint": "eslint --cache .",
     "lint:fix": "eslint --cache --fix .",
     "prepack": "pnpm build",

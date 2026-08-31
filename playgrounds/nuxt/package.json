@@ -1,0 +1,17 @@
+{
+  "name": "nuxt",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "prepare": "nuxt prepare",
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
+  },
+  "dependencies": {
+    "nuxt": "npm:nuxt-nightly@5.0.0-29801588.e458891d",
+    "vue": "^3.5.41",
+    "vue-router": "^5.2.0"
+  }
+}
