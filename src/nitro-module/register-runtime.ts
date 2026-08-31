@@ -1,20 +1,28 @@
 import type { Nitro } from 'nitro/types'
 import type { ResolvedDevDatabase } from '../dev-database/contracts'
 import { randomUUID } from 'node:crypto'
-import { basename, resolve } from 'node:path'
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../studio/contracts'
 import { readDevtoolsKey } from '../studio/devtools-key'
 
 const PACKAGE_NAME = '@teages/nitro-drizzle'
 
 function runtimeEntry(path: string): string {
-  // In source builds this file lives under `src/nitro-module`; in the
-  // published bundle its code is folded into `dist/index.mjs`. Normalize both
-  // layouts before resolving the separately built runtime entries.
-  const packageRoot = basename(import.meta.dirname) === 'nitro-module'
-    ? resolve(import.meta.dirname, '..')
-    : import.meta.dirname
-  return resolve(packageRoot, path)
+  // This code can run from src/nitro-module, dist/index.mjs, or an obuild
+  // shared chunk under dist/_chunks — probe upward for whichever directory
+  // actually holds the runtime entries instead of assuming one layout.
+  let dir = import.meta.dirname
+  while (
+    !existsSync(resolve(dir, 'dev-database/runtime/plugin.mjs'))
+    && !existsSync(resolve(dir, 'dev-database/runtime/plugin.ts'))
+  ) {
+    if (dir === resolve(dir, '..')) {
+      throw new Error(`Could not locate the ${PACKAGE_NAME} runtime entries from ${import.meta.dirname}.`)
+    }
+    dir = resolve(dir, '..')
+  }
+  return resolve(dir, path)
 }
 
 export function configureRuntime(
