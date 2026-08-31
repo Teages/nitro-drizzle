@@ -13,6 +13,11 @@
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
     },
+    "./nuxt": {
+      "types": "./dist/nuxt.d.mts",
+      "import": "./dist/nuxt.mjs",
+      "default": "./dist/nuxt.mjs"
+    },
     "./config": {
       "types": "./dist/config/index.d.mts",
       "import": "./dist/config/index.mjs",
@@ -24,6 +29,9 @@
     "*": {
       ".": [
         "./dist/index.d.mts"
+      ],
+      "./nuxt": [
+        "./dist/nuxt.d.mts"
       ],
       "./config": [
         "./dist/config/index.d.mts"
@@ -51,10 +59,14 @@
   "peerDependencies": {
     "drizzle-kit": "1.0.0-rc.4",
     "drizzle-orm": "1.0.0-rc.4",
-    "nitro": ">=3.0.260610-beta <4"
+    "nitro": ">=3.0.260610-beta <4",
+    "nuxt": ">=5.0.0"
   },
   "peerDependenciesMeta": {
     "nitro": {
+      "optional": true
+    },
+    "nuxt": {
       "optional": true
     }
   },
