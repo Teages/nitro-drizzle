@@ -1,16 +1,7 @@
 import type { Server } from 'srvx'
-import { randomInt } from 'node:crypto'
 import { serverFetch } from 'nitro/app'
 import { serve } from 'srvx/node'
 import { STUDIO_ROUTE } from '../contracts'
-
-/**
- * Wide random port range: ~15.5 bits of entropy on loopback, so a scanner
- * cannot walk a small, predictable window to find the studio proxy.
- */
-const PORT_MIN = 20000
-const PORT_MAX = 65536
-const PORT_ATTEMPTS = 10
 
 interface StudioServerGlobal {
   __NITRO_DRIZZLE_STUDIO_SERVER__?: Server
@@ -30,8 +21,8 @@ export interface StartStudioServerOptions {
   readonly authorization: string
   /** Base URL of the Studio web app; only its origin may talk to the proxy. */
   readonly studioUrl: string
-  /** Fixed port from `drizzle.devMock.studio.port`; random when omitted. */
-  readonly port?: number
+  /** Port the module resolved (configured or probed); bound exactly, never replaced. */
+  readonly port: number
   /** Overridable in-process dispatch; defaults to the Nitro app fetch. */
   readonly dispatch?: Dispatch
 }
@@ -70,42 +61,32 @@ async function startStudioServerQueued(
   const dispatch = options.dispatch ?? ((request: Request) => serverFetch(request))
   await closeStudioServerLocked()
 
-  // A configured port is a contract: bind it exactly or fail loudly. The
-  // default random mode instead retries within the wide range.
-  const ports = options.port === undefined
-    ? Array.from({ length: PORT_ATTEMPTS }, () => randomInt(PORT_MIN, PORT_MAX))
-    : [options.port]
-
-  let lastError: unknown
-  for (const port of ports) {
-    const server = serve({
-      fetch: request => forwardStudioRequest(request, options.authorization, options.studioUrl, dispatch),
-      gracefulShutdown: false,
-      hostname: '127.0.0.1',
-      port,
-      silent: true,
-    })
-    try {
-      await server.ready()
-      studioServerGlobal.__NITRO_DRIZZLE_STUDIO_SERVER__ = server
-      return {
-        port,
-        close: () => closeStudioServerIfOwner(server),
-      }
-    }
-    catch (error) {
-      if ((error as NodeJS.ErrnoException | undefined)?.code !== 'EADDRINUSE') {
-        throw error
-      }
-      lastError = new Error(
-        options.port === undefined
-          ? `Failed to find a free port for the Drizzle Studio proxy after ${PORT_ATTEMPTS} attempts.`
-          : `Port ${options.port} for the Drizzle Studio proxy is already in use.`,
+  // The module printed the studio link with this port: binding anything
+  // else would desync the link, so an occupied port fails loudly instead.
+  const server = serve({
+    fetch: request => forwardStudioRequest(request, options.authorization, options.studioUrl, dispatch),
+    gracefulShutdown: false,
+    hostname: '127.0.0.1',
+    port: options.port,
+    silent: true,
+  })
+  try {
+    await server.ready()
+  }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException | undefined)?.code === 'EADDRINUSE') {
+      throw new Error(
+        `Port ${options.port} for the Drizzle Studio proxy is already in use.`,
         { cause: error },
       )
     }
+    throw error
   }
-  throw lastError
+  studioServerGlobal.__NITRO_DRIZZLE_STUDIO_SERVER__ = server
+  return {
+    port: options.port,
+    close: () => closeStudioServerIfOwner(server),
+  }
 }
 
 /**
@@ -184,11 +165,4 @@ function closeStudioServerIfOwner(server: Server): Promise<void> {
 async function closeStudioServerLocked(): Promise<void> {
   await studioServerGlobal.__NITRO_DRIZZLE_STUDIO_SERVER__?.close()
   studioServerGlobal.__NITRO_DRIZZLE_STUDIO_SERVER__ = undefined
-}
-
-/** Startup link printed for the user: the Studio web app plus the proxy port. */
-export function studioLink(studioUrl: string, port: number): string {
-  const url = new URL(studioUrl)
-  url.searchParams.set('port', String(port))
-  return url.toString()
 }

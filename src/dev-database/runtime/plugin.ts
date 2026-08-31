@@ -1,4 +1,3 @@
-import { consola } from 'consola'
 import { definePlugin } from 'nitro'
 import { useDrizzle } from '#drizzle'
 import { drizzleConfig } from '#drizzle/config'
@@ -20,7 +19,7 @@ export default definePlugin((nitro) => {
     await nitro.hooks.callHook(DEV_DATABASE_SEED_HOOK)
   })()
   ready.catch((error) => {
-    consola.withTag('@teages/nitro-drizzle/dev').error(
+    console.error(
       'Failed to initialize the dev database:',
       error,
     )

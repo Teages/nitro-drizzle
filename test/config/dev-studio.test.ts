@@ -48,7 +48,7 @@ describe('resolveDevStudio', () => {
 })
 
 /** Minimal Nitro options shape `resolveDrizzleModuleContext` reads. */
-function fakeNitro(dev: boolean): Nitro {
+function fakeNitro(dev: boolean, studio: unknown = { port: 99999 }): Nitro {
   return {
     options: {
       dev,
@@ -58,7 +58,7 @@ function fakeNitro(dev: boolean): Nitro {
         dialect: 'sqlite',
         driver: 'libsql',
         schemaPath: './server/db/schema.ts',
-        devMock: { driver: 'node-sqlite', studio: { port: 99999 } },
+        devMock: { driver: 'node-sqlite', studio },
       },
     },
   } as unknown as Nitro
@@ -69,30 +69,56 @@ describe('studio resolution in module context', () => {
     vi.unstubAllEnvs()
   })
 
-  it('resolves and validates the studio only alongside the dev database', () => {
+  it('resolves and validates the studio only alongside the dev database', async () => {
     // Given — a dev session with an invalid studio port
     vi.stubEnv(DEV_ENV_FLAG, 'true')
 
     // When / Then — the build fails on the invalid dev-only option
-    expect(() => resolveDrizzleModuleContext(fakeNitro(true)))
+    await expect(resolveDrizzleModuleContext(fakeNitro(true)))
+      .rejects
       .toThrow('devMock.studio.port')
   })
 
-  it('ignores an invalid studio config in production builds', () => {
+  it('keeps a configured port as-is', async () => {
+    // Given — a dev session with a valid, fixed studio port
+    vi.stubEnv(DEV_ENV_FLAG, 'true')
+
+    // When
+    const context = await resolveDrizzleModuleContext(fakeNitro(true, { port: 4983 }))
+
+    // Then — the session binds exactly what the user asked for
+    expect(context?.devStudio?.port).toBe(4983)
+  })
+
+  it('probes an ephemeral port when none is configured', async () => {
+    // Given — a dev session relying on the default studio options
+    vi.stubEnv(DEV_ENV_FLAG, 'true')
+
+    // When
+    const context = await resolveDrizzleModuleContext(fakeNitro(true, {}))
+
+    // Then — the module hands the runtime a concrete, bindable port
+    const port = context?.devStudio?.port
+    expect(Number.isInteger(port)).toBe(true)
+    expect(port).toBeGreaterThan(0)
+    expect(port).toBeLessThanOrEqual(65535)
+  })
+
+  it('ignores an invalid studio config in production builds', async () => {
     // When — a production build carries a broken dev-only studio option
-    const context = resolveDrizzleModuleContext(fakeNitro(false))
+    const context = await resolveDrizzleModuleContext(fakeNitro(false))
 
     // Then — dev options are ignored entirely, exactly like `drizzle.devMock`
     expect(context?.devDb).toBeUndefined()
     expect(context?.devStudio).toBeUndefined()
   })
 
-  it('ignores an invalid studio config when dev is disabled by env', () => {
+  it('ignores an invalid studio config when dev is disabled by env', async () => {
     // Given — a dev build whose dev database is switched off via env
     vi.stubEnv(DEV_ENV_FLAG, 'false')
 
     // When
-    const context = resolveDrizzleModuleContext(fakeNitro(true))
+    const context = await resolveDrizzleModuleContext(fakeNitro(true))
 
     // Then — no dev database means no studio resolution or validation
     expect(context?.devDb).toBeUndefined()

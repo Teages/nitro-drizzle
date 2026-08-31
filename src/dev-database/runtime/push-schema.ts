@@ -1,10 +1,7 @@
 import type { SQLWrapper } from 'drizzle-orm'
-import { consola } from 'consola'
 import { sql } from 'drizzle-orm'
 
 export type DevDialect = 'postgresql' | 'sqlite'
-
-const logger = consola.withTag('@teages/nitro-drizzle/dev')
 
 type PushSchema = (
   imports: Record<string, unknown>,
@@ -79,7 +76,7 @@ export async function pushDevSchema(context: {
     client,
   )
   for (const hint of hints) {
-    logger.warn(hint.hint)
+    console.warn(hint.hint)
   }
   await apply()
   return { statements: sqlStatements.length, hints: hints.map(h => h.hint) }

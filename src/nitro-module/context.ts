@@ -1,7 +1,7 @@
 import type { Nitro } from 'nitro/types'
 import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { ResolvedDevDatabase } from '../dev-database/contracts'
-import type { ResolvedDevStudio } from '../studio/resolve'
+import type { StudioSession } from '../studio/resolve'
 import type { DatabaseConnection } from '../types'
 import { env } from 'node:process'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../configuration/resolve'
@@ -11,26 +11,28 @@ import {
   DEV_ENV_FLAG,
   resolveDevDatabase,
 } from '../dev-database/resolve'
-import { resolveDevStudio } from '../studio/resolve'
+import { activateDevStudio, resolveDevStudio } from '../studio/resolve'
 
 export interface DrizzleModuleContext {
   readonly config: ResolvedDrizzleConfig
   readonly schemaPath: string
   readonly relationsExport: string | undefined
   readonly devDb: ResolvedDevDatabase | undefined
-  /** Normalized `drizzle.devMock.studio`; `undefined` means disabled. */
-  readonly devStudio: ResolvedDevStudio | undefined
+  /** Normalized, port-resolved `drizzle.devMock.studio`; `undefined` means disabled. */
+  readonly devStudio: StudioSession | undefined
   readonly userConnection: DatabaseConnection
 }
 
 /**
  * Resolves the module inputs from the Nitro options: the effective Drizzle
  * config with environment connections merged in, plus the dev database when
- * dev mode is active. Returns `undefined` when the module stays disabled.
+ * dev mode is active. The studio session acquires its port here so the rest
+ * of the module — the printed link included — works with a known port.
+ * Returns `undefined` when the module stays disabled.
  */
-export function resolveDrizzleModuleContext(
+export async function resolveDrizzleModuleContext(
   nitro: Nitro,
-): DrizzleModuleContext | undefined {
+): Promise<DrizzleModuleContext | undefined> {
   if (nitro.options.drizzle === undefined) {
     return undefined
   }
@@ -71,19 +73,20 @@ export function resolveDrizzleModuleContext(
     nitro.options.rootDir,
   )
   const devOptions = nitro.options.drizzle.devMock
+  // The studio pairs exclusively with the dev database, so production
+  // builds and env-disabled dev sessions skip resolution entirely — an
+  // invalid `drizzle.devMock.studio` must not fail builds that ignore dev.
+  const devStudio = devDb === undefined
+    ? undefined
+    : resolveDevStudio(
+        devOptions === true || devOptions === undefined ? undefined : devOptions.studio,
+      )
   return {
     config,
     schemaPath,
     relationsExport: nitro.options.drizzle.relationsExport,
     devDb,
-    // The studio pairs exclusively with the dev database, so production
-    // builds and env-disabled dev sessions skip resolution entirely — an
-    // invalid `drizzle.devMock.studio` must not fail builds that ignore dev.
-    devStudio: devDb === undefined
-      ? undefined
-      : resolveDevStudio(
-          devOptions === true || devOptions === undefined ? undefined : devOptions.studio,
-        ),
+    devStudio: devStudio === undefined ? undefined : await activateDevStudio(devStudio),
     userConnection,
   }
 }

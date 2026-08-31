@@ -1,10 +1,18 @@
 import type { DrizzleDevStudioOptions } from '../types'
+import { getRandomPort } from 'get-port-please'
 
 export const DEFAULT_STUDIO_URL = 'https://local.drizzle.studio'
 
 export interface ResolvedDevStudio {
-  /** Fixed proxy port; `undefined` selects a random port per start. */
+  /** Configured proxy port; `undefined` defers to a probed ephemeral port. */
   readonly port: number | undefined
+  readonly silent: boolean
+  readonly studioUrl: string
+}
+
+/** Studio session for the runtime: validated options plus the port to bind. */
+export interface StudioSession {
+  readonly port: number
   readonly silent: boolean
   readonly studioUrl: string
 }
@@ -63,5 +71,18 @@ export function resolveDevStudio(
     port: config.port,
     silent: config.silent ?? false,
     studioUrl,
+  }
+}
+
+/**
+ * Resolves the port to bind: the configured one as-is, otherwise a
+ * kernel-assigned ephemeral port on loopback, which keeps the proxy's
+ * location unguessable without a predictable scan window.
+ */
+export async function activateDevStudio(studio: ResolvedDevStudio): Promise<StudioSession> {
+  return {
+    port: studio.port ?? await getRandomPort('127.0.0.1'),
+    silent: studio.silent,
+    studioUrl: studio.studioUrl,
   }
 }
