@@ -304,6 +304,28 @@ real connection. On the `node-sqlite` engine, array-shape Studio queries need
 Node 22.16+ (`StatementSync.setReturnArrays`); older runtimes surface an
 explicit error instead of silently wrong rows.
 
+With [Vite DevTools](https://devtools.vite.dev) installed, add the plugin from
+`@teages/nitro-drizzle/devtool` for a Drizzle Studio dock tab — no
+copy-pasted link needed:
+
+```ts
+import drizzleDevtool from '@teages/nitro-drizzle/devtool'
+import { nitro } from 'nitro/vite'
+
+export default defineConfig({
+  plugins: [nitro(), drizzleDevtool()],
+})
+```
+
+The Nuxt module wires the plugin itself for dev sessions with the dev
+database — no `vite.plugins` entry needed there.
+
+The tab is an iframe fixed to `/_drizzle/studio`. The plugin mints a
+per-session key, embeds it in the iframe URL, and shares it with the Nitro
+module in the same process; a GET on the studio route redirects to the Studio
+web app only when the `open` query matches that key, and every other request
+keeps meeting the proxy's bearer gate.
+
 ## Cloudflare
 
 With an explicit `d1` `databaseId`, or a PostgreSQL/MySQL `hyperdriveId`, the
