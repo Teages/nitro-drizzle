@@ -1,4 +1,7 @@
 ignoreWorkspaceRootCheck: true
+minimumReleaseAgeExclude:
+  - '@nuxt/*-nightly'
+  - nuxt-nightly
 shellEmulator: true
 
 trustPolicy: no-downgrade
