@@ -121,6 +121,31 @@ async function pollProxyQuery(
   throw new Error(`Studio proxy never served ${JSON.stringify(sql)}: ${lastFailure}`)
 }
 
+/**
+ * The studio link prints at module setup, before the dev server accepts
+ * traffic — Nitro dev answers 503 while the worker is still booting and the
+ * listener may not exist yet — so this polls until the route actually
+ * answers, then lets the caller assert on the response.
+ */
+async function waitUntilRouteAnswers(url: string, timeoutMs: number): Promise<Response> {
+  const deadline = Date.now() + timeoutMs
+  let lastFailure = 'request never ran'
+  while (Date.now() < deadline) {
+    try {
+      const response = await postStudio(url, { type: 'init' })
+      if (response.status !== 503) {
+        return response
+      }
+      lastFailure = 'HTTP 503 (dev server still booting)'
+    }
+    catch (error) {
+      lastFailure = String(error)
+    }
+    await new Promise(resolvePromise => setTimeout(resolvePromise, 500))
+  }
+  throw new Error(`Route ${url} never answered: ${lastFailure}`)
+}
+
 describe('studio dev proxy end to end', () => {
   it('serves, guards, reloads, and shuts down the studio proxy', { timeout: 300_000 }, async () => {
     // Given — a throwaway Nitro app with the dev database and a fixed studio
@@ -166,7 +191,7 @@ export default defineConfig({
       await waitForOutput(studioLink, 90_000)
 
       // And the internal route rejects direct access: no key, no studio
-      const direct = await postStudio(`http://127.0.0.1:${httpPort}/_drizzle/studio`, { type: 'init' })
+      const direct = await waitUntilRouteAnswers(`http://127.0.0.1:${httpPort}/_drizzle/studio`, 90_000)
       expect(direct.status).toBe(401)
 
       // And the proxy only accepts the Studio web app origin
