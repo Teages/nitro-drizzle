@@ -20,12 +20,14 @@ export async function createDrizzleArtifactsLifecycle(
   nitro: Nitro,
   ctx: DrizzleModuleContext,
 ): Promise<DrizzleArtifactsLifecycle> {
-  await generateDrizzleArtifacts({
-    buildDir: nitro.options.buildDir,
-    config: ctx.config,
-    schemaPath: ctx.schemaPath,
-    ...(ctx.relationsExport === undefined ? {} : { relationsExport: ctx.relationsExport }),
-    ...(ctx.devDb?.engine === undefined ? {} : { clientDriver: ctx.devDb.engine }),
+  nitro.hooks.hook('types:extend', async () => {
+    await generateDrizzleArtifacts({
+      buildDir: nitro.options.buildDir,
+      config: ctx.config,
+      schemaPath: ctx.schemaPath,
+      ...(ctx.relationsExport === undefined ? {} : { relationsExport: ctx.relationsExport }),
+      ...(ctx.devDb?.engine === undefined ? {} : { clientDriver: ctx.devDb.engine }),
+    })
   })
 
   const apply = (): void => {

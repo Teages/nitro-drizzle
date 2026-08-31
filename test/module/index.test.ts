@@ -252,7 +252,9 @@ describe('@teages/nitro-drizzle', () => {
     expect(configModule).toContain('"devMock": true')
     expect(configModule).toContain('"driver": "postgres-js"')
 
-    // And — the generated types follow the dev engine
+    // And — the generated types follow the dev engine; artifact generation
+    // defers to the types:extend hook so Nuxt keeps control of the timing
+    await nitro.hooks.callHook('types:extend', { routes: {} })
     const modules = await readFile(
       join(nitro.options.buildDir, 'drizzle/modules.d.ts'),
       'utf8',
