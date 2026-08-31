@@ -86,6 +86,20 @@ describe('package surface', () => {
     }
   })
 
+  it('keeps @nuxt/kit as a runtime dependency, not a dev toolchain entry', async () => {
+    // Given — the nuxt entry imports @nuxt/kit at runtime; without a
+    // dependency entry the import rides on host hoisting and no package
+    // manager enforces a compatible kit version
+    const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as {
+      dependencies: Record<string, string>
+      devDependencies: Record<string, string>
+    }
+
+    // Then
+    expect(packageJson.dependencies['@nuxt/kit']).toBeDefined()
+    expect(packageJson.devDependencies['@nuxt/kit']).toBeUndefined()
+  })
+
   it('builds every obuild entry from an existing source file', () => {
     // Given — obuild mirrors src/ paths into dist/, so an entry pointing at
     // a moved file ships nothing and breaks the published runtime

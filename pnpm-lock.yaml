@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@nuxt/kit':
+        specifier: npm:@nuxt/kit-nightly@5.0.0-29801588.e458891d
+        version: '@nuxt/kit-nightly@5.0.0-29801588.e458891d(confbox@0.2.4)(dotenv@17.4.2)(giget@3.3.1)(jiti@2.7.0)(magic-string@1.2.3)(mlly@1.8.2)(rolldown@1.2.4)(unplugin@3.3.0(esbuild@0.25.12)(rolldown@1.2.4)(vite@8.2.2(@types/node@24.12.4)(esbuild@0.25.12)(jiti@2.7.0)(yaml@2.9.0)))'
       get-port-please:
         specifier: ^3.2.0
         version: 3.2.0
@@ -27,9 +30,6 @@ importers:
       '@libsql/client':
         specifier: ^0.17.4
         version: 0.17.4
-      '@nuxt/kit':
-        specifier: npm:@nuxt/kit-nightly@5.0.0-29801588.e458891d
-        version: '@nuxt/kit-nightly@5.0.0-29801588.e458891d(confbox@0.2.4)(dotenv@17.4.2)(giget@3.3.1)(jiti@2.7.0)(magic-string@1.2.3)(mlly@1.8.2)(rolldown@1.2.4)(unplugin@3.3.0(esbuild@0.25.12)(rolldown@1.2.4)(vite@8.2.2(@types/node@24.12.4)(esbuild@0.25.12)(jiti@2.7.0)(yaml@2.9.0)))'
       '@nuxt/nitro-server':
         specifier: npm:@nuxt/nitro-server-nightly@5.0.0-29801588.e458891d
         version: '@nuxt/nitro-server-nightly@5.0.0-29801588.e458891d(1fb6181c80e3e8ad1a7479bb8a139d8c)'
@@ -715,8 +715,8 @@ packages:
   '@neon-rs/load@0.0.4':
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
 
-  '@nuxt/cli-nightly@4.0.0-20260829-200936-84e7673':
-    resolution: {integrity: sha512-8rnm+GnYmS3UwnXMtj43uojm9OzUTpAo+ZA6njCW42tSfdYYV9MOicv4Z8uGmeDOdm+wPdtjaZod/OkzONUIAw==}
+  '@nuxt/cli-nightly@4.0.0-20260831-075234-8bcf1bc':
+    resolution: {integrity: sha512-D48bEDjBMWa4LieiNkJ8Kq4zl4vjBssaUT4qStbKOv9sKZLp7PIp4dXsEEsDu0sq5CllD+PKUPsEiHtrmEnb5g==}
     engines: {node: ^22.19.0 || ^24.11.0 || >=26.0.0}
     hasBin: true
     peerDependencies:
@@ -4368,7 +4368,7 @@ snapshots:
 
   '@neon-rs/load@0.0.4': {}
 
-  '@nuxt/cli-nightly@4.0.0-20260829-200936-84e7673(@nuxt/schema-nightly@5.0.0-29801588.e458891d)(jiti@2.7.0)(rolldown@1.2.4)':
+  '@nuxt/cli-nightly@4.0.0-20260831-075234-8bcf1bc(@nuxt/schema-nightly@5.0.0-29801588.e458891d)(jiti@2.7.0)(rolldown@1.2.4)':
     dependencies:
       '@clack/prompts': 1.7.0
       args-tokenizer: 0.3.0
@@ -7043,7 +7043,7 @@ snapshots:
   nuxt-nightly@5.0.0-29801588.e458891d(218bea292ea5789a7254dee96f49dfca):
     dependencies:
       '@dxup/nuxt': 0.5.10(esbuild@0.25.12)(magicast@0.5.4)(rolldown@1.2.4)(vite@8.2.2)
-      '@nuxt/cli': '@nuxt/cli-nightly@4.0.0-20260829-200936-84e7673(@nuxt/schema-nightly@5.0.0-29801588.e458891d)(jiti@2.7.0)(rolldown@1.2.4)'
+      '@nuxt/cli': '@nuxt/cli-nightly@4.0.0-20260831-075234-8bcf1bc(@nuxt/schema-nightly@5.0.0-29801588.e458891d)(jiti@2.7.0)(rolldown@1.2.4)'
       '@nuxt/devtools': 4.0.0-alpha.15(da741a53b98accebf7ee177b352663f0)
       '@nuxt/kit': '@nuxt/kit-nightly@5.0.0-29801588.e458891d(confbox@0.2.4)(dotenv@17.4.2)(giget@3.3.1)(jiti@2.7.0)(magic-string@1.2.3)(mlly@1.8.2)(rolldown@1.2.4)(unplugin@3.3.0(esbuild@0.25.12)(rolldown@1.2.4)(vite@8.2.2(@types/node@24.12.4)(esbuild@0.25.12)(jiti@2.7.0)(yaml@2.9.0)))'
       '@nuxt/nitro-server': '@nuxt/nitro-server-nightly@5.0.0-29801588.e458891d(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(@oxc-project/types@0.144.0)(better-sqlite3@13.0.3)(chokidar@5.0.0)(confbox@0.2.4)(db0@0.3.4(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(better-sqlite3@13.0.3)(drizzle-orm@1.0.0-rc.4(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(mysql2@3.23.3(@types/node@24.12.4))(postgres@3.4.9)(zod@4.5.4))(mysql2@3.23.3(@types/node@24.12.4)))(dotenv@17.4.2)(drizzle-orm@1.0.0-rc.4(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(mysql2@3.23.3(@types/node@24.12.4))(postgres@3.4.9)(zod@4.5.4))(esbuild@0.25.12)(giget@3.3.1)(jiti@2.7.0)(lightningcss@1.33.0)(mlly@1.8.2)(mysql2@3.23.3(@types/node@24.12.4))(nuxt-nightly@5.0.0-29801588.e458891d)(ofetch@2.0.0-alpha.3)(rolldown@1.2.4)(typescript@6.0.3)(unplugin@3.3.0(esbuild@0.25.12)(rolldown@1.2.4)(vite@8.2.2(@types/node@24.12.4)(esbuild@0.25.12)(jiti@2.7.0)(yaml@2.9.0)))(vite@8.2.2)'
@@ -7209,7 +7209,7 @@ snapshots:
   nuxt-nightly@5.0.0-29801588.e458891d(f7702b7ba872b2e702807f9ed82c155d):
     dependencies:
       '@dxup/nuxt': 0.5.10(esbuild@0.25.12)(magicast@0.5.4)(rolldown@1.2.4)(vite@8.2.2)
-      '@nuxt/cli': '@nuxt/cli-nightly@4.0.0-20260829-200936-84e7673(@nuxt/schema-nightly@5.0.0-29801588.e458891d)(jiti@2.7.0)(rolldown@1.2.4)'
+      '@nuxt/cli': '@nuxt/cli-nightly@4.0.0-20260831-075234-8bcf1bc(@nuxt/schema-nightly@5.0.0-29801588.e458891d)(jiti@2.7.0)(rolldown@1.2.4)'
       '@nuxt/devtools': 4.0.0-alpha.15(3b8c796f147a41b9857c9c929fb57822)
       '@nuxt/kit': '@nuxt/kit-nightly@5.0.0-29801588.e458891d(confbox@0.2.4)(dotenv@17.4.2)(giget@3.3.1)(jiti@2.7.0)(magic-string@1.2.3)(mlly@1.8.2)(rolldown@1.2.4)(unplugin@3.3.0(esbuild@0.25.12)(rolldown@1.2.4)(vite@8.2.2(@types/node@24.12.4)(esbuild@0.25.12)(jiti@2.7.0)(yaml@2.9.0)))'
       '@nuxt/nitro-server': '@nuxt/nitro-server-nightly@5.0.0-29801588.e458891d(2efb1e5d3d11e7923867cf13d3dc33a4)'

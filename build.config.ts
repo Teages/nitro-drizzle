@@ -17,9 +17,6 @@ export default defineBuildConfig({
     dts: { build: true },
   })),
   hooks: {
-    // The Nuxt entry must share the @nuxt/kit singleton of the host Nuxt
-    // process — a bundled copy loses access to the Nuxt instance context.
-    // These are devDependencies, so obuild does not externalize them itself.
     rolldownConfig(config) {
       const { external } = config
       const base: readonly (string | RegExp)[]
@@ -28,10 +25,8 @@ export default defineBuildConfig({
           : external === undefined || typeof external === 'function' ? [] : [external]
       config.external = [
         ...base,
-        '@nuxt/kit',
         '@nuxt/schema',
         '@nuxt/nitro-server',
-        /^@nuxt\/kit\//,
         /^@nuxt\/schema\//,
         /^@nuxt\/nitro-server\//,
       ]
