@@ -11,13 +11,8 @@ interface DevtoolsKeyGlobal {
   [DEVTOOLS_KEY_GLOBAL]?: string
 }
 
-/**
- * Publishes the devtools key the studio route's redirect gate compares
- * against. Called without arguments it mints a key once per process —
- * repeated factory calls (Nuxt instantiates several vite configs) must not
- * invalidate the URL an already-registered dock embeds. An explicit key
- * always overwrites, which lets tests pin a known value.
- */
+// Mints once per process: Nuxt instantiates several vite configs, and a
+// remint would invalidate the URL an already-registered dock embeds.
 export function provideDevtoolsKey(key?: string): string {
   const devtoolsGlobal = globalThis as DevtoolsKeyGlobal
   if (key !== undefined) {
@@ -28,11 +23,6 @@ export function provideDevtoolsKey(key?: string): string {
   return devtoolsGlobal[DEVTOOLS_KEY_GLOBAL]
 }
 
-/**
- * Reads the published key from the Nitro module's build step. `undefined`
- * means the `devtool` plugin never ran in this process, and the studio
- * route keeps its redirect closed.
- */
 export function readDevtoolsKey(): string | undefined {
   return (globalThis as DevtoolsKeyGlobal)[DEVTOOLS_KEY_GLOBAL]
 }

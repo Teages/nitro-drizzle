@@ -36,10 +36,7 @@ function isBproxyRepeats(value: unknown): boolean {
     && value <= BPROXY_MAX_REPEATS
 }
 
-/**
- * Facts the `init` response is derived from. The engine and dev connection
- * come from the generated `#drizzle/config` virtual module.
- */
+/** Inputs to the Studio `init` response, taken from `#drizzle/config`. */
 export interface StudioInitContext {
   readonly dialect: DrizzleDialect
   readonly engine: DrizzleLocalDriver

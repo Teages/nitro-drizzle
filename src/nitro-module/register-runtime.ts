@@ -50,12 +50,7 @@ export function configureRuntime(
   nitro.options.alias['@teages/nitro-drizzle/runtime/connection'] = runtimeEntry('configuration/runtime/connection')
 }
 
-/**
- * Wires the built-in Drizzle Studio for dev-database sessions: an internal
- * route executing the Studio protocol plus a runtime plugin that serves the
- * loopback proxy the web app connects to. The per-session auth key is baked
- * into the build via `replace`, so non-dev builds never enable the route.
- */
+/** The auth key is baked in via `replace` — non-dev builds never get the route. */
 export function configureStudioRuntime(nitro: Nitro): void {
   if (!nitro.options.dev) {
     return

@@ -2,12 +2,8 @@ import type { Plugin } from 'vite'
 import { STUDIO_ROUTE } from './studio/contracts'
 import { provideDevtoolsKey } from './studio/devtools-key'
 
-// The `devtools` hook and its context come from @vitejs/devtools-kit's module
-// augmentation, which is still an experimental 0.x API. Declaring the slice
-// this plugin consumes keeps the published entry free of that type dependency
-// (consumers without the kit installed still typecheck) and the runtime
-// behaves the same either way: without DevTools the hook is simply never
-// called.
+// Declared locally so the published entry carries no type dependency on
+// @vitejs/devtools-kit (still an experimental 0.x API).
 interface DevtoolsSetupContext {
   docks: {
     register: (entry: {
@@ -28,10 +24,7 @@ interface DevtoolsPlugin extends Plugin {
 
 /**
  * Adds a Drizzle Studio tab to [Vite DevTools](https://devtools.vite.dev):
- * an iframe dock fixed to the internal studio route, which redirects the
- * keyed GET from the iframe to the Studio web app. The key is minted here —
- * before any build starts, so plugin ordering never matters — and reaches
- * the Nitro module through a process global.
+ * an iframe dock on the internal studio route.
  *
  * Serve-only on purpose: DevTools invokes `devtools.setup` in build mode too
  * (unless a plugin opts out via `capabilities`), but the studio route and its

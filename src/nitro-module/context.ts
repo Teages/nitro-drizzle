@@ -23,13 +23,7 @@ export interface DrizzleModuleContext {
   readonly userConnection: DatabaseConnection
 }
 
-/**
- * Resolves the module inputs from the Nitro options: the effective Drizzle
- * config with environment connections merged in, plus the dev database when
- * dev mode is active. The studio session acquires its port here so the rest
- * of the module — the printed link included — works with a known port.
- * Returns `undefined` when the module stays disabled.
- */
+/** The studio session resolves its port here so the printed link matches the bound one. */
 export async function resolveDrizzleModuleContext(
   nitro: Nitro,
 ): Promise<DrizzleModuleContext | undefined> {

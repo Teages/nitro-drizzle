@@ -1,7 +1,4 @@
-/**
- * Internal Nitro route the local proxy dispatches to. It is never part of
- * the public API surface and answers with 404 when the studio is disabled.
- */
+/** Internal Nitro route — never part of the public API. */
 export const STUDIO_ROUTE = '/_drizzle/studio'
 
 /**
