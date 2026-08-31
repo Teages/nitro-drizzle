@@ -19,9 +19,9 @@
       "default": "./dist/nuxt.mjs"
     },
     "./config": {
-      "types": "./dist/config/index.d.mts",
-      "import": "./dist/config/index.mjs",
-      "default": "./dist/config/index.mjs"
+      "types": "./dist/config.d.mts",
+      "import": "./dist/config.mjs",
+      "default": "./dist/config.mjs"
     }
   },
   "module": "./dist/index.mjs",
@@ -34,7 +34,7 @@
         "./dist/nuxt.d.mts"
       ],
       "./config": [
-        "./dist/config/index.d.mts"
+        "./dist/config.d.mts"
       ]
     }
   },

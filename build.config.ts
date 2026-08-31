@@ -4,7 +4,7 @@ export default defineBuildConfig({
   entries: [
     './src/index.ts',
     './src/nuxt.ts',
-    './src/config/index.ts',
+    './src/config.ts',
     './src/configuration/runtime/connection.ts',
     './src/dev-database/runtime/plugin.ts',
     './src/studio/runtime/plugin.ts',

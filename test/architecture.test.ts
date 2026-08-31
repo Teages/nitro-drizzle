@@ -74,7 +74,7 @@ describe('package surface', () => {
     // Then — jiti reloads nitro.config.ts through CJS require.resolve, which
     // throws ERR_PACKAGE_PATH_NOT_EXPORTED without the default condition
     expect(Object.keys(packageJson.exports)).toEqual(['.', './nuxt', './config'])
-    for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config/index']] as const) {
+    for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config']] as const) {
       expect(packageJson.exports[entry]).toEqual({
         types: `./dist/${distFile}.d.mts`,
         import: `./dist/${distFile}.mjs`,
@@ -97,7 +97,7 @@ describe('package surface', () => {
     // Then — the exact entry set: the three ABI facades at their
     // dist-determining locations plus the four runtime entries
     expect([...entries].sort()).toEqual([
-      './src/config/index.ts',
+      './src/config.ts',
       './src/configuration/runtime/connection.ts',
       './src/dev-database/runtime/plugin.ts',
       './src/index.ts',
