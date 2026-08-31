@@ -1,5 +1,5 @@
 import type {} from '@nuxt/nitro-server'
-import type { DrizzleOptions } from '../index'
+import type { DrizzleOptions } from '../types'
 
 import { createResolver, defineNuxtModule } from '@nuxt/kit'
 import DrizzleModule from '../nitro-module/module'
