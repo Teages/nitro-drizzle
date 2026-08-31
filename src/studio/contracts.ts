@@ -13,3 +13,12 @@ export const STUDIO_ROUTE = '/_drizzle/studio'
  * definition itself.
  */
 export const STUDIO_AUTH_KEY_MARKER = ['import', 'meta', 'DRIZZLE_STUDIO_KEY'].join('.')
+
+/**
+ * Compile-time replacement marker for the per-session devtools key, minted by
+ * the `devtool` Vite plugin and shared through a process global. Without the
+ * plugin (and the replacement it triggers) every access reads as `undefined`
+ * and the redirect stays closed. Assembled from parts for the same reason as
+ * the studio marker above.
+ */
+export const DEVTOOLS_KEY_MARKER = ['import', 'meta', 'DRIZZLE_DEVTOOLS_KEY'].join('.')
