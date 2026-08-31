@@ -3,7 +3,7 @@ import { defineBuildConfig } from 'obuild/config'
 export default defineBuildConfig({
   entries: [
     './src/index.ts',
-    './src/config/loader.ts',
+    './src/config/index.ts',
     './src/configuration/runtime/connection.ts',
     './src/dev-database/runtime/plugin.ts',
     './src/studio/runtime/plugin.ts',
