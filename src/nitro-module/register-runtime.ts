@@ -1,19 +1,28 @@
 import type { Nitro } from 'nitro/types'
 import type { ResolvedDevDatabase } from '../dev-database/contracts'
 import { randomUUID } from 'node:crypto'
-import { basename, resolve } from 'node:path'
-import { STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../studio/contracts'
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../studio/contracts'
+import { readDevtoolsKey } from '../studio/devtools-key'
 
 const PACKAGE_NAME = '@teages/nitro-drizzle'
 
 function runtimeEntry(path: string): string {
-  // In source builds this file lives under `src/nitro-module`; in the
-  // published bundle its code is folded into `dist/index.mjs`. Normalize both
-  // layouts before resolving the separately built runtime entries.
-  const packageRoot = basename(import.meta.dirname) === 'nitro-module'
-    ? resolve(import.meta.dirname, '..')
-    : import.meta.dirname
-  return resolve(packageRoot, path)
+  // This code can run from src/nitro-module, dist/index.mjs, or an obuild
+  // shared chunk under dist/_chunks — probe upward for whichever directory
+  // actually holds the runtime entries instead of assuming one layout.
+  let dir = import.meta.dirname
+  while (
+    !existsSync(resolve(dir, 'dev-database/runtime/plugin.mjs'))
+    && !existsSync(resolve(dir, 'dev-database/runtime/plugin.ts'))
+  ) {
+    if (dir === resolve(dir, '..')) {
+      throw new Error(`Could not locate the ${PACKAGE_NAME} runtime entries from ${import.meta.dirname}.`)
+    }
+    dir = resolve(dir, '..')
+  }
+  return resolve(dir, path)
 }
 
 export function configureRuntime(
@@ -49,17 +58,16 @@ export function configureRuntime(
   nitro.options.alias['@teages/nitro-drizzle/runtime/connection'] = runtimeEntry('configuration/runtime/connection')
 }
 
-/**
- * Wires the built-in Drizzle Studio for dev-database sessions: an internal
- * route executing the Studio protocol plus a runtime plugin that serves the
- * loopback proxy the web app connects to. The per-session auth key is baked
- * into the build via `replace`, so non-dev builds never enable the route.
- */
+/** The auth key is baked in via `replace` — non-dev builds never get the route. */
 export function configureStudioRuntime(nitro: Nitro): void {
   if (!nitro.options.dev) {
     return
   }
   nitro.options.replace[STUDIO_AUTH_KEY_MARKER] = JSON.stringify(randomUUID())
+  const devtoolsKey = readDevtoolsKey()
+  if (devtoolsKey !== undefined) {
+    nitro.options.replace[DEVTOOLS_KEY_MARKER] = JSON.stringify(devtoolsKey)
+  }
   nitro.options.routes[STUDIO_ROUTE] = {
     handler: runtimeEntry('studio/runtime/handler'),
   }

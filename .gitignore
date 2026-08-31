@@ -1,6 +1,8 @@
 node_modules
 coverage
 dist
+.nitro
+.output
 .DS_Store
 .eslintcache
 *.log*

@@ -7,7 +7,7 @@ import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
 import { DEV_DATABASE_SEED_HOOK } from '../src/dev-database/contracts'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
-import { STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
+import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
 
 const CONNECTION_ALIAS_KEY = '@teages/nitro-drizzle/runtime/connection'
 const CONNECTION_IMPORT = `import { resolveDrizzleConnection } from '${CONNECTION_ALIAS_KEY}'`
@@ -64,7 +64,7 @@ afterEach(async () => {
 })
 
 describe('package surface', () => {
-  it('exposes exactly the two public entries with a default condition', async () => {
+  it('exposes exactly the five public entries with a default condition', async () => {
     // Given — the published contract consumed by nitro.config.ts loading
     const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as {
       exports: Record<string, Record<string, string>>
@@ -73,8 +73,8 @@ describe('package surface', () => {
 
     // Then — jiti reloads nitro.config.ts through CJS require.resolve, which
     // throws ERR_PACKAGE_PATH_NOT_EXPORTED without the default condition
-    expect(Object.keys(packageJson.exports)).toEqual(['.', './config'])
-    for (const [entry, distFile] of [['.', 'index'], ['./config', 'config/index']] as const) {
+    expect(Object.keys(packageJson.exports)).toEqual(['.', './nuxt', './config', './types', './devtool'])
+    for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config'], ['./types', 'types'], ['./devtool', 'devtool']] as const) {
       expect(packageJson.exports[entry]).toEqual({
         types: `./dist/${distFile}.d.mts`,
         import: `./dist/${distFile}.mjs`,
@@ -86,6 +86,20 @@ describe('package surface', () => {
     }
   })
 
+  it('keeps @nuxt/kit as a runtime dependency, not a dev toolchain entry', async () => {
+    // Given — the nuxt entry imports @nuxt/kit at runtime; without a
+    // dependency entry the import rides on host hoisting and no package
+    // manager enforces a compatible kit version
+    const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as {
+      dependencies: Record<string, string>
+      devDependencies: Record<string, string>
+    }
+
+    // Then
+    expect(packageJson.dependencies['@nuxt/kit']).toBeDefined()
+    expect(packageJson.devDependencies['@nuxt/kit']).toBeUndefined()
+  })
+
   it('builds every obuild entry from an existing source file', () => {
     // Given — obuild mirrors src/ paths into dist/, so an entry pointing at
     // a moved file ships nothing and breaks the published runtime
@@ -94,15 +108,18 @@ describe('package surface', () => {
       return typeof input === 'string' ? [input] : input
     })
 
-    // Then — the exact entry set: the two ABI facades at their
+    // Then — the exact entry set: the five ABI facades at their
     // dist-determining locations plus the four runtime entries
     expect([...entries].sort()).toEqual([
-      './src/config/index.ts',
+      './src/config.ts',
       './src/configuration/runtime/connection.ts',
       './src/dev-database/runtime/plugin.ts',
+      './src/devtool.ts',
       './src/index.ts',
+      './src/nuxt.ts',
       './src/studio/runtime/handler.ts',
       './src/studio/runtime/plugin.ts',
+      './src/types.ts',
     ])
     for (const input of entries) {
       expect(existsSync(input), `${input} must exist`).toBe(true)
@@ -167,6 +184,9 @@ describe('runtime wiring', () => {
     expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
     expect(nitro.options.traceDeps).toContain('drizzle-orm*')
     expect(nitro.options.replace[STUDIO_AUTH_KEY_MARKER]).toBeTypeOf('string')
+    // And — without the `devtool` Vite plugin in this process, the keyed GET
+    // redirect on the studio route stays closed
+    expect(nitro.options.replace[DEVTOOLS_KEY_MARKER]).toBeUndefined()
     await nitro.close()
   })
 })

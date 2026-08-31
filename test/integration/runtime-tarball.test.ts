@@ -108,7 +108,7 @@ describe('published runtime entries in Nitro dev', () => {
     // so an entry pointing at a moved-away source silently drops its output.
     for (const entry of [
       'index',
-      'config/index',
+      'config',
       'configuration/runtime/connection',
       'dev-database/runtime/plugin',
       'studio/runtime/plugin',

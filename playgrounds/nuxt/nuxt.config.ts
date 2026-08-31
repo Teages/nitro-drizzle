@@ -1,10 +1,9 @@
-import { defineConfig } from 'nitro'
-import NitroDrizzle from '../src/index'
+// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+  compatibilityDate: '2025-07-15',
+  devtools: { enabled: true },
+  modules: ['../../src/nuxt'],
 
-export default defineConfig({
-  modules: [NitroDrizzle],
-  serverDir: './server',
-  buildDir: './.nitro',
   drizzle: {
     dialect: 'sqlite',
     driver: 'libsql',
@@ -17,8 +16,5 @@ export default defineConfig({
     connection: {
       url: 'file:./playground.db',
     },
-  },
-  experimental: {
-    tasks: true,
   },
 })

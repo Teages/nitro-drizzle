@@ -36,12 +36,7 @@ export interface RunningStudioServer {
   close: () => Promise<void>
 }
 
-/**
- * Start and close share one serial queue: concurrent starts would otherwise
- * race past each other's close step and leave a listener no later
- * `closeStudioServer()` can reach. Queueing makes every start observe (and
- * replace) the previously registered server.
- */
+/** Start and close share one queue so concurrent starts can't race past each other's close. */
 function enqueueLifecycle<T>(run: () => Promise<T>): Promise<T> {
   const result = (studioServerGlobal.__NITRO_DRIZZLE_STUDIO_LIFECYCLE__ ?? Promise.resolve())
     .then(run, run)
@@ -121,12 +116,9 @@ export interface StudioLifecycle {
 }
 
 /**
- * Owns one proxy generation's lifecycle. The close hook must await the
- * startup: when Nitro closes or reloads before the proxy is ready, a
- * synchronous read of the handle would no-op and the still-queued start
- * would land a listener nobody closes. Startup failures are reported through
- * `onError` and otherwise swallowed, so a failed start cannot reject the
- * close hook.
+ * The close hook awaits the startup: closing mid-boot would no-op and let
+ * the queued start land a listener nobody closes. Startup errors go to
+ * `onError` — a failed start must not reject the close hook.
  */
 export function studioLifecycle(options: {
   start: () => Promise<RunningStudioServer>

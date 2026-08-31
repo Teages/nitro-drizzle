@@ -164,8 +164,14 @@ export const users = sqliteTable('users', {
 `)
     const httpPort = await reservePort()
     const studioPort = await reservePort()
+    const devtoolsKey = 'e2e-studio-devtools-key'
     await writeFile(join(rootDir, 'nitro.config.ts'), `import { defineConfig } from 'nitro/config'
 import NitroDrizzle from ${JSON.stringify(resolve(repoRoot, 'src/index'))}
+import { provideDevtoolsKey } from ${JSON.stringify(resolve(repoRoot, 'src/studio/devtools-key'))}
+
+// Stands in for the devtool Vite plugin, which mints this key in the same
+// process before the build starts
+provideDevtoolsKey(${JSON.stringify(devtoolsKey)})
 
 export default defineConfig({
   serverDir: './server',
@@ -194,6 +200,27 @@ export default defineConfig({
       // And the internal route rejects direct access: no key, no studio
       const direct = await waitUntilRouteAnswers(`http://127.0.0.1:${httpPort}/_drizzle/studio`, 90_000)
       expect(direct.status).toBe(401)
+
+      // And the keyed devtools GET redirects to the studio page: the iframe
+      // carries no credentials, so the redirect settles before the bearer gate
+      const devtools = await fetch(
+        `http://127.0.0.1:${httpPort}/_drizzle/studio?open=${devtoolsKey}`,
+        { redirect: 'manual' },
+      )
+      expect(devtools.status).toBe(302)
+      expect(devtools.headers.get('location')).toBe(`https://local.drizzle.studio/?port=${studioPort}`)
+
+      // And any other GET — wrong key, or none — keeps meeting the bearer gate
+      const wrongKey = await fetch(
+        `http://127.0.0.1:${httpPort}/_drizzle/studio?open=not-the-key`,
+        { redirect: 'manual' },
+      )
+      expect(wrongKey.status).toBe(401)
+      const unkeyed = await fetch(
+        `http://127.0.0.1:${httpPort}/_drizzle/studio`,
+        { redirect: 'manual' },
+      )
+      expect(unkeyed.status).toBe(401)
 
       // And the proxy only accepts the Studio web app origin
       const evil = await postStudio(proxyUrl, { type: 'init' }, 'https://evil.example')

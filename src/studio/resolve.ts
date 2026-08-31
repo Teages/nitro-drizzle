@@ -27,11 +27,7 @@ export class DrizzleDevStudioError extends Error {
   }
 }
 
-/**
- * Normalizes `drizzle.devMock.studio`. `false` disables the studio and resolves to
- * `undefined`; `undefined` and `true` apply the defaults. Values are
- * validated up front so a broken config fails the build, not the dev server.
- */
+/** Validates up front so a broken config fails the build, not the dev server. */
 export function resolveDevStudio(
   options: boolean | DrizzleDevStudioOptions | undefined,
 ): ResolvedDevStudio | undefined {

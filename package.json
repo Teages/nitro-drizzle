@@ -13,10 +13,25 @@
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
     },
+    "./nuxt": {
+      "types": "./dist/nuxt.d.mts",
+      "import": "./dist/nuxt.mjs",
+      "default": "./dist/nuxt.mjs"
+    },
     "./config": {
-      "types": "./dist/config/index.d.mts",
-      "import": "./dist/config/index.mjs",
-      "default": "./dist/config/index.mjs"
+      "types": "./dist/config.d.mts",
+      "import": "./dist/config.mjs",
+      "default": "./dist/config.mjs"
+    },
+    "./types": {
+      "types": "./dist/types.d.mts",
+      "import": "./dist/types.mjs",
+      "default": "./dist/types.mjs"
+    },
+    "./devtool": {
+      "types": "./dist/devtool.d.mts",
+      "import": "./dist/devtool.mjs",
+      "default": "./dist/devtool.mjs"
     }
   },
   "module": "./dist/index.mjs",
@@ -25,8 +40,17 @@
       ".": [
         "./dist/index.d.mts"
       ],
+      "./nuxt": [
+        "./dist/nuxt.d.mts"
+      ],
       "./config": [
-        "./dist/config/index.d.mts"
+        "./dist/config.d.mts"
+      ],
+      "./types": [
+        "./dist/types.d.mts"
+      ],
+      "./devtool": [
+        "./dist/devtool.d.mts"
       ]
     }
   },
@@ -38,8 +62,9 @@
   },
   "scripts": {
     "build": "obuild",
-    "dev:prepare": "pnpm -C playground prepare",
-    "dev": "pnpm -C playground dev",
+    "dev:prepare": "pnpm -F './playgrounds/*' prepare",
+    "dev": "pnpm -C playgrounds/nitro dev",
+    "dev:nuxt": "pnpm -C playgrounds/nuxt dev",
     "lint": "eslint --cache .",
     "lint:fix": "eslint --cache --fix .",
     "prepack": "pnpm build",
@@ -51,14 +76,23 @@
   "peerDependencies": {
     "drizzle-kit": "1.0.0-rc.4",
     "drizzle-orm": "1.0.0-rc.4",
-    "nitro": ">=3.0.260610-beta <4"
+    "nitro": ">=3.0.260610-beta <4",
+    "nuxt": ">=5.0.0",
+    "vite": ">=5.0.0"
   },
   "peerDependenciesMeta": {
     "nitro": {
       "optional": true
+    },
+    "nuxt": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
     }
   },
   "dependencies": {
+    "@nuxt/kit": "npm:@nuxt/kit-nightly@5.0.0-29801588.e458891d",
     "get-port-please": "^3.2.0",
     "srvx": "^0.11.16"
   },
@@ -67,6 +101,8 @@
     "@electric-sql/pglite": "^0.5.5",
     "@electric-sql/pglite-socket": "^0.2.8",
     "@libsql/client": "^0.17.4",
+    "@nuxt/nitro-server": "npm:@nuxt/nitro-server-nightly@5.0.0-29801588.e458891d",
+    "@nuxt/schema": "npm:@nuxt/schema-nightly@5.0.0-29801588.e458891d",
     "@tsconfig/node24": "^24.0.5",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.12.4",
@@ -78,10 +114,12 @@
     "eslint": "^10.8.1",
     "mysql2": "^3.23.3",
     "nitro": "^3.0.260610-beta",
+    "nuxt": "npm:nuxt-nightly@5.0.0-29801588.e458891d",
     "obuild": "^0.4.38",
     "pkg-pr-new": "^0.0.88",
     "postgres": "^3.4.9",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vite": "^8.2.2",
     "vitest": "^4.1.10"
   },
   "publishConfig": {

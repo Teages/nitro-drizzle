@@ -2,6 +2,7 @@ import type { DrizzleDialect, DrizzleLocalDriver } from '../../types'
 import type { StudioExecutor, StudioQuery } from './adapters'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
+import { studioLink } from '../link'
 
 /** Protocol version the Studio web app accepts (6 … 6.3). */
 const STUDIO_PROTOCOL_VERSION = '6.3'
@@ -35,10 +36,7 @@ function isBproxyRepeats(value: unknown): boolean {
     && value <= BPROXY_MAX_REPEATS
 }
 
-/**
- * Facts the `init` response is derived from. The engine and dev connection
- * come from the generated `#drizzle/config` virtual module.
- */
+/** Inputs to the Studio `init` response, taken from `#drizzle/config`. */
 export interface StudioInitContext {
   readonly dialect: DrizzleDialect
   readonly engine: DrizzleLocalDriver
@@ -56,6 +54,36 @@ export function validateStudioAuthorization(
     return 'unauthorized'
   }
   return undefined
+}
+
+/** Facts the keyed GET redirect decision is derived from. */
+export interface StudioDevtoolsRedirectInput {
+  /** Per-session devtools key from the `devtool` plugin's replace marker. */
+  readonly key: string | undefined
+  readonly method: string
+  /** Parsed `open` query value; anything but the exact key keeps it closed. */
+  readonly open: unknown
+  /** Studio session the redirect targets; absent when the studio is off. */
+  readonly studio: { readonly studioUrl: string, readonly port: number } | undefined
+}
+
+/**
+ * Resolves the Studio page URL a keyed GET on the studio route redirects to,
+ * or `undefined` when the request is not the devtools iframe's navigation.
+ * The target comes from validated build-time config only — the query key
+ * gates the redirect, it never shapes it, so a leaked key cannot turn the
+ * route into an open redirect.
+ */
+export function studioDevtoolsRedirect(
+  input: StudioDevtoolsRedirectInput,
+): string | undefined {
+  if (input.key === undefined || input.studio === undefined) {
+    return undefined
+  }
+  if (input.method !== 'GET' || input.open !== input.key) {
+    return undefined
+  }
+  return studioLink(input.studio.studioUrl, input.studio.port)
 }
 
 interface StudioProxyData {
