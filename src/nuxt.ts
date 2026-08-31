@@ -1,7 +1,3 @@
-import type { NuxtModule } from '@nuxt/schema'
-import type { DrizzleOptions } from './types'
-import _default from './nuxt-module/module'
-
-export type ModuleOptions = DrizzleOptions
-
-export default _default as NuxtModule<ModuleOptions, ModuleOptions, false>
+export { default } from './nuxt-module/module'
+export type { DrizzleOptions as ModuleOptions } from './types'
+export type * from './types'
