@@ -89,15 +89,17 @@ async function postStudio(url: string, body: unknown, origin?: string, signal?: 
 /**
  * Node's fetch follows the spec and refuses a `Host` header, so proxy
  * traffic shaped for the per-session domain goes over a raw socket with a
- * hand-written request line. HTTP/1.0 keeps the response free of chunked
- * framing and `Connection: close` ends the stream, so the full response
- * drains before the promise settles.
+ * hand-written request line. The Studio web app's HTTP client posts to the
+ * bare `scheme://host:port` root, so `path` defaults to `/`. HTTP/1.0 keeps
+ * the response free of chunked framing and `Connection: close` ends the
+ * stream, so the full response drains before the promise settles.
  */
 function rawStudioRequest(
   port: number,
   host: string,
   body: string,
   origin?: string,
+  path = '/',
 ): Promise<{ status: number, body: string }> {
   return new Promise((resolvePromise, rejectPromise) => {
     const socket = connect(port, '127.0.0.1')
@@ -106,7 +108,7 @@ function rawStudioRequest(
     socket
       .on('connect', () => {
         socket.write([
-          'POST /_drizzle/studio HTTP/1.0',
+          `POST ${path} HTTP/1.0`,
           `Host: ${host}`,
           ...(origin === undefined ? [] : [`Origin: ${origin}`]),
           'Content-Type: application/json',
@@ -284,14 +286,15 @@ export default defineConfig({
       )
       expect(evil.status).toBe(403)
 
-      // And the port-scan shape — the very port the app runs on, even with
-      // the right origin, but no session Host — keeps meeting the bearer
-      // gate: the domain, not the port, is the capability
+      // And the port-scan shape — probing the known route path on the app
+      // host, even with the right origin but no session Host — keeps
+      // meeting the bearer gate: the domain, not the port, is the capability
       const byIp = await rawStudioRequest(
         httpPort,
         `127.0.0.1:${httpPort}`,
         JSON.stringify({ type: 'init' }),
         'https://local.drizzle.studio',
+        '/_drizzle/studio',
       )
       expect(byIp.status).toBe(401)
 
