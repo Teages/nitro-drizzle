@@ -100,8 +100,8 @@ export interface DrizzleDevStudioOptions {
   silent?: boolean
   /**
    * Base URL of the Studio web app. It is used both for the startup link and
-   * as the origin the loopback proxy accepts requests from, so pointing it at
-   * a self-hosted Studio frontend keeps the origin check meaningful.
+   * as the origin the session-host gate accepts, so pointing it at a
+   * self-hosted Studio frontend keeps the origin check meaningful.
    * @default 'https://local.drizzle.studio'
    */
   studioUrl?: string

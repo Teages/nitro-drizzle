@@ -347,7 +347,7 @@ The tab is an iframe fixed to `/_drizzle/studio`. The plugin mints a
 per-session key, embeds it in the iframe URL, and shares it with the Nitro
 module in the same process; a GET on the studio route redirects to the Studio
 web app only when the `open` query matches that key, and every other request
-keeps meeting the proxy's bearer gate.
+keeps meeting the route's bearer gate.
 
 ## Cloudflare
 
