@@ -5,13 +5,18 @@
     "prepare": "nitro prepare",
     "build": "vite build",
     "dev": "vite dev",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "drizzle:check": "drizzle-kit check"
   },
-  "devDependencies": {
+  "dependencies": {
     "@libsql/client": "^0.17.4",
     "@teages/nitro-drizzle": "workspace:*",
+    "drizzle-orm": "1.0.0-rc.4"
+  },
+  "devDependencies": {
+    "@teages/nitro-drizzle": "workspace:*",
     "@types/node": "^24.12.4",
-    "drizzle-orm": "1.0.0-rc.4",
+    "drizzle-kit": "1.0.0-rc.4",
     "nitro": "^3.0.260610-beta",
     "typescript": "^7.0.2",
     "vite": "^8.2.1"
