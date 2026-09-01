@@ -64,7 +64,11 @@ export interface StudioDevtoolsRedirectInput {
   /** Parsed `open` query value; anything but the exact key keeps it closed. */
   readonly open: unknown
   /** Studio session the redirect targets; absent when the studio is off. */
-  readonly studio: { readonly studioUrl: string, readonly port: number } | undefined
+  readonly studio: {
+    readonly studioUrl: string
+    readonly port: number
+    readonly localhostDomain?: string
+  } | undefined
 }
 
 /**
@@ -83,7 +87,7 @@ export function studioDevtoolsRedirect(
   if (input.method !== 'GET' || input.open !== input.key) {
     return undefined
   }
-  return studioLink(input.studio.studioUrl, input.studio.port)
+  return studioLink(input.studio.studioUrl, input.studio.port, input.studio.localhostDomain)
 }
 
 interface StudioProxyData {

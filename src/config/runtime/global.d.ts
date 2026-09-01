@@ -17,6 +17,8 @@ declare module '#drizzle/config' {
     readonly devStudio?: {
       /** Port the proxy binds: the configured one, or an ephemeral port probed by the module. */
       readonly port: number
+      /** Per-session `<uuid>.localhost` host; absent when the security domain is off. */
+      readonly localhostDomain?: string
       readonly silent: boolean
       readonly studioUrl: string
     }

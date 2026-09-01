@@ -17,6 +17,8 @@ export interface RuntimeDrizzleConfig {
   /** Normalized `drizzle.devMock.studio`; only present when the studio is enabled. */
   readonly devStudio?: {
     readonly port: number
+    /** Per-session `<uuid>.localhost` host; absent when the security domain is off. */
+    readonly localhostDomain?: string
     readonly silent: boolean
     readonly studioUrl: string
   }
