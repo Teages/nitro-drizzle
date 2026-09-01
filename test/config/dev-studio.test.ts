@@ -37,14 +37,6 @@ describe('resolveDevStudio', () => {
       expect(() => resolveDevStudio({ studioUrl })).toThrow('devMock.studio.studioUrl')
     }
   })
-
-  it('rejects options removed by the shared-port studio with a migration hint', () => {
-    const removed: ReadonlyArray<Record<string, unknown>> = [{ port: 4983 }, { securityLocalhostDomain: false }]
-    for (const options of removed) {
-      expect(() => resolveDevStudio(options)).toThrow(DrizzleDevStudioError)
-      expect(() => resolveDevStudio(options)).toThrow('has been removed')
-    }
-  })
 })
 
 /** Minimal Nitro options shape `resolveDrizzleModuleContext` reads. */

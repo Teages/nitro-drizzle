@@ -13,16 +13,13 @@ export interface ResolvedDevStudio {
 
 export class DrizzleDevStudioError extends Error {
   constructor(
-    readonly code: 'invalid_url' | 'removed_option',
+    readonly code: 'invalid_url',
     message: string,
   ) {
     super(message)
     this.name = 'DrizzleDevStudioError'
   }
 }
-
-/** Studio options that predate the shared-port design; rejected loudly. */
-const REMOVED_OPTIONS = ['port', 'securityLocalhostDomain'] as const
 
 /** Validates up front so a broken config fails the build, not the dev server. */
 export function resolveDevStudio(
@@ -32,18 +29,6 @@ export function resolveDevStudio(
     return undefined
   }
   const config: DrizzleDevStudioOptions = options === true || options === undefined ? {} : options
-
-  // The studio rides the dev server port behind its session domain now;
-  // silently ignoring the retired knobs would strand migrating configs.
-  const raw = config as Record<string, unknown>
-  for (const removed of REMOVED_OPTIONS) {
-    if (raw[removed] !== undefined) {
-      throw new DrizzleDevStudioError(
-        'removed_option',
-        `drizzle.devMock.studio.${removed} has been removed: the studio shares the dev server port behind its per-session *.localhost host.`,
-      )
-    }
-  }
 
   const studioUrl = config.studioUrl ?? DEFAULT_STUDIO_URL
   let parsed: URL
