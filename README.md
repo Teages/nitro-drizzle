@@ -277,9 +277,12 @@ disables it for a single run, and `NITRO_DRIZZLE_DEV_MOCK_FILE` overrides
 
 Dev-database sessions get the built-in [Drizzle Studio](https://orm.drizzle.team/drizzle-studio)
 automatically: on startup the module serves a loopback proxy on a random port
-and logs a `https://local.drizzle.studio?port=…` link. The web app talks to
-your in-memory dev database directly — the exact same instance the dev server
-runs on — with an origin check and a per-session auth key guarding the proxy.
+and logs a `https://local.drizzle.studio?host=<uuid>.localhost&port=…` link.
+The web app talks to your in-memory dev database directly — the exact same
+instance the dev server runs on — with an origin check, a per-session auth
+key, and a per-session `*.localhost` host guarding the proxy: the hostname is
+unguessable and checked against the `Host` header, so a scanned-open port
+alone grants nothing.
 
 Customize it through `drizzle.devMock.studio`:
 
@@ -291,6 +294,7 @@ export default defineConfig({
     devMock: {
       studio: {
         port: 4983, // fixed port instead of random
+        securityLocalhostDomain: false, // plain localhost instead of <uuid>.localhost
         silent: true, // skip the startup link
         studioUrl: 'http://localhost:5173/studio', // self-hosted Studio frontend
       },
@@ -301,6 +305,15 @@ export default defineConfig({
 
 `studioUrl` drives both the printed link and the origin the proxy accepts, so
 pointing it at a self-hosted Studio frontend keeps the origin check intact.
+
+Browsers resolve `*.localhost` to loopback without DNS (RFC 6761), which is
+what makes the per-session domain work with zero setup. Safari only does so
+since macOS 26 — on older macOS open the link in Chrome or Firefox (the
+module logs a warning there), or set `securityLocalhostDomain: false` to fall
+back to plain `localhost`. To poke the proxy with `curl` while the security
+domain is on, resolve the session hostname explicitly:
+`curl --resolve <uuid>.localhost:<port>:127.0.0.1 http://<uuid>.localhost:<port>/…`.
+
 Set `devMock.studio: false` to disable the built-in studio; without a dev database
 (`drizzle.devMock`) it never starts — use `npx drizzle-kit studio` to inspect a
 real connection. On the `node-sqlite` engine, array-shape Studio queries need
