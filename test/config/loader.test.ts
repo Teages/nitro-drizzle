@@ -59,6 +59,42 @@ export default defineConfig({
   return { rootDir, serverDir, schemaPath, relationsPath }
 }
 
+/** Same layout as `createFixture`, but the `drizzle` block sits in a Nuxt config. */
+async function createNuxtFixture(
+  options: FixtureOptions = {},
+): Promise<Fixture> {
+  const rootDir = await mkdtemp(join(process.cwd(), '.test-drizzle-loader-'))
+  temporaryDirectories.push(rootDir)
+  const serverDir = join(rootDir, 'server')
+  const databaseDir = join(serverDir, 'db')
+  await mkdir(databaseDir, { recursive: true })
+  const schemaPath = join(databaseDir, 'schema.ts')
+  const relationsPath = join(databaseDir, 'relations.ts')
+  const drizzleBody = options.drizzle
+    ?? `{ dialect: 'sqlite', driver: 'libsql', schemaPath: './server/db/schema.ts' }`
+  const drizzleWithConnection = drizzleBody.replace(
+    /\}\s*$/,
+    `,\n  connection: ${options.connection ?? '{ url: \'file:./test.db\' }'},\n}`,
+  )
+  await Promise.all([
+    writeFile(
+      schemaPath,
+      'export const users = { table: "users" }\nexport { relations } from "./relations"\n',
+    ),
+    writeFile(relationsPath, 'export const relations = { users: {} }\n'),
+    writeFile(
+      join(rootDir, 'nuxt.config.ts'),
+      `export default {
+  compatibilityDate: '2025-07-15',
+  drizzle: ${drizzleWithConnection},
+  ${options.experimental === undefined ? '' : `nitro: { experimental: ${options.experimental} },`}
+}
+`,
+    ),
+  ])
+  return { rootDir, serverDir, schemaPath, relationsPath }
+}
+
 afterEach(async () => {
   await Promise.all(
     temporaryDirectories.splice(0).map(path =>
@@ -307,5 +343,101 @@ export default defineConfig({
       password: 'secret',
       database: 'app',
     })
+  })
+
+  it('builds the config from the Nuxt config when a nuxt.config is present', async () => {
+    const fixture = await createNuxtFixture()
+
+    const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
+
+    expect(config.dialect).toBe('turso')
+    expect(config.schema).toEqual([fixture.schemaPath])
+    expect(config.out).toBe(join(fixture.serverDir, 'db/migrations/sqlite'))
+    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+      url: 'file:./test.db',
+    })
+  })
+
+  it('prefers the Nuxt config\'s drizzle block over a Nitro config in the same project', async () => {
+    const fixture = await createNuxtFixture({
+      connection: '{ url: \'file:./from-nuxt.db\' }',
+    })
+    await writeFile(
+      join(fixture.rootDir, 'nitro.config.ts'),
+      `import { defineConfig } from 'nitro/config'
+
+export default defineConfig({
+  serverDir: './server',
+  drizzle: { dialect: 'sqlite', driver: 'libsql', schemaPath: './server/db/schema.ts', connection: { url: 'file:./from-nitro.db' } },
+})
+`,
+    )
+
+    const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
+
+    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+      url: 'file:./from-nuxt.db',
+    })
+  })
+
+  it('reads the Nitro config in a Nuxt project when framework is forced', async () => {
+    const fixture = await createNuxtFixture({
+      connection: '{ url: \'file:./from-nuxt.db\' }',
+    })
+    await writeFile(
+      join(fixture.rootDir, 'nitro.config.ts'),
+      `import { defineConfig } from 'nitro/config'
+
+export default defineConfig({
+  serverDir: './server',
+  drizzle: { dialect: 'sqlite', driver: 'libsql', schemaPath: './server/db/schema.ts', connection: { url: 'file:./from-nitro.db' } },
+})
+`,
+    )
+
+    const config = await loadDrizzleConfig({
+      cwd: fixture.rootDir,
+      framework: 'nitro',
+    })
+
+    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+      url: 'file:./from-nitro.db',
+    })
+  })
+
+  it('expands {{VAR}} templates from the Nuxt config\'s nitro.experimental.envExpansion', async () => {
+    const fixture = await createNuxtFixture({
+      connection: `{ url: '{{TEST_LOADER_DATABASE_URL}}' }`,
+      experimental: '{ envExpansion: true }',
+    })
+    const previous = process.env.TEST_LOADER_DATABASE_URL
+    process.env.TEST_LOADER_DATABASE_URL = 'libsql://expanded'
+    try {
+      const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
+      expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+        url: 'libsql://expanded',
+      })
+    }
+    finally {
+      if (previous === undefined) {
+        delete process.env.TEST_LOADER_DATABASE_URL
+      }
+      else {
+        process.env.TEST_LOADER_DATABASE_URL = previous
+      }
+    }
+  })
+
+  it('fails when the Nuxt config has no drizzle dialect and driver', async () => {
+    const rootDir = await mkdtemp(join(process.cwd(), '.test-drizzle-loader-'))
+    temporaryDirectories.push(rootDir)
+    await writeFile(
+      join(rootDir, 'nuxt.config.ts'),
+      `export default { compatibilityDate: '2025-07-15' }\n`,
+    )
+
+    await expect(
+      loadDrizzleConfig({ cwd: rootDir }),
+    ).rejects.toThrow(DrizzleConfigError)
   })
 })
