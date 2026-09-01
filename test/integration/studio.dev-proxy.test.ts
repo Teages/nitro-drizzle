@@ -1,7 +1,7 @@
-import type { Buffer } from 'node:buffer'
+import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { createServer } from 'node:net'
+import { connect, createServer } from 'node:net'
 import { join, resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -85,12 +85,56 @@ async function postStudio(url: string, body: unknown, origin?: string, signal?: 
 }
 
 /**
+ * Node's fetch follows the spec and refuses a `Host` header, so proxy
+ * traffic shaped for the per-session domain goes over a raw socket with a
+ * hand-written request line. HTTP/1.0 keeps the response free of chunked
+ * framing and `Connection: close` ends the stream, so the full response
+ * drains before the promise settles.
+ */
+function rawStudioRequest(
+  port: number,
+  host: string,
+  body: string,
+  origin?: string,
+): Promise<{ status: number, body: string }> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const socket = connect(port, '127.0.0.1')
+    socket.setTimeout(10_000)
+    let raw = ''
+    socket
+      .on('connect', () => {
+        socket.write([
+          'POST /_drizzle/studio HTTP/1.0',
+          `Host: ${host}`,
+          ...(origin === undefined ? [] : [`Origin: ${origin}`]),
+          'Content-Type: application/json',
+          `Content-Length: ${Buffer.byteLength(body)}`,
+          'Connection: close',
+          '',
+          body,
+        ].join('\r\n'))
+      })
+      .on('data', (chunk: Buffer) => {
+        raw += chunk.toString()
+      })
+      .on('end', () => {
+        const headerBlock = raw.slice(0, raw.indexOf('\r\n\r\n'))
+        const status = Number((headerBlock.split('\r\n')[0] ?? '').split(' ')[1])
+        resolvePromise({ status, body: raw.slice(headerBlock.length + 4) })
+      })
+      .on('timeout', () => socket.destroy(new Error(`Studio proxy request to ${host} timed out`)))
+      .on('error', rejectPromise)
+  })
+}
+
+/**
  * Polls the studio proxy until a query returns the expected rows — the
  * signal that the reloaded worker generation has pushed the new schema and
  * rebound the same port.
  */
 async function pollProxyQuery(
-  proxyUrl: string,
+  port: number,
+  localhostDomain: string,
   sql: string,
   expected: unknown[][],
   timeoutMs: number,
@@ -99,19 +143,21 @@ async function pollProxyQuery(
   let lastFailure = 'request never ran'
   while (Date.now() < deadline) {
     try {
-      const response = await postStudio(proxyUrl, {
-        type: 'proxy',
-        data: { sql, method: 'values', mode: 'array' },
-      }, 'https://local.drizzle.studio', AbortSignal.timeout(deadline - Date.now()))
-      if (response.ok) {
-        const rows = await response.json()
+      const { status, body } = await rawStudioRequest(
+        port,
+        `${localhostDomain}:${port}`,
+        JSON.stringify({ type: 'proxy', data: { sql, method: 'values', mode: 'array' } }),
+        'https://local.drizzle.studio',
+      )
+      if (status === 200) {
+        const rows: unknown = JSON.parse(body)
         if (JSON.stringify(rows) === JSON.stringify(expected)) {
           return
         }
         lastFailure = `rows were ${JSON.stringify(rows)}`
       }
       else {
-        lastFailure = `HTTP ${response.status}`
+        lastFailure = `HTTP ${status}`
       }
     }
     catch (error) {
@@ -191,11 +237,16 @@ export default defineConfig({
 
     const { child, waitForOutput } = spawnDevServer(rootDir, httpPort)
     try {
-      const proxyUrl = `http://127.0.0.1:${studioPort}/`
-      const studioLink = new RegExp(`Drizzle Studio: \\S+port=${studioPort}`)
+      const proxyHost = (domain: string): string => `${domain}:${studioPort}`
 
-      // Then — the plugin started the proxy (auth key replaced at build time)
-      await waitForOutput(studioLink, 90_000)
+      // Then — the plugin started the proxy under its per-session
+      // *.localhost domain (auth key and domain replaced at build time)
+      const linkLog = await waitForOutput(
+        new RegExp(`Drizzle Studio: \\S+port=${studioPort}&host=[\\w.-]+\\.localhost`),
+        90_000,
+      )
+      const localhostDomain = /&host=([\w.-]+)/.exec(linkLog)?.[1] ?? ''
+      expect(localhostDomain).toMatch(/^[0-9a-f-]{36}\.localhost$/)
 
       // And the internal route rejects direct access: no key, no studio
       const direct = await waitUntilRouteAnswers(`http://127.0.0.1:${httpPort}/_drizzle/studio`, 90_000)
@@ -208,7 +259,8 @@ export default defineConfig({
         { redirect: 'manual' },
       )
       expect(devtools.status).toBe(302)
-      expect(devtools.headers.get('location')).toBe(`https://local.drizzle.studio/?port=${studioPort}`)
+      expect(devtools.headers.get('location'))
+        .toBe(`https://local.drizzle.studio/?port=${studioPort}&host=${localhostDomain}`)
 
       // And any other GET — wrong key, or none — keeps meeting the bearer gate
       const wrongKey = await fetch(
@@ -223,24 +275,46 @@ export default defineConfig({
       expect(unkeyed.status).toBe(401)
 
       // And the proxy only accepts the Studio web app origin
-      const evil = await postStudio(proxyUrl, { type: 'init' }, 'https://evil.example')
+      const evil = await rawStudioRequest(
+        studioPort,
+        proxyHost(localhostDomain),
+        JSON.stringify({ type: 'init' }),
+        'https://evil.example',
+      )
       expect(evil.status).toBe(403)
+
+      // And the port-scan shape — right port, even right origin, wrong
+      // Host — is rejected: the domain, not the port, is the capability
+      const byIp = await rawStudioRequest(
+        studioPort,
+        `127.0.0.1:${studioPort}`,
+        JSON.stringify({ type: 'init' }),
+        'https://local.drizzle.studio',
+      )
+      expect(byIp.status).toBe(403)
 
       // And a real Studio handshake reaches the dev database through
       // serverFetch with the injected key
-      const init = await postStudio(proxyUrl, { type: 'init' }, 'https://local.drizzle.studio')
-      await expect(init.json()).resolves.toMatchObject({
+      const init = await rawStudioRequest(
+        studioPort,
+        proxyHost(localhostDomain),
+        JSON.stringify({ type: 'init' }),
+        'https://local.drizzle.studio',
+      )
+      expect(JSON.parse(init.body)).toMatchObject({
         version: '6.3',
         dialect: 'sqlite',
         driver: 'node-sqlite',
       })
 
       // And array-mode queries keep their full shape through the proxy
-      const probe = await postStudio(proxyUrl, {
-        type: 'proxy',
-        data: { sql: 'SELECT 1 AS x, 2 AS x', method: 'values', mode: 'array' },
-      }, 'https://local.drizzle.studio')
-      await expect(probe.json()).resolves.toEqual([[1, 2]])
+      const probe = await rawStudioRequest(
+        studioPort,
+        proxyHost(localhostDomain),
+        JSON.stringify({ type: 'proxy', data: { sql: 'SELECT 1 AS x, 2 AS x', method: 'values', mode: 'array' } }),
+        'https://local.drizzle.studio',
+      )
+      expect(JSON.parse(probe.body)).toEqual([[1, 2]])
 
       // And a worker reload rebinds the fixed port without leaking or losing
       // it: the superseded generation's close hook must not kill the new one
@@ -259,8 +333,13 @@ export const reloadMarkers = sqliteTable('reload_markers', {
       // port, so it is stable across worker generations); the reload itself
       // is observed through the proxy: only the new generation pushes and
       // serves the new table on the same port.
-      await pollProxyQuery(proxyUrl, 'SELECT count(*) AS n FROM reload_markers', [[0]], 90_000)
-      const afterReload = await postStudio(proxyUrl, { type: 'init' }, 'https://local.drizzle.studio')
+      await pollProxyQuery(studioPort, localhostDomain, 'SELECT count(*) AS n FROM reload_markers', [[0]], 90_000)
+      const afterReload = await rawStudioRequest(
+        studioPort,
+        proxyHost(localhostDomain),
+        JSON.stringify({ type: 'init' }),
+        'https://local.drizzle.studio',
+      )
       expect(afterReload.status).toBe(200)
 
       // And the dev server terminates on SIGTERM — a leaked studio listener
