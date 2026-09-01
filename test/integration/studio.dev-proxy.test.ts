@@ -32,14 +32,16 @@ afterEach(async () => {
 /**
  * Spawns a real `nitro dev` server with the studio enabled. The child env
  * drops the test markers (`VITEST`, `TEST`) that would short-circuit the
- * studio plugin or silence the dev-server logging this test waits on, and
- * restores the development NODE_ENV vitest overrode.
+ * studio wiring or silence the dev-server logging this test waits on, and
+ * restores the development NODE_ENV vitest overrode. The listening port
+ * comes from the generated config's `devServer.port` — the same source the
+ * module reads for the printed link.
  */
-function spawnDevServer(rootDir: string, port: number) {
+function spawnDevServer(rootDir: string) {
   const env: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: 'development' }
   delete env.VITEST
   delete env.TEST
-  const child = spawn(nitroBin, ['dev', '--port', String(port)], {
+  const child = spawn(nitroBin, ['dev'], {
     cwd: rootDir,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -128,9 +130,8 @@ function rawStudioRequest(
 }
 
 /**
- * Polls the studio proxy until a query returns the expected rows — the
- * signal that the reloaded worker generation has pushed the new schema and
- * rebound the same port.
+ * Polls the studio route until a query returns the expected rows — the
+ * signal that the reloaded worker generation has pushed the new schema.
  */
 async function pollProxyQuery(
   port: number,
@@ -209,7 +210,6 @@ export const users = sqliteTable('users', {
 })
 `)
     const httpPort = await reservePort()
-    const studioPort = await reservePort()
     const devtoolsKey = 'e2e-studio-devtools-key'
     await writeFile(join(rootDir, 'nitro.config.ts'), `import { defineConfig } from 'nitro/config'
 import NitroDrizzle from ${JSON.stringify(resolve(repoRoot, 'src/index'))}
@@ -221,6 +221,7 @@ provideDevtoolsKey(${JSON.stringify(devtoolsKey)})
 
 export default defineConfig({
   serverDir: './server',
+  devServer: { port: ${httpPort} },
   modules: [NitroDrizzle],
   drizzle: {
     dialect: 'sqlite',
@@ -228,21 +229,21 @@ export default defineConfig({
     schemaPath: './server/db/schema.ts',
     devMock: {
       driver: 'node-sqlite',
-      studio: { port: ${studioPort} },
+      studio: {},
     },
     connection: { url: ${JSON.stringify(`file:${join(rootDir, 'dev.db')}`)} },
   },
 })
 `)
 
-    const { child, waitForOutput } = spawnDevServer(rootDir, httpPort)
+    const { child, waitForOutput } = spawnDevServer(rootDir)
     try {
-      const proxyHost = (domain: string): string => `${domain}:${studioPort}`
+      const proxyHost = (domain: string): string => `${domain}:${httpPort}`
 
-      // Then — the plugin started the proxy under its per-session
-      // *.localhost domain (auth key and domain replaced at build time)
+      // Then — the module printed the studio link for the dev server port
+      // under its per-session *.localhost domain
       const linkLog = await waitForOutput(
-        new RegExp(`Drizzle Studio: \\S+port=${studioPort}&host=[\\w.-]+\\.localhost`),
+        new RegExp(`Drizzle Studio: \\S+port=${httpPort}&host=[\\w.-]+\\.localhost`),
         90_000,
       )
       const localhostDomain = /&host=([\w.-]+)/.exec(linkLog)?.[1] ?? ''
@@ -260,7 +261,7 @@ export default defineConfig({
       )
       expect(devtools.status).toBe(302)
       expect(devtools.headers.get('location'))
-        .toBe(`https://local.drizzle.studio/?port=${studioPort}&host=${localhostDomain}`)
+        .toBe(`https://local.drizzle.studio/?port=${httpPort}&host=${localhostDomain}`)
 
       // And any other GET — wrong key, or none — keeps meeting the bearer gate
       const wrongKey = await fetch(
@@ -274,29 +275,30 @@ export default defineConfig({
       )
       expect(unkeyed.status).toBe(401)
 
-      // And the proxy only accepts the Studio web app origin
+      // And the session domain only opens for the Studio web app origin
       const evil = await rawStudioRequest(
-        studioPort,
+        httpPort,
         proxyHost(localhostDomain),
         JSON.stringify({ type: 'init' }),
         'https://evil.example',
       )
       expect(evil.status).toBe(403)
 
-      // And the port-scan shape — right port, even right origin, wrong
-      // Host — is rejected: the domain, not the port, is the capability
+      // And the port-scan shape — the very port the app runs on, even with
+      // the right origin, but no session Host — keeps meeting the bearer
+      // gate: the domain, not the port, is the capability
       const byIp = await rawStudioRequest(
-        studioPort,
-        `127.0.0.1:${studioPort}`,
+        httpPort,
+        `127.0.0.1:${httpPort}`,
         JSON.stringify({ type: 'init' }),
         'https://local.drizzle.studio',
       )
-      expect(byIp.status).toBe(403)
+      expect(byIp.status).toBe(401)
 
-      // And a real Studio handshake reaches the dev database through
-      // serverFetch with the injected key
+      // And a real Studio handshake — session Host plus Studio origin —
+      // reaches the dev database with the gate-injected key
       const init = await rawStudioRequest(
-        studioPort,
+        httpPort,
         proxyHost(localhostDomain),
         JSON.stringify({ type: 'init' }),
         'https://local.drizzle.studio',
@@ -307,17 +309,16 @@ export default defineConfig({
         driver: 'node-sqlite',
       })
 
-      // And array-mode queries keep their full shape through the proxy
+      // And array-mode queries keep their full shape through the gate
       const probe = await rawStudioRequest(
-        studioPort,
+        httpPort,
         proxyHost(localhostDomain),
         JSON.stringify({ type: 'proxy', data: { sql: 'SELECT 1 AS x, 2 AS x', method: 'values', mode: 'array' } }),
         'https://local.drizzle.studio',
       )
       expect(JSON.parse(probe.body)).toEqual([[1, 2]])
 
-      // And a worker reload rebinds the fixed port without leaking or losing
-      // it: the superseded generation's close hook must not kill the new one
+      // And a worker reload keeps serving the studio on the same route
       await writeFile(schemaFile, `import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const users = sqliteTable('users', {
@@ -329,21 +330,19 @@ export const reloadMarkers = sqliteTable('reload_markers', {
   id: integer('id').primaryKey(),
 })
 `)
-      // The link prints once per dev-server run (the module resolves the
-      // port, so it is stable across worker generations); the reload itself
-      // is observed through the proxy: only the new generation pushes and
-      // serves the new table on the same port.
-      await pollProxyQuery(studioPort, localhostDomain, 'SELECT count(*) AS n FROM reload_markers', [[0]], 90_000)
+      // The reload itself is observed through the gated route: only the new
+      // generation pushes and serves the new table.
+      await pollProxyQuery(httpPort, localhostDomain, 'SELECT count(*) AS n FROM reload_markers', [[0]], 90_000)
       const afterReload = await rawStudioRequest(
-        studioPort,
+        httpPort,
         proxyHost(localhostDomain),
         JSON.stringify({ type: 'init' }),
         'https://local.drizzle.studio',
       )
       expect(afterReload.status).toBe(200)
 
-      // And the dev server terminates on SIGTERM — a leaked studio listener
-      // would keep the process alive
+      // And the dev server terminates on SIGTERM — a wedged worker would
+      // keep the process alive
       child.kill('SIGTERM')
       const outcome = await new Promise<{ code: number | null, signal: string | null } | null>(
         (resolvePromise) => {
