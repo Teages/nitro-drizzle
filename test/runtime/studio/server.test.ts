@@ -1,5 +1,6 @@
+import type { Buffer } from 'node:buffer'
 import type { RunningStudioServer } from '../../../src/studio/runtime/proxy-server'
-import { createServer } from 'node:net'
+import { connect, createServer } from 'node:net'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { studioLink } from '../../../src/studio/link'
 import { closeStudioServer, startStudioServer, studioLifecycle } from '../../../src/studio/runtime/proxy-server'
@@ -12,6 +13,7 @@ const dispatch = vi.fn(async (request: Request) => {
 })
 
 const STUDIO_URL = 'https://local.drizzle.studio'
+const STUDIO_DOMAIN = '6f9c9e22-c1dc-4c76-93e2-076b8f4c4a65.localhost'
 
 afterEach(async () => {
   await closeStudioServer()
@@ -25,6 +27,47 @@ async function reservePort(): Promise<number> {
   const { port } = server.address() as { port: number }
   await new Promise<void>(resolve => server.close(() => resolve()))
   return port
+}
+
+/**
+ * Node's fetch follows the spec and refuses a `Host` header, so requests
+ * shaped for a specific host go over a raw socket with a hand-written
+ * request line. HTTP/1.0 keeps the response free of chunked framing and
+ * `Connection: close` makes the server end the stream, so the status can
+ * be read once the socket drains.
+ */
+function rawStudioRequest(
+  port: number,
+  host: string,
+  init: { origin?: string } = {},
+): Promise<number> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const socket = connect(port, '127.0.0.1')
+    socket.setTimeout(10_000)
+    let raw = ''
+    socket
+      .on('connect', () => {
+        socket.write([
+          'POST / HTTP/1.0',
+          `Host: ${host}`,
+          ...(init.origin === undefined ? [] : [`Origin: ${init.origin}`]),
+          'Content-Type: application/json',
+          'Content-Length: 2',
+          'Connection: close',
+          '',
+          '{}',
+        ].join('\r\n'))
+      })
+      .on('data', (chunk: Buffer) => {
+        raw += chunk.toString()
+      })
+      .on('end', () => {
+        const statusLine = raw.split('\r\n', 1)[0] ?? ''
+        resolvePromise(Number(statusLine.split(' ')[1]))
+      })
+      .on('timeout', () => socket.destroy(new Error(`Studio proxy request to ${host} timed out`)))
+      .on('error', rejectPromise)
+  })
 }
 
 describe('startStudioServer', () => {
@@ -92,6 +135,49 @@ describe('startStudioServer', () => {
     // Then — origin ignores the path component and rejects other origins
     expect(official.status).toBe(403)
     expect(selfHosted.status).toBe(200)
+  })
+
+  it('answers only the per-session domain while one is configured', async () => {
+    // Given — the default security posture: an unguessable *.localhost host
+    const server = await startStudioServer({
+      authorization: 'Bearer test',
+      studioUrl: STUDIO_URL,
+      port: await reservePort(),
+      localhostDomain: STUDIO_DOMAIN,
+      dispatch,
+    })
+
+    // When — the browser-shaped request carries the domain as its Host
+    const authorized = await rawStudioRequest(
+      server.port,
+      `${STUDIO_DOMAIN}:${server.port}`,
+      { origin: STUDIO_URL },
+    )
+
+    // Then — it passes, and the port-scan shapes (right port, wrong host)
+    // are rejected before any protocol handling
+    const byIp = await rawStudioRequest(server.port, `127.0.0.1:${server.port}`, { origin: STUDIO_URL })
+    const byLocalhost = await rawStudioRequest(server.port, `localhost:${server.port}`, { origin: STUDIO_URL })
+    expect(authorized).toBe(200)
+    expect(byIp).toBe(403)
+    expect(byLocalhost).toBe(403)
+    expect(dispatch).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps serving the loopback host spellings without a domain', async () => {
+    // Given — legacy mode: `securityLocalhostDomain: false`
+    const server = await startStudioServer({
+      authorization: 'Bearer test',
+      studioUrl: STUDIO_URL,
+      port: await reservePort(),
+      dispatch,
+    })
+
+    // When / Then — both loopback spellings pass, foreign hosts do not
+    expect(await rawStudioRequest(server.port, `127.0.0.1:${server.port}`, { origin: STUDIO_URL })).toBe(200)
+    expect(await rawStudioRequest(server.port, `localhost:${server.port}`, { origin: STUDIO_URL })).toBe(200)
+    expect(await rawStudioRequest(server.port, `evil.example:${server.port}`, { origin: STUDIO_URL })).toBe(403)
+    expect(dispatch).toHaveBeenCalledTimes(2)
   })
 
   it('forwards Studio requests to the internal route with the auth key attached', async () => {
@@ -208,6 +294,11 @@ describe('studioLink', () => {
   it('appends the port as a query parameter without clobbering existing ones', () => {
     expect(studioLink(STUDIO_URL, 1234)).toBe('https://local.drizzle.studio/?port=1234')
     expect(studioLink('http://localhost:5173/studio?token=x', 99)).toBe('http://localhost:5173/studio?token=x&port=99')
+  })
+
+  it('passes the per-session domain as the host parameter the Studio web app connects to', () => {
+    expect(studioLink(STUDIO_URL, 1234, STUDIO_DOMAIN))
+      .toBe(`https://local.drizzle.studio/?port=1234&host=${STUDIO_DOMAIN}`)
   })
 })
 

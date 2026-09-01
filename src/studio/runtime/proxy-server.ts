@@ -23,6 +23,8 @@ export interface StartStudioServerOptions {
   readonly studioUrl: string
   /** Port the module resolved (configured or probed); bound exactly, never replaced. */
   readonly port: number
+  /** Per-session `<uuid>.localhost` domain; `undefined` keeps plain loopback hosts. */
+  readonly localhostDomain?: string
   /** Overridable in-process dispatch; defaults to the Nitro app fetch. */
   readonly dispatch?: Dispatch
 }
@@ -54,12 +56,14 @@ async function startStudioServerQueued(
   options: StartStudioServerOptions,
 ): Promise<RunningStudioServer> {
   const dispatch = options.dispatch ?? ((request: Request) => serverFetch(request))
+  const allowedHosts = studioHostAllowlist(options.port, options.localhostDomain)
+  const studioOrigin = new URL(options.studioUrl).origin
   await closeStudioServerLocked()
 
   // The module printed the studio link with this port: binding anything
   // else would desync the link, so an occupied port fails loudly instead.
   const server = serve({
-    fetch: request => forwardStudioRequest(request, options.authorization, options.studioUrl, dispatch),
+    fetch: request => forwardStudioRequest(request, options.authorization, studioOrigin, allowedHosts, dispatch),
     gracefulShutdown: false,
     hostname: '127.0.0.1',
     port: options.port,
@@ -85,17 +89,40 @@ async function startStudioServerQueued(
 }
 
 /**
+ * Host authorities the proxy answers to, always port-qualified. With a
+ * per-session domain the unguessable hostname is the capability: probes
+ * that found the port but not the domain are rejected before any protocol
+ * handling, and rebinding a foreign name onto loopback cannot present it.
+ * The plain-loopback mode keeps the two spellings a browser may use.
+ */
+function studioHostAllowlist(
+  port: number,
+  localhostDomain: string | undefined,
+): ReadonlySet<string> {
+  return new Set(
+    localhostDomain === undefined
+      ? [`localhost:${port}`, `127.0.0.1:${port}`]
+      : [`${localhostDomain}:${port}`],
+  )
+}
+
+/**
  * The Studio frontend cannot carry credentials, so this loopback proxy is the
- * trust boundary: only the configured Studio origin passes, and the auth key
- * is attached server-side before the request enters the Nitro pipeline.
+ * trust boundary: only the configured Studio origin and Host pass, and the
+ * auth key is attached server-side before the request enters the Nitro
+ * pipeline.
  */
 async function forwardStudioRequest(
   request: Request,
   authorization: string,
-  studioUrl: string,
+  studioOrigin: string,
+  allowedHosts: ReadonlySet<string>,
   dispatch: Dispatch,
 ): Promise<Response> {
-  if (request.headers.get('origin') !== new URL(studioUrl).origin) {
+  if (!allowedHosts.has(request.headers.get('host') ?? '')) {
+    return new Response('Forbidden', { status: 403 })
+  }
+  if (request.headers.get('origin') !== studioOrigin) {
     return new Response('Forbidden', { status: 403 })
   }
   const forwarded = new Request(`http://drizzle-studio.local${STUDIO_ROUTE}`, request)

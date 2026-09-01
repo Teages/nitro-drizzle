@@ -29,6 +29,7 @@ export default definePlugin((nitro) => {
   const lifecycle = studioLifecycle({
     start: () => startStudioServer({
       authorization: `Bearer ${authKey}`,
+      localhostDomain: studio.localhostDomain,
       port: studio.port,
       studioUrl: studio.studioUrl,
     }),
