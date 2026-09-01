@@ -276,13 +276,14 @@ disables it for a single run, and `NITRO_DRIZZLE_DEV_MOCK_FILE` overrides
 ## Drizzle Studio
 
 Dev-database sessions get the built-in [Drizzle Studio](https://orm.drizzle.team/drizzle-studio)
-automatically: on startup the module serves a loopback proxy on a random port
-and logs a `https://local.drizzle.studio?host=<uuid>.localhost&port=…` link.
-The web app talks to your in-memory dev database directly — the exact same
-instance the dev server runs on — with an origin check, a per-session auth
-key, and a per-session `*.localhost` host guarding the proxy: the hostname is
-unguessable and checked against the `Host` header, so a scanned-open port
-alone grants nothing.
+automatically: the dev server itself serves the Studio API behind a
+per-session unguessable `*.localhost` host and logs a
+`https://local.drizzle.studio?host=<uuid>.localhost&port=…` link — one port,
+no extra listener. The web app talks to your in-memory dev database
+directly — the exact same instance the dev server runs on — with the
+session host, an origin check, and a per-session auth key gating the route:
+the hostname is unguessable and matched against the request's `Host`, so
+knowing the port (it is the dev server's own) grants nothing.
 
 Customize it through `drizzle.devMock.studio`:
 
@@ -293,8 +294,6 @@ export default defineConfig({
     schemaPath: './server/db/schema.ts',
     devMock: {
       studio: {
-        port: 4983, // fixed port instead of random
-        securityLocalhostDomain: false, // plain localhost instead of <uuid>.localhost
         silent: true, // skip the startup link
         studioUrl: 'http://localhost:5173/studio', // self-hosted Studio frontend
       },
@@ -303,16 +302,25 @@ export default defineConfig({
 })
 ```
 
-`studioUrl` drives both the printed link and the origin the proxy accepts, so
+`studioUrl` drives both the printed link and the origin the gate accepts, so
 pointing it at a self-hosted Studio frontend keeps the origin check intact.
+The `port` and `securityLocalhostDomain` options are gone: the studio rides
+the dev server port, and the session domain is always on.
 
 Browsers resolve `*.localhost` to loopback without DNS (RFC 6761), which is
 what makes the per-session domain work with zero setup. Safari only does so
 since macOS 26 — on older macOS open the link in Chrome or Firefox (the
-module logs a warning there), or set `securityLocalhostDomain: false` to fall
-back to plain `localhost`. To poke the proxy with `curl` while the security
-domain is on, resolve the session hostname explicitly:
+module logs a warning there). To poke the studio route with `curl`, resolve
+the session hostname explicitly:
 `curl --resolve <uuid>.localhost:<port>:127.0.0.1 http://<uuid>.localhost:<port>/…`.
+
+Because the studio shares the dev server's listener, it is reachable
+wherever the dev server is. Keep `--host`ed or tunneled dev servers
+private, and treat the printed link as a secret — anyone holding it (and
+able to reach the port) can read and write the disposable dev database. The
+console link assumes the configured `devServer.port` (default 3000);
+`nitro dev --port` never reaches module setup, so prefer the DevTools dock
+link there — it is built per request and always accurate.
 
 Set `devMock.studio: false` to disable the built-in studio; without a dev database
 (`drizzle.devMock`) it never starts — use `npx drizzle-kit studio` to inspect a
