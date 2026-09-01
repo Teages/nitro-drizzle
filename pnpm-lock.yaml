@@ -92,19 +92,23 @@ importers:
         version: 4.1.10(@types/node@24.12.4)(@vitest/coverage-v8@4.1.10)(vite@8.2.2)
 
   playgrounds/nitro:
-    devDependencies:
+    dependencies:
       '@libsql/client':
         specifier: ^0.17.4
         version: 0.17.4
       '@teages/nitro-drizzle':
         specifier: workspace:*
         version: link:../..
-      '@types/node':
-        specifier: ^24.12.4
-        version: 24.12.4
       drizzle-orm:
         specifier: 1.0.0-rc.4
         version: 1.0.0-rc.4(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(mysql2@3.23.3(@types/node@24.12.4))(postgres@3.4.9)(zod@4.5.4)
+    devDependencies:
+      '@types/node':
+        specifier: ^24.12.4
+        version: 24.12.4
+      drizzle-kit:
+        specifier: 1.0.0-rc.4
+        version: 1.0.0-rc.4
       nitro:
         specifier: ^3.0.260610-beta
         version: 3.0.260610-beta(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(better-sqlite3@13.0.3)(chokidar@5.0.0)(dotenv@17.4.2)(drizzle-orm@1.0.0-rc.4(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(mysql2@3.23.3(@types/node@24.12.4))(postgres@3.4.9)(zod@4.5.4))(giget@3.3.1)(jiti@2.7.0)(lru-cache@11.5.2)(mysql2@3.23.3(@types/node@24.12.4))(vite@8.2.2)
@@ -117,21 +121,31 @@ importers:
 
   playgrounds/nuxt:
     dependencies:
+      '@libsql/client':
+        specifier: ^0.17.4
+        version: 0.17.4
+      '@teages/nitro-drizzle':
+        specifier: workspace:*
+        version: link:../..
       drizzle-orm:
         specifier: 1.0.0-rc.4
         version: 1.0.0-rc.4(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(mysql2@3.23.3(@types/node@24.12.4))(postgres@3.4.9)(zod@4.5.4)
-      nitro:
-        specifier: ^3.0.260610-beta
-        version: 3.0.260610-beta(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(better-sqlite3@13.0.3)(chokidar@5.0.0)(dotenv@17.4.2)(drizzle-orm@1.0.0-rc.4(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(mysql2@3.23.3(@types/node@24.12.4))(postgres@3.4.9)(zod@4.5.4))(giget@3.3.1)(jiti@2.7.0)(lru-cache@11.5.2)(mysql2@3.23.3(@types/node@24.12.4))(vite@8.2.2)
-      nuxt:
-        specifier: npm:nuxt-nightly@5.0.0-29801588.e458891d
-        version: nuxt-nightly@5.0.0-29801588.e458891d(056fb7b4124c232063e2adb8e396e487)
       vue:
         specifier: ^3.5.41
         version: 3.5.42(typescript@6.0.3)
       vue-router:
         specifier: ^5.2.0
         version: 5.3.0(@vue/compiler-sfc@3.5.42)(esbuild@0.25.12)(rolldown@1.2.4)(vite@8.2.2)(vue@3.5.42(typescript@6.0.3))
+    devDependencies:
+      drizzle-kit:
+        specifier: 1.0.0-rc.4
+        version: 1.0.0-rc.4
+      nitro:
+        specifier: ^3.0.260610-beta
+        version: 3.0.260610-beta(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(better-sqlite3@13.0.3)(chokidar@5.0.0)(dotenv@17.4.2)(drizzle-orm@1.0.0-rc.4(@electric-sql/pglite@0.5.5)(@libsql/client@0.17.4)(@types/better-sqlite3@9.6.0)(better-sqlite3@13.0.3)(mysql2@3.23.3(@types/node@24.12.4))(postgres@3.4.9)(zod@4.5.4))(giget@3.3.1)(jiti@2.7.0)(lru-cache@11.5.2)(mysql2@3.23.3(@types/node@24.12.4))(vite@8.2.2)
+      nuxt:
+        specifier: npm:nuxt-nightly@5.0.0-29801588.e458891d
+        version: nuxt-nightly@5.0.0-29801588.e458891d(056fb7b4124c232063e2adb8e396e487)
 
 packages:
 

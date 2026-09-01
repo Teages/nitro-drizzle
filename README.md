@@ -179,9 +179,12 @@ databases, package-owned tables) belongs in the migration chain itself or in
 your own runner, not in a second migration directory.
 
 Drizzle Kit commands run against a config that `loadDrizzleConfig` builds
-from your Nitro config at runtime, resolving the connection with the same
+from your framework config at runtime, resolving the connection with the same
 code path the server uses and pointing the schema straight at your source
-files, so it is always current. Declare it from a `drizzle.config.ts` in your
+files, so it is always current. In Nuxt projects the `drizzle` block sits at
+the top level of `nuxt.config.ts` and is picked up automatically — matching
+the module, `nitro.drizzle` is ignored there; pass `{ framework: 'nitro' }` to
+read the Nitro config instead. Declare it from a `drizzle.config.ts` in your
 project root, and drizzle-kit picks it up without a `--config` flag:
 
 ```ts
