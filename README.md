@@ -308,9 +308,10 @@ pointing it at a self-hosted Studio frontend keeps the origin check intact.
 Browsers resolve `*.localhost` to loopback without DNS (RFC 6761), which is
 what makes the per-session domain work with zero setup. Safari only does so
 since macOS 26 — on older macOS open the link in Chrome or Firefox (the
-module logs a warning there). To poke the studio route with `curl`, resolve
-the session hostname explicitly:
-`curl --resolve <uuid>.localhost:<port>:127.0.0.1 http://<uuid>.localhost:<port>/…`.
+module logs a warning there). To poke the studio route with `curl`, send the
+Studio origin — anything else meets the gate's 403 — and resolve the session
+hostname explicitly:
+`curl --resolve <uuid>.localhost:<port>:127.0.0.1 -H "Origin: https://local.drizzle.studio" http://<uuid>.localhost:<port>/`.
 
 Because the studio shares the dev server's listener, it is reachable
 wherever the dev server is. Keep `--host`ed or tunneled dev servers
