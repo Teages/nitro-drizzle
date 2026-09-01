@@ -97,6 +97,15 @@ export interface DrizzleDevStudioOptions {
    */
   port?: number
   /**
+   * Serve the proxy under a per-session `<uuid>.localhost` domain and reject
+   * every other Host header, so a scanned-open port alone grants nothing.
+   * Browsers resolve `*.localhost` to loopback; Safari only does since
+   * macOS 26 — on older macOS use Chrome or Firefox, or set this to `false`
+   * for plain `localhost`.
+   * @default true
+   */
+  securityLocalhostDomain?: boolean
+  /**
    * Skip the startup log line pointing at the Studio web app. Startup errors
    * are still reported.
    * @default false

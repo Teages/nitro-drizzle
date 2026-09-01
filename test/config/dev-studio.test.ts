@@ -8,6 +8,7 @@ describe('resolveDevStudio', () => {
   it('applies defaults for undefined and true', () => {
     expect(resolveDevStudio(undefined)).toEqual({
       port: undefined,
+      securityLocalhostDomain: true,
       silent: false,
       studioUrl: DEFAULT_STUDIO_URL,
     })
@@ -21,14 +22,31 @@ describe('resolveDevStudio', () => {
   it('normalizes a partial options object', () => {
     expect(resolveDevStudio({ port: 4983 })).toEqual({
       port: 4983,
+      securityLocalhostDomain: true,
       silent: false,
       studioUrl: DEFAULT_STUDIO_URL,
     })
     expect(resolveDevStudio({ silent: true, studioUrl: 'http://localhost:5173/' })).toEqual({
       port: undefined,
+      securityLocalhostDomain: true,
       silent: true,
       studioUrl: 'http://localhost:5173/',
     })
+  })
+
+  it('opts out of the per-session localhost domain', () => {
+    expect(resolveDevStudio({ securityLocalhostDomain: false })).toEqual({
+      port: undefined,
+      securityLocalhostDomain: false,
+      silent: false,
+      studioUrl: DEFAULT_STUDIO_URL,
+    })
+  })
+
+  it('rejects a non-boolean securityLocalhostDomain', () => {
+    const securityLocalhostDomain = 'yes' as unknown as boolean
+    expect(() => resolveDevStudio({ securityLocalhostDomain })).toThrow(DrizzleDevStudioError)
+    expect(() => resolveDevStudio({ securityLocalhostDomain })).toThrow('devMock.studio.securityLocalhostDomain')
   })
 
   it('rejects ports outside the valid range', () => {
@@ -102,6 +120,28 @@ describe('studio resolution in module context', () => {
     expect(Number.isInteger(port)).toBe(true)
     expect(port).toBeGreaterThan(0)
     expect(port).toBeLessThanOrEqual(65535)
+  })
+
+  it('mints the per-session localhost domain by default', async () => {
+    // Given — a dev session relying on the default studio options
+    vi.stubEnv(DEV_ENV_FLAG, 'true')
+
+    // When
+    const context = await resolveDrizzleModuleContext(fakeNitro(true, {}))
+
+    // Then — the session carries an unguessable *.localhost hostname
+    expect(context?.devStudio?.localhostDomain).toMatch(/^[0-9a-f-]{36}\.localhost$/)
+  })
+
+  it('omits the localhost domain when the security domain is disabled', async () => {
+    // Given — a dev session opting out of the per-session domain
+    vi.stubEnv(DEV_ENV_FLAG, 'true')
+
+    // When
+    const context = await resolveDrizzleModuleContext(fakeNitro(true, { securityLocalhostDomain: false }))
+
+    // Then — the session falls back to plain localhost hosts
+    expect(context?.devStudio?.localhostDomain).toBeUndefined()
   })
 
   it('ignores an invalid studio config in production builds', async () => {

@@ -1,11 +1,13 @@
 import type { DrizzleDevStudioOptions } from '../types'
 import { getRandomPort } from 'get-port-please'
+import { createStudioLocalhostDomain } from './localhost-domain'
 
 export const DEFAULT_STUDIO_URL = 'https://local.drizzle.studio'
 
 export interface ResolvedDevStudio {
   /** Configured proxy port; `undefined` defers to a probed ephemeral port. */
   readonly port: number | undefined
+  readonly securityLocalhostDomain: boolean
   readonly silent: boolean
   readonly studioUrl: string
 }
@@ -13,13 +15,15 @@ export interface ResolvedDevStudio {
 /** Studio session for the runtime: validated options plus the port to bind. */
 export interface StudioSession {
   readonly port: number
+  /** Per-session `<uuid>.localhost` hostname; `undefined` keeps plain loopback hosts. */
+  readonly localhostDomain: string | undefined
   readonly silent: boolean
   readonly studioUrl: string
 }
 
 export class DrizzleDevStudioError extends Error {
   constructor(
-    readonly code: 'invalid_port' | 'invalid_url',
+    readonly code: 'invalid_port' | 'invalid_url' | 'invalid_security_localhost_domain',
     message: string,
   ) {
     super(message)
@@ -45,6 +49,13 @@ export function resolveDevStudio(
     }
   }
 
+  if (config.securityLocalhostDomain !== undefined && typeof config.securityLocalhostDomain !== 'boolean') {
+    throw new DrizzleDevStudioError(
+      'invalid_security_localhost_domain',
+      `drizzle.devMock.studio.securityLocalhostDomain must be a boolean, got ${JSON.stringify(config.securityLocalhostDomain)}.`,
+    )
+  }
+
   const studioUrl = config.studioUrl ?? DEFAULT_STUDIO_URL
   let parsed: URL
   try {
@@ -65,6 +76,7 @@ export function resolveDevStudio(
 
   return {
     port: config.port,
+    securityLocalhostDomain: config.securityLocalhostDomain ?? true,
     silent: config.silent ?? false,
     studioUrl,
   }
@@ -78,6 +90,7 @@ export function resolveDevStudio(
 export async function activateDevStudio(studio: ResolvedDevStudio): Promise<StudioSession> {
   return {
     port: studio.port ?? await getRandomPort('127.0.0.1'),
+    localhostDomain: studio.securityLocalhostDomain ? createStudioLocalhostDomain() : undefined,
     silent: studio.silent,
     studioUrl: studio.studioUrl,
   }
