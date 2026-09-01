@@ -1,16 +1,24 @@
-import { defineHandler, getQuery, HTTPError, redirect } from 'nitro/h3'
+import { defineHandler, getQuery, getRequestURL, HTTPError, redirect } from 'nitro/h3'
 import { useDrizzle } from '#drizzle'
 import { drizzleConfig } from '#drizzle/config'
 import { createStudioExecutor } from './adapters'
 import { handleStudioProtocol, studioCorsHeaders, studioDevtoolsRedirect, validateStudioAuthorization } from './protocol'
 
 export default defineHandler(async (event) => {
+  // The redirect must point the iframe's browser at a port it can reach: the
+  // request's own (forwarded) host carries the public dev server port even
+  // behind the nuxt/vite dev proxy. The default ports cover fronting setups
+  // that strip the explicit port from the host.
+  const requestUrl = getRequestURL(event, { xForwardedHost: true, xForwardedProto: true })
+  const requestPort = requestUrl.port || (requestUrl.protocol === 'https:' ? '443' : '80')
+
   // The devtools iframe navigates here without credentials, so its keyed GET
-  // is settled before the bearer gate that governs the Studio proxy traffic.
+  // is settled before the bearer gate that governs the Studio traffic.
   const redirectUrl = studioDevtoolsRedirect({
     key: import.meta.DRIZZLE_DEVTOOLS_KEY,
     method: event.req.method,
     open: getQuery(event).open,
+    requestPort,
     studio: drizzleConfig.devStudio,
   })
   if (redirectUrl !== undefined) {

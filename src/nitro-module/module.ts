@@ -45,14 +45,18 @@ export default {
     if (ctx.devDb !== undefined && ctx.devStudio !== undefined) {
       configureStudioRuntime(nitro)
       if (!ctx.devStudio.silent) {
-        logger.info(`Drizzle Studio: ${studioLink(ctx.devStudio.studioUrl, ctx.devStudio.port, ctx.devStudio.localhostDomain)}`)
+        // The console link assumes the configured dev port (`nitro dev
+        // --port` never reaches module setup); the DevTools dock redirect
+        // is built per request and stays accurate regardless.
+        const devPort = nitro.options.devServer.port ?? 3000
+        logger.info(`Drizzle Studio: ${studioLink(ctx.devStudio.studioUrl, ctx.devStudio.localhostDomain, devPort)}`)
       }
       // Safari defers `*.localhost` to the system resolver, which only
       // learned the suffix in macOS 26; Chrome and Firefox are unaffected.
       // Surfaced regardless of `silent` — a broken link is an error, not noise.
-      if (ctx.devStudio.localhostDomain !== undefined && isMacosWithoutLocalhostDomainSupport()) {
+      if (isMacosWithoutLocalhostDomainSupport()) {
         logger.warn(
-          'This macOS release cannot resolve *.localhost domains in Safari, so the Drizzle Studio link only works in Chrome or Firefox here. Set drizzle.devMock.studio.securityLocalhostDomain: false for plain localhost.',
+          'This macOS release cannot resolve *.localhost domains in Safari, so the Drizzle Studio link only works in Chrome or Firefox here.',
         )
       }
     }

@@ -68,10 +68,18 @@ export function configureStudioRuntime(nitro: Nitro): void {
   if (devtoolsKey !== undefined) {
     nitro.options.replace[DEVTOOLS_KEY_MARKER] = JSON.stringify(devtoolsKey)
   }
+  // The middleware is the in-process successor of the loopback proxy,
+  // injecting the bearer only for requests that present the per-session
+  // domain and the Studio origin. It rides the global middleware chain
+  // (nitro's routed-middleware path is broken in current betas) and
+  // self-filters to the studio route; everything else keeps meeting the
+  // route's bearer gate.
+  nitro.options.handlers.push({
+    route: '/**',
+    middleware: true,
+    handler: runtimeEntry('studio/runtime/middleware'),
+  })
   nitro.options.routes[STUDIO_ROUTE] = {
     handler: runtimeEntry('studio/runtime/handler'),
   }
-  nitro.options.plugins.push(
-    runtimeEntry('studio/runtime/plugin'),
-  )
 }

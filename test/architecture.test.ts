@@ -118,7 +118,7 @@ describe('package surface', () => {
       './src/index.ts',
       './src/nuxt.ts',
       './src/studio/runtime/handler.ts',
-      './src/studio/runtime/plugin.ts',
+      './src/studio/runtime/middleware.ts',
       './src/types.ts',
     ])
     for (const input of entries) {
@@ -163,16 +163,19 @@ describe('runtime wiring', () => {
     expect(virtualSource(nitro, '#drizzle/config')).toContain('export const drizzleConfig = {')
     expect(virtualSource(nitro, '#drizzle/config')).toContain('export function useDrizzleConnection()')
 
-    // And — both runtime plugins are registered and every registered plugin
-    // and route handler exists on disk
-    for (const expected of ['dev-database/runtime/plugin', 'studio/runtime/plugin']) {
-      const registered = nitro.options.plugins.find(plugin =>
-        plugin.replaceAll('\\', '/').endsWith(expected))
-      expect(registered, `${expected} must be registered`).toBeDefined()
-    }
+    // And — the dev-database plugin is registered, the studio route carries
+    // its host-gating middleware, and every registered plugin, handler, and
+    // route exists on disk
+    const registered = nitro.options.plugins.find(plugin =>
+      plugin.replaceAll('\\', '/').endsWith('dev-database/runtime/plugin'))
+    expect(registered, 'dev-database/runtime/plugin must be registered').toBeDefined()
     for (const plugin of nitro.options.plugins) {
       expect(moduleFileExists(plugin), `${plugin} must resolve to a file`).toBe(true)
     }
+    const studioGate = nitro.options.handlers.find(handler =>
+      handler.route === '/**' && handler.middleware === true)
+    expect(studioGate?.handler.replaceAll('\\', '/')).toMatch(/studio\/runtime\/middleware$/)
+    expect(moduleFileExists(studioGate?.handler ?? '')).toBe(true)
     const studioRoute = nitro.options.routes[STUDIO_ROUTE]
     if (typeof studioRoute === 'string' || studioRoute === undefined) {
       throw new Error(`Expected ${STUDIO_ROUTE} to be a handler object.`)

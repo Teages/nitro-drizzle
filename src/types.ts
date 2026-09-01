@@ -82,29 +82,16 @@ export interface DrizzleDevMockOptions {
    */
   file?: string
   /**
-   * The built-in Drizzle Studio that ships with dev-database sessions: a
-   * loopback proxy on a random port that the Studio web app connects to.
-   * `false` disables it; an object customizes it; omitted or `true` uses the
+   * The built-in Drizzle Studio that ships with dev-database sessions: the
+   * dev server serves the Studio API behind a per-session unguessable
+   * `*.localhost` host — no separate listener, no extra port. `false`
+   * disables it; an object customizes it; omitted or `true` uses the
    * defaults.
    */
   studio?: boolean | DrizzleDevStudioOptions
 }
 
 export interface DrizzleDevStudioOptions {
-  /**
-   * Fixed port for the local Studio API proxy. When omitted the module picks
-   * a random port in the 20000–65535 range on every start.
-   */
-  port?: number
-  /**
-   * Serve the proxy under a per-session `<uuid>.localhost` domain and reject
-   * every other Host header, so a scanned-open port alone grants nothing.
-   * Browsers resolve `*.localhost` to loopback; Safari only does since
-   * macOS 26 — on older macOS use Chrome or Firefox, or set this to `false`
-   * for plain `localhost`.
-   * @default true
-   */
-  securityLocalhostDomain?: boolean
   /**
    * Skip the startup log line pointing at the Studio web app. Startup errors
    * are still reported.

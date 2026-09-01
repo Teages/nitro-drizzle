@@ -1,7 +1,7 @@
 import type { Nitro } from 'nitro/types'
 import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { ResolvedDevDatabase } from '../dev-database/contracts'
-import type { StudioSession } from '../studio/resolve'
+import type { ResolvedDevStudio } from '../studio/resolve'
 import type { DatabaseConnection } from '../types'
 import { env } from 'node:process'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../configuration/resolve'
@@ -11,19 +11,19 @@ import {
   DEV_ENV_FLAG,
   resolveDevDatabase,
 } from '../dev-database/resolve'
-import { activateDevStudio, resolveDevStudio } from '../studio/resolve'
+import { resolveDevStudio } from '../studio/resolve'
 
 export interface DrizzleModuleContext {
   readonly config: ResolvedDrizzleConfig
   readonly schemaPath: string
   readonly relationsExport: string | undefined
   readonly devDb: ResolvedDevDatabase | undefined
-  /** Normalized, port-resolved `drizzle.devMock.studio`; `undefined` means disabled. */
-  readonly devStudio: StudioSession | undefined
+  /** Normalized, domain-minted `drizzle.devMock.studio`; `undefined` means disabled. */
+  readonly devStudio: ResolvedDevStudio | undefined
   readonly userConnection: DatabaseConnection
 }
 
-/** The studio session resolves its port here so the printed link matches the bound one. */
+/** The studio session is resolved here so the printed link and the runtime share one domain. */
 export async function resolveDrizzleModuleContext(
   nitro: Nitro,
 ): Promise<DrizzleModuleContext | undefined> {
@@ -80,7 +80,7 @@ export async function resolveDrizzleModuleContext(
     schemaPath,
     relationsExport: nitro.options.drizzle.relationsExport,
     devDb,
-    devStudio: devStudio === undefined ? undefined : await activateDevStudio(devStudio),
+    devStudio,
     userConnection,
   }
 }
