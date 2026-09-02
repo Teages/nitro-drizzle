@@ -105,6 +105,7 @@
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.12.4",
     "@typescript/native": "npm:typescript@^7.0.2",
+    "@vitejs/devtools-kit": "^0.6.2",
     "@vitest/coverage-v8": "^4.1.10",
     "better-sqlite3": "^13.0.3",
     "drizzle-kit": "1.0.0-rc.4",
