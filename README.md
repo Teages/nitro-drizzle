@@ -165,6 +165,33 @@ declarations in the server tsconfig:
 The module declares `#drizzle` directly. It does not add aliases or write a
 synthetic package into `node_modules`.
 
+### Nuxt app environment
+
+In Nuxt projects the module wires the app side for you: the generated
+declarations are referenced from the app and shared tsconfig projects, so
+`useDrizzle`, `schema`, and your table types infer in Vue code the same way
+they do on the server. How `#drizzle` resolves depends on the environment:
+
+- **Nitro server** (`server/` handlers, plugins) and **Vue SSR** code get the
+  real database client — Nuxt's NitroVirtualBridge resolves Nitro virtuals in
+  the `ssr` environment, so `useDrizzle()` works while server-rendering.
+- **The browser** gets a stub: importing `useDrizzle` resolves fine, but
+  calling it throws, since the client is never shipped to the browser.
+
+```ts
+// app/utils/db-types.ts — types only, safe to import anywhere
+import type { DrizzleDatabase } from '#drizzle'
+
+export type Database = DrizzleDatabase
+```
+
+Because SSR succeeds and the browser throws, calling `useDrizzle()` directly
+in shared component code produces a hydration mismatch — fetch through a
+server API instead, or guard the call with `import.meta.server`. The stub's
+runtime surface is exactly `useDrizzle`; importing `schema` or `relations` as
+values in browser code fails at build time with a missing-export error.
+Import them from your schema entry instead.
+
 ## Migrations
 
 Drizzle v1 migrations are generated under

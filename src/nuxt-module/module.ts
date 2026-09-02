@@ -2,10 +2,16 @@ import type {} from '@nuxt/nitro-server'
 import type { DrizzleOptions } from '../types'
 
 import { env } from 'node:process'
-import { addVitePlugin, createResolver, defineNuxtModule, logger } from '@nuxt/kit'
+import { addTemplate, addVitePlugin, createResolver, defineNuxtModule, logger } from '@nuxt/kit'
 import { DEV_ENV_FLAG } from '../dev-database/resolve'
 import drizzleDevtool from '../devtool'
 import DrizzleModule from '../nitro-module/module'
+
+const DRIZZLE_TYPE_ARTIFACTS = [
+  './drizzle/hooks.d.ts',
+  './drizzle/modules.d.ts',
+  './drizzle/schema.d.ts',
+]
 
 export default defineNuxtModule<DrizzleOptions>({
   meta: {
@@ -39,12 +45,25 @@ export default defineNuxtModule<DrizzleOptions>({
       addVitePlugin(drizzleDevtool() as Parameters<typeof addVitePlugin>[0])
     }
 
+    // The generated declarations join both server projects (nitro types) and
+    // the app project, so `#drizzle` types infer across environments.
     nuxt.hook('nitro:prepare:types', ctx =>
-      [
-        './drizzle/hooks.d.ts',
-        './drizzle/modules.d.ts',
-        './drizzle/schema.d.ts',
-      ]
-        .forEach(path => ctx.references.push({ path: buildResolver.resolve(path) })))
+      DRIZZLE_TYPE_ARTIFACTS.forEach(path =>
+        ctx.references.push({ path: buildResolver.resolve(path) })))
+    nuxt.hook('prepare:types', ctx =>
+      DRIZZLE_TYPE_ARTIFACTS.forEach(path =>
+        ctx.references.push({ path: buildResolver.resolve(path) })))
+
+    // In the browser `#drizzle` resolves to a stub: importing `useDrizzle`
+    // compiles, calling it throws. SSR and the Nitro server always resolve
+    // Nitro's real virtual before this alias (resolve order "pre"). The alias
+    // must be the template's absolute `dst` — a `#build/...` value would land
+    // verbatim in the app tsconfig paths, which rejects non-relative paths.
+    const appGate = addTemplate({
+      filename: 'app-drizzle-gate.mjs',
+      write: true,
+      getContents: () => 'export function useDrizzle() { throw new Error(\'Drizzle is not available in client\') }',
+    })
+    nuxt.options.alias['#drizzle'] = appGate.dst
   },
 })
