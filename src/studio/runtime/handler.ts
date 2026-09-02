@@ -43,7 +43,7 @@ export default defineHandler(async (event) => {
     })
   }
   if (event.req.method !== 'POST') {
-    throw HTTPError.status(405, 'Method Not Allowed')
+    return new Response('Not Found', { status: 404, headers: studioCorsHeaders })
   }
 
   const engine = drizzleConfig.devEngine

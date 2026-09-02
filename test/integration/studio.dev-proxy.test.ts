@@ -100,7 +100,8 @@ function rawStudioRequest(
   body: string,
   origin?: string,
   path = '/',
-): Promise<{ status: number, body: string }> {
+  method = 'POST',
+): Promise<{ status: number, body: string, headers: string }> {
   return new Promise((resolvePromise, rejectPromise) => {
     const socket = connect(port, '127.0.0.1')
     socket.setTimeout(10_000)
@@ -108,7 +109,7 @@ function rawStudioRequest(
     socket
       .on('connect', () => {
         socket.write([
-          `POST ${path} HTTP/1.0`,
+          `${method} ${path} HTTP/1.0`,
           `Host: ${host}`,
           ...(origin === undefined ? [] : [`Origin: ${origin}`]),
           'Content-Type: application/json',
@@ -124,7 +125,7 @@ function rawStudioRequest(
       .on('end', () => {
         const headerBlock = raw.slice(0, raw.indexOf('\r\n\r\n'))
         const status = Number((headerBlock.split('\r\n')[0] ?? '').split(' ')[1])
-        resolvePromise({ status, body: raw.slice(headerBlock.length + 4) })
+        resolvePromise({ status, body: raw.slice(headerBlock.length + 4), headers: headerBlock })
       })
       .on('timeout', () => socket.destroy(new Error(`Studio proxy request to ${host} timed out`)))
       .on('error', rejectPromise)
@@ -297,6 +298,23 @@ export default defineConfig({
         '/_drizzle/studio',
       )
       expect(byIp.status).toBe(401)
+
+      // And the Studio web app's legacy probe — GET /init over the session
+      // host with the Studio origin — meets a CORS-headered 404: the client
+      // refuses to connect when any 2xx answers there, and a CORS-less
+      // response makes the browser log a loud CORS failure. drizzle-kit's
+      // studio server (POST-only routes behind cors middleware) serves the
+      // same 404.
+      const legacyProbe = await rawStudioRequest(
+        httpPort,
+        proxyHost(localhostDomain),
+        '',
+        'https://local.drizzle.studio',
+        '/init',
+        'GET',
+      )
+      expect(legacyProbe.status).toBe(404)
+      expect(legacyProbe.headers.toLowerCase()).toContain('access-control-allow-origin')
 
       // And a real Studio handshake — session Host plus Studio origin —
       // reaches the dev database with the gate-injected key

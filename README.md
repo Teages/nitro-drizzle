@@ -370,11 +370,18 @@ export default defineConfig({
 The Nuxt module wires the plugin itself for dev sessions with the dev
 database — no `vite.plugins` entry needed there.
 
-The tab is an iframe fixed to `/_drizzle/studio`. The plugin mints a
-per-session key, embeds it in the iframe URL, and shares it with the Nitro
-module in the same process; a GET on the studio route redirects to the Studio
-web app only when the `open` query matches that key, and every other request
-keeps meeting the route's bearer gate.
+The tab is a `custom-render` dock: the plugin's renderer mounts an iframe on
+`/_drizzle/studio` itself, with `allow="local-network-access *"`. That
+permission is what lets the Studio web app — a public origin, reached through
+the route's keyed redirect — talk to the loopback session host from inside an
+iframe under Chrome/Edge [Local Network Access](https://learn.microsoft.com/en-us/deployedge/ms-edge-local-network-access)
+rules, and the host's plain iframe entries cannot express it. First use
+prompts once for the app origin; Local Network Access also needs a secure
+context, which `localhost` qualifies as but a plain-HTTP LAN-IP host does
+not. The plugin still mints the per-session key, embeds it in the iframe URL,
+and shares it with the Nitro module in the same process; a GET on the studio
+route redirects to the Studio web app only when the `open` query matches that
+key, and every other request keeps meeting the route's bearer gate.
 
 ## Cloudflare
 
