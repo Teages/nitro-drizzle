@@ -7,36 +7,28 @@ import { DEFAULT_STUDIO_URL, DrizzleDevStudioError, resolveDevStudio } from '../
 describe('resolveDevStudio', () => {
   it('applies defaults for undefined and true', () => {
     expect(resolveDevStudio(undefined)).toEqual({
-      port: undefined,
+      localhostDomain: expect.any(String),
       silent: false,
       studioUrl: DEFAULT_STUDIO_URL,
     })
-    expect(resolveDevStudio(true)).toEqual(resolveDevStudio(undefined))
+    expect(resolveDevStudio(true)?.silent).toBe(false)
   })
 
   it('disables the studio for false', () => {
     expect(resolveDevStudio(false)).toBeUndefined()
   })
 
+  it('mints a fresh per-session localhost domain every call', () => {
+    expect(resolveDevStudio({})?.localhostDomain).toMatch(/^[0-9a-f-]{36}\.localhost$/)
+    expect(resolveDevStudio({})?.localhostDomain).not.toBe(resolveDevStudio({})?.localhostDomain)
+  })
+
   it('normalizes a partial options object', () => {
-    expect(resolveDevStudio({ port: 4983 })).toEqual({
-      port: 4983,
-      silent: false,
-      studioUrl: DEFAULT_STUDIO_URL,
-    })
     expect(resolveDevStudio({ silent: true, studioUrl: 'http://localhost:5173/' })).toEqual({
-      port: undefined,
+      localhostDomain: expect.any(String),
       silent: true,
       studioUrl: 'http://localhost:5173/',
     })
-  })
-
-  it('rejects ports outside the valid range', () => {
-    for (const port of [0, -1, 65536, 4983.5, Number.NaN]) {
-      expect(() => resolveDevStudio({ port }))
-        .toThrow(DrizzleDevStudioError)
-      expect(() => resolveDevStudio({ port })).toThrow('devMock.studio.port')
-    }
   })
 
   it('rejects studio URLs that are not absolute http(s) URLs', () => {
@@ -48,7 +40,7 @@ describe('resolveDevStudio', () => {
 })
 
 /** Minimal Nitro options shape `resolveDrizzleModuleContext` reads. */
-function fakeNitro(dev: boolean, studio: unknown = { port: 99999 }): Nitro {
+function fakeNitro(dev: boolean, studio: unknown = { studioUrl: 'local.drizzle.studio' }): Nitro {
   return {
     options: {
       dev,
@@ -70,38 +62,24 @@ describe('studio resolution in module context', () => {
   })
 
   it('resolves and validates the studio only alongside the dev database', async () => {
-    // Given — a dev session with an invalid studio port
+    // Given — a dev session with an invalid studio URL
     vi.stubEnv(DEV_ENV_FLAG, 'true')
 
     // When / Then — the build fails on the invalid dev-only option
     await expect(resolveDrizzleModuleContext(fakeNitro(true)))
       .rejects
-      .toThrow('devMock.studio.port')
+      .toThrow('devMock.studio.studioUrl')
   })
 
-  it('keeps a configured port as-is', async () => {
-    // Given — a dev session with a valid, fixed studio port
-    vi.stubEnv(DEV_ENV_FLAG, 'true')
-
-    // When
-    const context = await resolveDrizzleModuleContext(fakeNitro(true, { port: 4983 }))
-
-    // Then — the session binds exactly what the user asked for
-    expect(context?.devStudio?.port).toBe(4983)
-  })
-
-  it('probes an ephemeral port when none is configured', async () => {
+  it('mints the per-session localhost domain for the runtime', async () => {
     // Given — a dev session relying on the default studio options
     vi.stubEnv(DEV_ENV_FLAG, 'true')
 
     // When
     const context = await resolveDrizzleModuleContext(fakeNitro(true, {}))
 
-    // Then — the module hands the runtime a concrete, bindable port
-    const port = context?.devStudio?.port
-    expect(Number.isInteger(port)).toBe(true)
-    expect(port).toBeGreaterThan(0)
-    expect(port).toBeLessThanOrEqual(65535)
+    // Then — the session carries an unguessable *.localhost hostname
+    expect(context?.devStudio?.localhostDomain).toMatch(/^[0-9a-f-]{36}\.localhost$/)
   })
 
   it('ignores an invalid studio config in production builds', async () => {

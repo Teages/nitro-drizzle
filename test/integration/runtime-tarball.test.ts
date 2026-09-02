@@ -111,7 +111,7 @@ describe('published runtime entries in Nitro dev', () => {
       'config',
       'configuration/runtime/connection',
       'dev-database/runtime/plugin',
-      'studio/runtime/plugin',
+      'studio/runtime/middleware',
       'studio/runtime/handler',
     ]) {
       await access(join(packageDir, 'dist', `${entry}.mjs`))
@@ -126,10 +126,8 @@ describe('published runtime entries in Nitro dev', () => {
     for (const dependency of [
       'drizzle-kit',
       'drizzle-orm',
-      'get-port-please',
       'nitro',
       'rolldown',
-      'srvx',
     ]) {
       await symlink(
         join(repoRoot, 'node_modules', dependency),

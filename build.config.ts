@@ -19,7 +19,7 @@ export default defineBuildConfig({
       input: [
         './src/configuration/runtime/connection.ts',
         './src/dev-database/runtime/plugin.ts',
-        './src/studio/runtime/plugin.ts',
+        './src/studio/runtime/middleware.ts',
         './src/studio/runtime/handler.ts',
       ],
       dts: false,

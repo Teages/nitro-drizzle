@@ -82,20 +82,16 @@ export interface DrizzleDevMockOptions {
    */
   file?: string
   /**
-   * The built-in Drizzle Studio that ships with dev-database sessions: a
-   * loopback proxy on a random port that the Studio web app connects to.
-   * `false` disables it; an object customizes it; omitted or `true` uses the
+   * The built-in Drizzle Studio that ships with dev-database sessions: the
+   * dev server serves the Studio API behind a per-session unguessable
+   * `*.localhost` host — no separate listener, no extra port. `false`
+   * disables it; an object customizes it; omitted or `true` uses the
    * defaults.
    */
   studio?: boolean | DrizzleDevStudioOptions
 }
 
 export interface DrizzleDevStudioOptions {
-  /**
-   * Fixed port for the local Studio API proxy. When omitted the module picks
-   * a random port in the 20000–65535 range on every start.
-   */
-  port?: number
   /**
    * Skip the startup log line pointing at the Studio web app. Startup errors
    * are still reported.
@@ -104,8 +100,8 @@ export interface DrizzleDevStudioOptions {
   silent?: boolean
   /**
    * Base URL of the Studio web app. It is used both for the startup link and
-   * as the origin the loopback proxy accepts requests from, so pointing it at
-   * a self-hosted Studio frontend keeps the origin check meaningful.
+   * as the origin the session-host gate accepts, so pointing it at a
+   * self-hosted Studio frontend keeps the origin check meaningful.
    * @default 'https://local.drizzle.studio'
    */
   studioUrl?: string

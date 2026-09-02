@@ -1,7 +1,7 @@
-import type { Buffer } from 'node:buffer'
+import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { createServer } from 'node:net'
+import { connect, createServer } from 'node:net'
 import { join, resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -32,14 +32,16 @@ afterEach(async () => {
 /**
  * Spawns a real `nitro dev` server with the studio enabled. The child env
  * drops the test markers (`VITEST`, `TEST`) that would short-circuit the
- * studio plugin or silence the dev-server logging this test waits on, and
- * restores the development NODE_ENV vitest overrode.
+ * studio wiring or silence the dev-server logging this test waits on, and
+ * restores the development NODE_ENV vitest overrode. The listening port
+ * comes from the generated config's `devServer.port` — the same source the
+ * module reads for the printed link.
  */
-function spawnDevServer(rootDir: string, port: number) {
+function spawnDevServer(rootDir: string) {
   const env: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: 'development' }
   delete env.VITEST
   delete env.TEST
-  const child = spawn(nitroBin, ['dev', '--port', String(port)], {
+  const child = spawn(nitroBin, ['dev'], {
     cwd: rootDir,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -85,12 +87,57 @@ async function postStudio(url: string, body: unknown, origin?: string, signal?: 
 }
 
 /**
- * Polls the studio proxy until a query returns the expected rows — the
- * signal that the reloaded worker generation has pushed the new schema and
- * rebound the same port.
+ * Node's fetch follows the spec and refuses a `Host` header, so proxy
+ * traffic shaped for the per-session domain goes over a raw socket with a
+ * hand-written request line. The Studio web app's HTTP client posts to the
+ * bare `scheme://host:port` root, so `path` defaults to `/`. HTTP/1.0 keeps
+ * the response free of chunked framing and `Connection: close` ends the
+ * stream, so the full response drains before the promise settles.
+ */
+function rawStudioRequest(
+  port: number,
+  host: string,
+  body: string,
+  origin?: string,
+  path = '/',
+): Promise<{ status: number, body: string }> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const socket = connect(port, '127.0.0.1')
+    socket.setTimeout(10_000)
+    let raw = ''
+    socket
+      .on('connect', () => {
+        socket.write([
+          `POST ${path} HTTP/1.0`,
+          `Host: ${host}`,
+          ...(origin === undefined ? [] : [`Origin: ${origin}`]),
+          'Content-Type: application/json',
+          `Content-Length: ${Buffer.byteLength(body)}`,
+          'Connection: close',
+          '',
+          body,
+        ].join('\r\n'))
+      })
+      .on('data', (chunk: Buffer) => {
+        raw += chunk.toString()
+      })
+      .on('end', () => {
+        const headerBlock = raw.slice(0, raw.indexOf('\r\n\r\n'))
+        const status = Number((headerBlock.split('\r\n')[0] ?? '').split(' ')[1])
+        resolvePromise({ status, body: raw.slice(headerBlock.length + 4) })
+      })
+      .on('timeout', () => socket.destroy(new Error(`Studio proxy request to ${host} timed out`)))
+      .on('error', rejectPromise)
+  })
+}
+
+/**
+ * Polls the studio route until a query returns the expected rows — the
+ * signal that the reloaded worker generation has pushed the new schema.
  */
 async function pollProxyQuery(
-  proxyUrl: string,
+  port: number,
+  localhostDomain: string,
   sql: string,
   expected: unknown[][],
   timeoutMs: number,
@@ -99,19 +146,21 @@ async function pollProxyQuery(
   let lastFailure = 'request never ran'
   while (Date.now() < deadline) {
     try {
-      const response = await postStudio(proxyUrl, {
-        type: 'proxy',
-        data: { sql, method: 'values', mode: 'array' },
-      }, 'https://local.drizzle.studio', AbortSignal.timeout(deadline - Date.now()))
-      if (response.ok) {
-        const rows = await response.json()
+      const { status, body } = await rawStudioRequest(
+        port,
+        `${localhostDomain}:${port}`,
+        JSON.stringify({ type: 'proxy', data: { sql, method: 'values', mode: 'array' } }),
+        'https://local.drizzle.studio',
+      )
+      if (status === 200) {
+        const rows: unknown = JSON.parse(body)
         if (JSON.stringify(rows) === JSON.stringify(expected)) {
           return
         }
         lastFailure = `rows were ${JSON.stringify(rows)}`
       }
       else {
-        lastFailure = `HTTP ${response.status}`
+        lastFailure = `HTTP ${status}`
       }
     }
     catch (error) {
@@ -163,7 +212,6 @@ export const users = sqliteTable('users', {
 })
 `)
     const httpPort = await reservePort()
-    const studioPort = await reservePort()
     const devtoolsKey = 'e2e-studio-devtools-key'
     await writeFile(join(rootDir, 'nitro.config.ts'), `import { defineConfig } from 'nitro/config'
 import NitroDrizzle from ${JSON.stringify(resolve(repoRoot, 'src/index'))}
@@ -175,6 +223,7 @@ provideDevtoolsKey(${JSON.stringify(devtoolsKey)})
 
 export default defineConfig({
   serverDir: './server',
+  devServer: { port: ${httpPort} },
   modules: [NitroDrizzle],
   drizzle: {
     dialect: 'sqlite',
@@ -182,20 +231,25 @@ export default defineConfig({
     schemaPath: './server/db/schema.ts',
     devMock: {
       driver: 'node-sqlite',
-      studio: { port: ${studioPort} },
+      studio: {},
     },
     connection: { url: ${JSON.stringify(`file:${join(rootDir, 'dev.db')}`)} },
   },
 })
 `)
 
-    const { child, waitForOutput } = spawnDevServer(rootDir, httpPort)
+    const { child, waitForOutput } = spawnDevServer(rootDir)
     try {
-      const proxyUrl = `http://127.0.0.1:${studioPort}/`
-      const studioLink = new RegExp(`Drizzle Studio: \\S+port=${studioPort}`)
+      const proxyHost = (domain: string): string => `${domain}:${httpPort}`
 
-      // Then — the plugin started the proxy (auth key replaced at build time)
-      await waitForOutput(studioLink, 90_000)
+      // Then — the module printed the studio link for the dev server port
+      // under its per-session *.localhost domain
+      const linkLog = await waitForOutput(
+        new RegExp(`Drizzle Studio: \\S+port=${httpPort}&host=[\\w.-]+\\.localhost`),
+        90_000,
+      )
+      const localhostDomain = /&host=([\w.-]+)/.exec(linkLog)?.[1] ?? ''
+      expect(localhostDomain).toMatch(/^[0-9a-f-]{36}\.localhost$/)
 
       // And the internal route rejects direct access: no key, no studio
       const direct = await waitUntilRouteAnswers(`http://127.0.0.1:${httpPort}/_drizzle/studio`, 90_000)
@@ -208,7 +262,8 @@ export default defineConfig({
         { redirect: 'manual' },
       )
       expect(devtools.status).toBe(302)
-      expect(devtools.headers.get('location')).toBe(`https://local.drizzle.studio/?port=${studioPort}`)
+      expect(devtools.headers.get('location'))
+        .toBe(`https://local.drizzle.studio/?port=${httpPort}&host=${localhostDomain}`)
 
       // And any other GET — wrong key, or none — keeps meeting the bearer gate
       const wrongKey = await fetch(
@@ -222,28 +277,51 @@ export default defineConfig({
       )
       expect(unkeyed.status).toBe(401)
 
-      // And the proxy only accepts the Studio web app origin
-      const evil = await postStudio(proxyUrl, { type: 'init' }, 'https://evil.example')
+      // And the session domain only opens for the Studio web app origin
+      const evil = await rawStudioRequest(
+        httpPort,
+        proxyHost(localhostDomain),
+        JSON.stringify({ type: 'init' }),
+        'https://evil.example',
+      )
       expect(evil.status).toBe(403)
 
-      // And a real Studio handshake reaches the dev database through
-      // serverFetch with the injected key
-      const init = await postStudio(proxyUrl, { type: 'init' }, 'https://local.drizzle.studio')
-      await expect(init.json()).resolves.toMatchObject({
+      // And the port-scan shape — probing the known route path on the app
+      // host, even with the right origin but no session Host — keeps
+      // meeting the bearer gate: the domain, not the port, is the capability
+      const byIp = await rawStudioRequest(
+        httpPort,
+        `127.0.0.1:${httpPort}`,
+        JSON.stringify({ type: 'init' }),
+        'https://local.drizzle.studio',
+        '/_drizzle/studio',
+      )
+      expect(byIp.status).toBe(401)
+
+      // And a real Studio handshake — session Host plus Studio origin —
+      // reaches the dev database with the gate-injected key
+      const init = await rawStudioRequest(
+        httpPort,
+        proxyHost(localhostDomain),
+        JSON.stringify({ type: 'init' }),
+        'https://local.drizzle.studio',
+      )
+      expect(JSON.parse(init.body)).toMatchObject({
         version: '6.3',
         dialect: 'sqlite',
         driver: 'node-sqlite',
       })
 
-      // And array-mode queries keep their full shape through the proxy
-      const probe = await postStudio(proxyUrl, {
-        type: 'proxy',
-        data: { sql: 'SELECT 1 AS x, 2 AS x', method: 'values', mode: 'array' },
-      }, 'https://local.drizzle.studio')
-      await expect(probe.json()).resolves.toEqual([[1, 2]])
+      // And array-mode queries keep their full shape through the gate
+      const probe = await rawStudioRequest(
+        httpPort,
+        proxyHost(localhostDomain),
+        JSON.stringify({ type: 'proxy', data: { sql: 'SELECT 1 AS x, 2 AS x', method: 'values', mode: 'array' } }),
+        'https://local.drizzle.studio',
+      )
+      expect(JSON.parse(probe.body)).toEqual([[1, 2]])
 
-      // And a worker reload rebinds the fixed port without leaking or losing
-      // it: the superseded generation's close hook must not kill the new one
+      // And a worker reload keeps serving the studio on the same route
       await writeFile(schemaFile, `import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 export const users = sqliteTable('users', {
@@ -255,16 +333,19 @@ export const reloadMarkers = sqliteTable('reload_markers', {
   id: integer('id').primaryKey(),
 })
 `)
-      // The link prints once per dev-server run (the module resolves the
-      // port, so it is stable across worker generations); the reload itself
-      // is observed through the proxy: only the new generation pushes and
-      // serves the new table on the same port.
-      await pollProxyQuery(proxyUrl, 'SELECT count(*) AS n FROM reload_markers', [[0]], 90_000)
-      const afterReload = await postStudio(proxyUrl, { type: 'init' }, 'https://local.drizzle.studio')
+      // The reload itself is observed through the gated route: only the new
+      // generation pushes and serves the new table.
+      await pollProxyQuery(httpPort, localhostDomain, 'SELECT count(*) AS n FROM reload_markers', [[0]], 90_000)
+      const afterReload = await rawStudioRequest(
+        httpPort,
+        proxyHost(localhostDomain),
+        JSON.stringify({ type: 'init' }),
+        'https://local.drizzle.studio',
+      )
       expect(afterReload.status).toBe(200)
 
-      // And the dev server terminates on SIGTERM — a leaked studio listener
-      // would keep the process alive
+      // And the dev server terminates on SIGTERM — a wedged worker would
+      // keep the process alive
       child.kill('SIGTERM')
       const outcome = await new Promise<{ code: number | null, signal: string | null } | null>(
         (resolvePromise) => {

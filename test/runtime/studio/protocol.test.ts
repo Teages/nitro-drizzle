@@ -33,23 +33,25 @@ describe('validateStudioAuthorization', () => {
 })
 
 describe('studioDevtoolsRedirect', () => {
-  const studio = { studioUrl: 'https://local.drizzle.studio', port: 4983 }
+  const studio = { studioUrl: 'https://local.drizzle.studio', localhostDomain: 'abc.localhost' }
 
   it('redirects only a GET whose open query equals the session key', () => {
     expect(studioDevtoolsRedirect({
       key: 'secret',
       method: 'GET',
       open: 'secret',
+      requestPort: '3000',
       studio,
-    })).toBe('https://local.drizzle.studio/?port=4983')
+    })).toBe('https://local.drizzle.studio/?port=3000&host=abc.localhost')
   })
 
   it('stays closed without a key, a studio session, or a matching query', () => {
-    expect(studioDevtoolsRedirect({ key: undefined, method: 'GET', open: 'secret', studio })).toBeUndefined()
-    expect(studioDevtoolsRedirect({ key: 'secret', method: 'GET', open: 'secret', studio: undefined })).toBeUndefined()
-    expect(studioDevtoolsRedirect({ key: 'secret', method: 'POST', open: 'secret', studio })).toBeUndefined()
-    expect(studioDevtoolsRedirect({ key: 'secret', method: 'GET', open: 'wrong', studio })).toBeUndefined()
-    expect(studioDevtoolsRedirect({ key: 'secret', method: 'GET', open: undefined, studio })).toBeUndefined()
+    const input = { method: 'GET', open: 'secret', requestPort: '3000', studio } as const
+    expect(studioDevtoolsRedirect({ key: undefined, ...input })).toBeUndefined()
+    expect(studioDevtoolsRedirect({ key: 'secret', ...input, studio: undefined })).toBeUndefined()
+    expect(studioDevtoolsRedirect({ key: 'secret', ...input, method: 'POST' })).toBeUndefined()
+    expect(studioDevtoolsRedirect({ key: 'secret', ...input, open: 'wrong' })).toBeUndefined()
+    expect(studioDevtoolsRedirect({ key: 'secret', ...input, open: undefined })).toBeUndefined()
   })
 })
 

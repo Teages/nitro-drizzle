@@ -16,8 +16,8 @@ export interface RuntimeDrizzleConfig {
   readonly devConnection?: string
   /** Normalized `drizzle.devMock.studio`; only present when the studio is enabled. */
   readonly devStudio?: {
-    readonly port: number
-    readonly silent: boolean
+    /** Per-session `<uuid>.localhost` host the studio answers to. */
+    readonly localhostDomain: string
     readonly studioUrl: string
   }
   readonly connection: DatabaseConnection
