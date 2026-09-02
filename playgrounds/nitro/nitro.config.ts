@@ -9,11 +9,7 @@ export default defineConfig({
     dialect: 'sqlite',
     driver: 'libsql',
     schemaPath: './server/db/schema.ts',
-    devMock: {
-      studio: {
-        port: 4983,
-      },
-    },
+    devMock: true,
     connection: {
       url: 'file:./playground.db',
     },
