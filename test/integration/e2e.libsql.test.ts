@@ -57,7 +57,7 @@ describe('@teages/nitro-drizzle end-to-end build', () => {
     const rootDir = await mkdtemp(join(process.cwd(), '.test-drizzle-e2e-'))
     temporaryDirectories.push(rootDir)
     const databaseFile = join(rootDir, 'app.db')
-    await mkdir(join(rootDir, 'server/db/migrations/sqlite/20260819000000_create_users'), { recursive: true })
+    await mkdir(join(rootDir, 'server/db/migrations/20260819000000_create_users'), { recursive: true })
     await mkdir(join(rootDir, 'server/api'), { recursive: true })
     await writeFile(
       join(rootDir, 'server/db/schema.ts'),
@@ -70,7 +70,7 @@ export const users = sqliteTable('users', {
 `,
     )
     await writeFile(
-      join(rootDir, 'server/db/migrations/sqlite/20260819000000_create_users/migration.sql'),
+      join(rootDir, 'server/db/migrations/20260819000000_create_users/migration.sql'),
       `CREATE TABLE users (
   id integer PRIMARY KEY AUTOINCREMENT,
   name text NOT NULL
@@ -119,7 +119,7 @@ export default defineHandler(async () => {
 
     // And applying the migration chain prepares the database for the built server
     const migrationSql = await readFile(
-      join(rootDir, 'server/db/migrations/sqlite/20260819000000_create_users/migration.sql'),
+      join(rootDir, 'server/db/migrations/20260819000000_create_users/migration.sql'),
       'utf8',
     )
     const migrate = createClient({ url: `file:${databaseFile}` })

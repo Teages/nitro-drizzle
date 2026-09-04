@@ -54,7 +54,7 @@ export interface DrizzleOptions {
   /**
    * The directory holding the Drizzle migration chain. `drizzle-kit generate`
    * writes new migrations here; apply them with the drizzle-kit CLI.
-   * @default '<serverDir>/db/migrations/<dialect>'
+   * @default '<serverDir>/db/migrations'
    */
   migrationsDir?: string
   /**

@@ -63,7 +63,7 @@ describe('generateDrizzleArtifacts', () => {
     // Then
     expect(artifacts.directory).toBe(join(nitro.options.buildDir, 'drizzle'))
     expect(config.migrationsDir).toBe(
-      join(serverDir, 'db/migrations/sqlite'),
+      join(serverDir, 'db/migrations'),
     )
     expect(nitro.options.runtimeConfig.drizzle).toBeUndefined()
     await nitro.close()
