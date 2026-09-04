@@ -145,7 +145,7 @@ describe('published runtime entries in Nitro dev', () => {
     const serverDir = join(rootDir, 'server')
     const migrationDir = join(
       serverDir,
-      'db/migrations/sqlite/20260824000000_create_todos',
+      'db/migrations/20260824000000_create_todos',
     )
     await Promise.all([
       mkdir(join(serverDir, 'api'), { recursive: true }),

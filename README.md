@@ -195,7 +195,7 @@ Import them from your schema entry instead.
 ## Migrations
 
 Drizzle v1 migrations are generated under
-`server/db/migrations/<dialect>/<timestamp>_<name>/`. Legacy
+`server/db/migrations/<timestamp>_<name>/`. Legacy
 `meta/_journal.json` migrations must first be upgraded with `drizzle-kit up`.
 
 Each project owns a single migration chain: `generate` writes to it and every

@@ -111,7 +111,7 @@ describe('loadDrizzleConfig', () => {
 
     expect(config.dialect).toBe('turso')
     expect(config.schema).toEqual([fixture.schemaPath])
-    expect(config.out).toBe(join(fixture.serverDir, 'db/migrations/sqlite'))
+    expect(config.out).toBe(join(fixture.serverDir, 'db/migrations'))
     expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
       url: 'file:./test.db',
     })
@@ -287,7 +287,7 @@ export default defineConfig({
     expect(config.dialect).toBe('postgresql')
     expect(config.schema).toEqual([fixture.schemaPath])
     expect('driver' in config ? config.driver : undefined).toBe('pglite')
-    expect(config.out).toBe(join(fixture.serverDir, 'db/migrations/postgresql'))
+    expect(config.out).toBe(join(fixture.serverDir, 'db/migrations'))
     expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
       url: '/tmp/pg-data',
     })
@@ -352,7 +352,7 @@ export default defineConfig({
 
     expect(config.dialect).toBe('turso')
     expect(config.schema).toEqual([fixture.schemaPath])
-    expect(config.out).toBe(join(fixture.serverDir, 'db/migrations/sqlite'))
+    expect(config.out).toBe(join(fixture.serverDir, 'db/migrations'))
     expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
       url: 'file:./test.db',
     })

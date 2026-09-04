@@ -48,7 +48,7 @@ export function resolveDrizzleConfig(
   const migrationsDir = config.migrationsDir ?? (
     options.serverDir === false
       ? undefined
-      : resolve(options.serverDir, 'db/migrations', config.dialect)
+      : resolve(options.serverDir, 'db/migrations')
   )
 
   return {

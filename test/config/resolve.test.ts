@@ -69,7 +69,7 @@ describe('resolveDrizzleConfig', () => {
       dialect: 'sqlite',
       driver: 'libsql',
       connection: { url: 'file:database.db' },
-      migrationsDir: join(serverDir, 'db/migrations/sqlite'),
+      migrationsDir: join(serverDir, 'db/migrations'),
     })
   })
 

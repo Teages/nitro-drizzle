@@ -25,7 +25,7 @@ describe('local libSQL drizzle-kit config', () => {
     const databaseFile = join(rootDir, 'local.db')
     const migrationDir = join(
       rootDir,
-      'server/db/migrations/sqlite/20260824000000_create_users',
+      'server/db/migrations/20260824000000_create_users',
     )
     await mkdir(migrationDir, { recursive: true })
     await writeFile(
