@@ -149,28 +149,35 @@ export default defineHandler(() => {
 
 ## Generated types
 
-Run `nitro prepare`, `nitro dev`, or `nitro build`, then include the generated
-declarations in the server tsconfig:
+The module writes its declarations during module setup — `nitro dev` and
+`nitro build` both produce them — into `node_modules/.nitro-drizzle`. Include
+that directory in the server tsconfig:
 
 ```json
 {
   "extends": "nitro/tsconfig",
   "include": [
     "./**/*.ts",
-    "node_modules/.nitro/drizzle/**/*.d.ts"
+    "node_modules/.nitro-drizzle/**/*.d.ts"
   ]
 }
 ```
+
+Set `drizzle.typesDir` to move the declarations elsewhere (relative paths
+resolve from the project root) or to `false` to disable type generation. The
+option does not apply in Nuxt — see below.
 
 The module declares `#drizzle` directly. It does not add aliases or write a
 synthetic package into `node_modules`.
 
 ### Nuxt app environment
 
-In Nuxt projects the module wires the app side for you: the generated
-declarations are referenced from the app and shared tsconfig projects, so
+In Nuxt projects the module wires the app side for you: the declarations
+generate into `<buildDir>/drizzle` (`.nuxt/drizzle`) whenever Nuxt prepares
+types, and are referenced from the app and shared tsconfig projects, so
 `useDrizzle`, `schema`, and your table types infer in Vue code the same way
-they do on the server. How `#drizzle` resolves depends on the environment:
+they do on the server. `drizzle.typesDir` is ignored — Nuxt owns the type
+lifecycle. How `#drizzle` resolves depends on the environment:
 
 - **Nitro server** (`server/` handlers, plugins) and **Vue SSR** code get the
   real database client — Nuxt's NitroVirtualBridge resolves Nitro virtuals in
@@ -229,9 +236,9 @@ drizzle-kit migrate
 Other Drizzle Kit commands (`push`, `pull`, `check`, `studio`) work the same
 way. `loadDrizzleConfig` accepts a `{ cwd }` option when the project root is
 not the working directory. Drizzle Kit reads the configured entry directly,
-so source edits do not require re-running `nitro prepare`; it is only needed
-for generated types and build artifacts. `drizzle-kit migrate` applies only
-the migration chain.
+so source edits do not require re-running anything — `nitro dev` and
+`nitro build` regenerate the declarations on startup. `drizzle-kit migrate`
+applies only the migration chain.
 
 Migrations never run as a side effect of a production build — the build stays
 side-effect free and needs no database credentials. Apply the migration chain

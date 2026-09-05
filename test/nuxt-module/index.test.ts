@@ -19,7 +19,14 @@ function createStubNuxt(dev: boolean): {
   const alias: Record<string, string> = {}
   const templates: Nuxt['options']['build']['templates'] = []
   const nuxt = {
-    options: { dev, buildDir: '/tmp/nuxt-drizzle-build', alias, build: { templates } },
+    options: {
+      dev,
+      rootDir: '/tmp/nuxt-drizzle-root',
+      serverDir: '/tmp/nuxt-drizzle-root/server',
+      buildDir: '/tmp/nuxt-drizzle-build',
+      alias,
+      build: { templates },
+    },
     hook: (event: string, handler: RegisteredHook['handler']) => {
       hooks.push({ event, handler })
     },
@@ -92,6 +99,7 @@ describe('@teages/nitro-drizzle/nuxt', () => {
     // Given — any session; the app wiring does not depend on the dev session
     const { hooks, alias, templates } = await setupModule({}, false)
     const buildDir = '/tmp/nuxt-drizzle-build'
+    const typesDir = `${buildDir}/drizzle`
 
     // Then — the browser alias resolves to the gate template on disk, whose
     // only export is a useDrizzle that throws
@@ -107,9 +115,32 @@ describe('@teages/nitro-drizzle/nuxt', () => {
     const payload = { references: [] }
     await typesHook?.handler(payload as never)
     expect(payload.references).toEqual([
-      { path: `${buildDir}/drizzle/hooks.d.ts` },
-      { path: `${buildDir}/drizzle/modules.d.ts` },
-      { path: `${buildDir}/drizzle/schema.d.ts` },
+      { path: `${typesDir}/hooks.d.ts` },
+      { path: `${typesDir}/modules.d.ts` },
+      { path: `${typesDir}/schema.d.ts` },
+    ])
+  })
+
+  it('owns the type lifecycle regardless of the typesDir option', async () => {
+    // Given — a typesDir the user configured
+    const { hooks } = await setupModule({ typesDir: 'types/drizzle' }, false)
+
+    // Then — the nitro module receives the option overridden to false, so
+    // it never writes declarations at its own setup
+    const nitroConfig: { modules?: unknown[], drizzle?: Record<string, unknown> } = {}
+    const configHook = hooks.find(({ event }) => event === 'nitro:config')
+    await configHook?.handler(nitroConfig as never)
+    expect(nitroConfig.drizzle).toEqual({ typesDir: false })
+
+    // And — the type hooks reference <buildDir>/drizzle, where the module
+    // generates while Nuxt prepares types
+    const typesHook = hooks.find(({ event }) => event === 'prepare:types')
+    const payload = { references: [] }
+    await typesHook?.handler(payload as never)
+    expect(payload.references).toEqual([
+      { path: '/tmp/nuxt-drizzle-build/drizzle/hooks.d.ts' },
+      { path: '/tmp/nuxt-drizzle-build/drizzle/modules.d.ts' },
+      { path: '/tmp/nuxt-drizzle-build/drizzle/schema.d.ts' },
     ])
   })
 })

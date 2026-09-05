@@ -2,7 +2,6 @@
   "name": "fixture-base",
   "type": "module",
   "scripts": {
-    "prepare": "nitro prepare",
     "dev": "nitro dev",
     "schema:pg": "node ../../../../node_modules/drizzle-kit/bin.cjs generate --dialect postgresql --schema ./server/db/schema.postgresql.ts --out ./server/db/migrations/postgresql",
     "schema:sqlite": "node ../../../../node_modules/drizzle-kit/bin.cjs generate --dialect sqlite --schema ./server/db/schema.sqlite.ts --out ./server/db/migrations/sqlite",

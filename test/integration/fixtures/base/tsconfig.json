@@ -1,4 +1,4 @@
 {
   "extends": ["nitro/tsconfig"],
-  "include": ["**/*.ts", ".nitro/**/*"]
+  "include": ["**/*.ts", "node_modules/.nitro-drizzle/**/*.d.ts"]
 }

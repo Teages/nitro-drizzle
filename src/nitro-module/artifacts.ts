@@ -14,21 +14,23 @@ export interface DrizzleArtifactsLifecycle {
 
 /**
  * Prepares the Drizzle artifacts and keeps everything derived from them in
- * sync: the runtime config and the `#drizzle` virtual modules.
+ * sync: the runtime config and the `#drizzle` virtual modules. Type
+ * declarations are written here — module setup runs for `nitro dev` and
+ * `nitro build` alike, ahead of any consumer typecheck.
  */
 export async function createDrizzleArtifactsLifecycle(
   nitro: Nitro,
   ctx: DrizzleModuleContext,
 ): Promise<DrizzleArtifactsLifecycle> {
-  nitro.hooks.hook('types:extend', async () => {
+  if (ctx.typesDir !== false) {
     await generateDrizzleArtifacts({
-      buildDir: nitro.options.buildDir,
+      directory: ctx.typesDir,
       config: ctx.config,
       schemaPath: ctx.schemaPath,
       ...(ctx.relationsExport === undefined ? {} : { relationsExport: ctx.relationsExport }),
       ...(ctx.devDb?.engine === undefined ? {} : { clientDriver: ctx.devDb.engine }),
     })
-  })
+  }
 
   const apply = (): void => {
     // Module-owned runtime config: connection values never pass through

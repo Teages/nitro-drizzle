@@ -19,8 +19,16 @@ export default {
         '@teages/nitro-drizzle requires Nitro serverDir to be enabled.',
       )
     }
+    if (nitro.options.drizzle === undefined) {
+      return
+    }
 
-    const ctx = await resolveDrizzleModuleContext(nitro)
+    const ctx = await resolveDrizzleModuleContext({
+      drizzle: nitro.options.drizzle,
+      rootDir: nitro.options.rootDir,
+      serverDir: nitro.options.serverDir,
+      dev: nitro.options.dev,
+    })
     if (ctx === undefined) {
       return
     }
