@@ -1,4 +1,4 @@
 {
   "extends": "nitro/tsconfig",
-  "include": ["src/*/runtime/**/*.ts", "playgrounds/nitro/.nitro/drizzle/**/*.ts"]
+  "include": ["src/*/runtime/**/*.ts", "playgrounds/nitro/node_modules/.nitro-drizzle/**/*.d.ts"]
 }

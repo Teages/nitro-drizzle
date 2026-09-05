@@ -1,3 +1,7 @@
 {
-  "extends": ["./.nitro/tsconfig.json"]
+  "extends": ["nitro/tsconfig"],
+  "include": [
+    "./**/*",
+    "./node_modules/.nitro-drizzle/**/*.d.ts"
+  ]
 }

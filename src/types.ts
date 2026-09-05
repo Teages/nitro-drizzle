@@ -58,6 +58,17 @@ export interface DrizzleOptions {
    */
   migrationsDir?: string
   /**
+   * Directory the generated type declarations are written to, resolved from
+   * the project root. Declarations are written during module setup, so
+   * `nitro dev` and `nitro build` both produce them. Set to `false` to
+   * disable type generation.
+   *
+   * Ignored in Nuxt: the Nuxt module always generates the declarations into
+   * `<buildDir>/drizzle` while Nuxt prepares types.
+   * @default 'node_modules/.nitro-drizzle'
+   */
+  typesDir?: string | false
+  /**
    * Run `nitro dev` against a disposable local dev database instead of the
    * configured connection. The schema is pushed with drizzle-kit on startup,
    * destructive statements apply without confirmation, and the drizzle-kit CLI

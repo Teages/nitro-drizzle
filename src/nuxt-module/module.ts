@@ -1,16 +1,19 @@
 import type {} from '@nuxt/nitro-server'
 import type { DrizzleOptions } from '../types'
 
+import { join } from 'node:path'
 import { env } from 'node:process'
-import { addTemplate, addVitePlugin, createResolver, defineNuxtModule, logger } from '@nuxt/kit'
+import { addTemplate, addVitePlugin, defineNuxtModule, logger } from '@nuxt/kit'
 import { DEV_ENV_FLAG } from '../dev-database/resolve'
 import drizzleDevtool from '../devtool'
+import { resolveDrizzleModuleContext } from '../nitro-module/context'
 import DrizzleModule from '../nitro-module/module'
+import { generateDrizzleArtifacts } from '../schema-artifacts/generate'
 
 const DRIZZLE_TYPE_ARTIFACTS = [
-  './drizzle/hooks.d.ts',
-  './drizzle/modules.d.ts',
-  './drizzle/schema.d.ts',
+  'hooks.d.ts',
+  'modules.d.ts',
+  'schema.d.ts',
 ]
 
 export default defineNuxtModule<DrizzleOptions>({
@@ -19,15 +22,16 @@ export default defineNuxtModule<DrizzleOptions>({
     configKey: 'drizzle',
   },
   async setup(options, nuxt) {
-    const buildResolver = createResolver(nuxt.options.buildDir)
-
     nuxt.hook('nitro:config', (config) => {
       config.modules ??= []
       config.modules.push(DrizzleModule)
       if (config.drizzle) {
         logger.warn('drizzle config in `nitro.drizzle` will be ignored')
       }
-      config.drizzle = options
+      // Nuxt owns the type lifecycle: the nitro module must not write
+      // declarations at its own setup — the type hooks below generate them
+      // into Nuxt's buildDir when Nuxt prepares types.
+      config.drizzle = { ...options, typesDir: false }
     })
 
     // The Vite DevTools dock is only usable when the studio route will
@@ -45,14 +49,47 @@ export default defineNuxtModule<DrizzleOptions>({
       addVitePlugin(drizzleDevtool() as Parameters<typeof addVitePlugin>[0])
     }
 
-    // The generated declarations join both server projects (nitro types) and
-    // the app project, so `#drizzle` types infer across environments.
-    nuxt.hook('nitro:prepare:types', ctx =>
+    // The declarations generate into `<buildDir>/drizzle` — the directory
+    // both the nitro types and the app tsconfig projects reference, so
+    // `#drizzle` types infer across environments. Both hooks generate:
+    // whichever fires first creates the files ahead of its own references,
+    // and the write itself is idempotent. Without a usable drizzle config
+    // nothing generates, and the references stay off the type projects —
+    // they would point at missing files.
+    const typesDir = join(nuxt.options.buildDir, 'drizzle')
+    const generateTypes = async (): Promise<boolean> => {
+      const ctx = await resolveDrizzleModuleContext({
+        drizzle: options,
+        rootDir: nuxt.options.rootDir,
+        serverDir: nuxt.options.serverDir,
+        dev: nuxt.options.dev,
+      })
+      if (ctx === undefined) {
+        return false
+      }
+      await generateDrizzleArtifacts({
+        directory: typesDir,
+        config: ctx.config,
+        schemaPath: ctx.schemaPath,
+        ...(ctx.relationsExport === undefined ? {} : { relationsExport: ctx.relationsExport }),
+        ...(ctx.devDb?.engine === undefined ? {} : { clientDriver: ctx.devDb.engine }),
+      })
+      return true
+    }
+    nuxt.hook('nitro:prepare:types', async (ctx) => {
+      if (!await generateTypes()) {
+        return
+      }
       DRIZZLE_TYPE_ARTIFACTS.forEach(path =>
-        ctx.references.push({ path: buildResolver.resolve(path) })))
-    nuxt.hook('prepare:types', ctx =>
+        ctx.references.push({ path: join(typesDir, path) }))
+    })
+    nuxt.hook('prepare:types', async (ctx) => {
+      if (!await generateTypes()) {
+        return
+      }
       DRIZZLE_TYPE_ARTIFACTS.forEach(path =>
-        ctx.references.push({ path: buildResolver.resolve(path) })))
+        ctx.references.push({ path: join(typesDir, path) }))
+    })
 
     // In the browser `#drizzle` resolves to a stub: importing `useDrizzle`
     // compiles, calling it throws. SSR and the Nitro server always resolve

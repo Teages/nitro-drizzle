@@ -55,13 +55,13 @@ describe('generateDrizzleArtifacts', () => {
 
     // When
     const artifacts = await generateDrizzleArtifacts({
-      buildDir: nitro.options.buildDir,
+      directory: join(nitro.options.rootDir, 'node_modules/.nitro-drizzle'),
       config,
       schemaPath: rootSchemaPath,
     })
 
     // Then
-    expect(artifacts.directory).toBe(join(nitro.options.buildDir, 'drizzle'))
+    expect(artifacts.directory).toBe(join(nitro.options.rootDir, 'node_modules/.nitro-drizzle'))
     expect(config.migrationsDir).toBe(
       join(serverDir, 'db/migrations'),
     )
