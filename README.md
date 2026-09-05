@@ -164,8 +164,9 @@ that directory in the server tsconfig:
 ```
 
 Set `drizzle.typesDir` to move the declarations elsewhere (relative paths
-resolve from the project root) or to `false` to disable type generation. The
-option does not apply in Nuxt — see below.
+resolve from the project root — update the tsconfig `include` to match) or to
+`false` to disable type generation. The option does not apply in Nuxt — see
+below.
 
 The module declares `#drizzle` directly. It does not add aliases or write a
 synthetic package into `node_modules`.

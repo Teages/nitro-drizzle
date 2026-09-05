@@ -53,9 +53,11 @@ export default defineNuxtModule<DrizzleOptions>({
     // both the nitro types and the app tsconfig projects reference, so
     // `#drizzle` types infer across environments. Both hooks generate:
     // whichever fires first creates the files ahead of its own references,
-    // and the write itself is idempotent.
+    // and the write itself is idempotent. Without a usable drizzle config
+    // nothing generates, and the references stay off the type projects —
+    // they would point at missing files.
     const typesDir = join(nuxt.options.buildDir, 'drizzle')
-    const generateTypes = async (): Promise<void> => {
+    const generateTypes = async (): Promise<boolean> => {
       const ctx = await resolveDrizzleModuleContext({
         drizzle: options,
         rootDir: nuxt.options.rootDir,
@@ -63,7 +65,7 @@ export default defineNuxtModule<DrizzleOptions>({
         dev: nuxt.options.dev,
       })
       if (ctx === undefined) {
-        return
+        return false
       }
       await generateDrizzleArtifacts({
         directory: typesDir,
@@ -72,14 +74,19 @@ export default defineNuxtModule<DrizzleOptions>({
         ...(ctx.relationsExport === undefined ? {} : { relationsExport: ctx.relationsExport }),
         ...(ctx.devDb?.engine === undefined ? {} : { clientDriver: ctx.devDb.engine }),
       })
+      return true
     }
     nuxt.hook('nitro:prepare:types', async (ctx) => {
-      await generateTypes()
+      if (!await generateTypes()) {
+        return
+      }
       DRIZZLE_TYPE_ARTIFACTS.forEach(path =>
         ctx.references.push({ path: join(typesDir, path) }))
     })
     nuxt.hook('prepare:types', async (ctx) => {
-      await generateTypes()
+      if (!await generateTypes()) {
+        return
+      }
       DRIZZLE_TYPE_ARTIFACTS.forEach(path =>
         ctx.references.push({ path: join(typesDir, path) }))
     })
