@@ -4,9 +4,8 @@
   "scripts": {
     "prepare": "nitro prepare",
     "dev": "nitro dev",
-    "drizzle-kit": "node ../../../../node_modules/drizzle-kit/bin.cjs",
-    "schema:pg": "drizzle-kit generate --dialect postgresql --schema ./server/db/schema.postgresql.ts --out ./server/db/migrations/postgresql",
-    "schema:sqlite": "drizzle-kit generate --dialect sqlite --schema ./server/db/schema.sqlite.ts --out ./server/db/migrations/sqlite",
-    "schema:mysql": "drizzle-kit generate --dialect mysql --schema ./server/db/schema.mysql.ts --out ./server/db/migrations/mysql"
+    "schema:pg": "node ../../../../node_modules/drizzle-kit/bin.cjs generate --dialect postgresql --schema ./server/db/schema.postgresql.ts --out ./server/db/migrations/postgresql",
+    "schema:sqlite": "node ../../../../node_modules/drizzle-kit/bin.cjs generate --dialect sqlite --schema ./server/db/schema.sqlite.ts --out ./server/db/migrations/sqlite",
+    "schema:mysql": "node ../../../../node_modules/drizzle-kit/bin.cjs generate --dialect mysql --schema ./server/db/schema.mysql.ts --out ./server/db/migrations/mysql"
   }
 }
