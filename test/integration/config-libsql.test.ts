@@ -1,10 +1,12 @@
 import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import process from 'node:process'
 import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
 import { loadDrizzleConfig } from '../../src/config/loader'
+import { copyFixture } from './fixtures'
 
 const execFileAsync = promisify(execFile)
 const temporaryDirectories: string[] = []
@@ -18,30 +20,13 @@ afterEach(async () => {
 })
 
 describe('local libSQL drizzle-kit config', () => {
-  it('migrates a file database twice without an auth token', async () => {
-    // Given a Nitro config targeting a local libSQL database
+  it('migrates the fixture app twice without an auth token', async () => {
+    // Given the base fixture app's schema and migrations, configured for a
+    // local libSQL database
     const rootDir = await mkdtemp(join(process.cwd(), '.test-drizzle-kit-libsql-'))
     temporaryDirectories.push(rootDir)
+    await copyFixture(rootDir)
     const databaseFile = join(rootDir, 'local.db')
-    const migrationDir = join(
-      rootDir,
-      'server/db/migrations/20260824000000_create_users',
-    )
-    await mkdir(migrationDir, { recursive: true })
-    await writeFile(
-      join(rootDir, 'server/db/schema.ts'),
-      `import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-
-export const users = sqliteTable('users', {
-  id: integer('id').primaryKey(),
-  name: text('name').notNull(),
-})
-`,
-    )
-    await writeFile(
-      join(migrationDir, 'migration.sql'),
-      'CREATE TABLE users (id integer PRIMARY KEY, name text NOT NULL);\n',
-    )
     await writeFile(
       join(rootDir, 'nitro.config.ts'),
       `import { defineConfig } from 'nitro/config'
@@ -51,7 +36,8 @@ export default defineConfig({
   drizzle: {
     dialect: 'sqlite',
     driver: 'libsql',
-    schemaPath: './server/db/schema.ts',
+    schemaPath: './server/db/schema.sqlite.ts',
+    migrationsDir: './server/db/migrations/sqlite',
     connection: { url: ${JSON.stringify(`file:${databaseFile}`)} },
   },
 })
@@ -76,12 +62,12 @@ export default defineConfig({
       )
     }
 
-    // Then the migration is applied once and tracked in the real database
+    // Then the fixture's migration is applied once and tracked in the real database
     const database = new DatabaseSync(databaseFile)
     try {
       expect(database.prepare(
-        `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'users'`,
-      ).get()).toEqual({ name: 'users' })
+        `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'counts'`,
+      ).get()).toEqual({ name: 'counts' })
       expect(database.prepare(
         'SELECT COUNT(*) AS count FROM __drizzle_migrations',
       ).get()).toEqual({ count: 1 })

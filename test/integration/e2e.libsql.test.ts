@@ -1,14 +1,16 @@
 import type { AddressInfo } from 'node:net'
 import { spawn } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { createServer } from 'node:net'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
+import process from 'node:process'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { createClient } from '@libsql/client'
 import { build, createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
-import NitroDrizzle from '../../src'
+import { copyFixture, fixtureMigrationNames, fixtureMigrationsFolder } from './fixtures'
 
+const repoRoot = process.cwd()
 const temporaryDirectories: string[] = []
 const childProcesses: ReturnType<typeof spawn>[] = []
 
@@ -53,52 +55,22 @@ async function waitForJson(url: string, timeoutMs = 90_000): Promise<unknown> {
 
 describe('@teages/nitro-drizzle end-to-end build', () => {
   it('leaves the database untouched during build and serves queries after a deploy-time migration', { timeout: 300_000 }, async () => {
-    // Given a minimal Nitro app with a schema, a v1 migration folder, and an API route
-    const rootDir = await mkdtemp(join(process.cwd(), '.test-drizzle-e2e-'))
+    // Given the base fixture app, copied inside the repository so its imports
+    // resolve against the workspace install, built for a libSQL database
+    const rootDir = await mkdtemp(join(repoRoot, '.test-drizzle-e2e-'))
     temporaryDirectories.push(rootDir)
+    await copyFixture(rootDir, { moduleSpecifier: resolve(repoRoot, 'src/index') })
     const databaseFile = join(rootDir, 'app.db')
-    await mkdir(join(rootDir, 'server/db/migrations/20260819000000_create_users'), { recursive: true })
-    await mkdir(join(rootDir, 'server/api'), { recursive: true })
-    await writeFile(
-      join(rootDir, 'server/db/schema.ts'),
-      `import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-
-export const users = sqliteTable('users', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
-})
-`,
-    )
-    await writeFile(
-      join(rootDir, 'server/db/migrations/20260819000000_create_users/migration.sql'),
-      `CREATE TABLE users (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  name text NOT NULL
-);`,
-    )
-    await writeFile(
-      join(rootDir, 'server/api/users.get.ts'),
-      `import { useDrizzle } from '#drizzle'
-import { defineHandler } from 'nitro'
-
-export default defineHandler(async () => {
-  const { db, schema } = useDrizzle()
-  await db.insert(schema.users).values({ name: 'e2e' })
-  return db.select().from(schema.users)
-})
-`,
-    )
-
-    // When the app is built without any build-time migration behavior
+    // The fixture config enables devMock; a production build resolves no dev
+    // database, so the inline drizzle block only retargets the driver and
+    // connection at the throwaway database.
     const nitro = await createNitro({
       rootDir,
-      serverDir: './server',
-      buildDir: './node_modules/.nitro',
-      modules: [NitroDrizzle],
       drizzle: {
         dialect: 'sqlite',
         driver: 'libsql',
-        schemaPath: './server/db/schema.ts',
+        schemaPath: './server/db/schema.sqlite.ts',
+        migrationsDir: './server/db/migrations/sqlite',
         connection: { url: `file:${databaseFile}` },
       },
     })
@@ -109,7 +81,7 @@ export default defineHandler(async () => {
     const verify = createClient({ url: `file:${databaseFile}` })
     try {
       const tables = await verify.execute(
-        `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'users'`,
+        `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'counts'`,
       )
       expect(tables.rows).toHaveLength(0)
     }
@@ -117,14 +89,17 @@ export default defineHandler(async () => {
       verify.close()
     }
 
-    // And applying the migration chain prepares the database for the built server
-    const migrationSql = await readFile(
-      join(rootDir, 'server/db/migrations/20260819000000_create_users/migration.sql'),
-      'utf8',
-    )
+    // And applying the fixture's migration chain prepares the database for
+    // the built server — the deploy-time `drizzle-kit migrate` stand-in
     const migrate = createClient({ url: `file:${databaseFile}` })
     try {
-      await migrate.execute(migrationSql)
+      for (const name of await fixtureMigrationNames('sqlite')) {
+        const migrationSql = await readFile(
+          join(fixtureMigrationsFolder('sqlite'), name, 'migration.sql'),
+          'utf8',
+        )
+        await migrate.execute(migrationSql)
+      }
     }
     finally {
       migrate.close()
@@ -140,8 +115,10 @@ export default defineHandler(async () => {
     childProcesses.push(serverProcess)
     serverProcess.stderr.on('data', chunk => console.error(String(chunk)))
 
-    await expect(
-      waitForJson(`http://127.0.0.1:${port}/api/users`),
-    ).resolves.toEqual([{ id: 1, name: 'e2e' }])
+    const countUrl = `http://127.0.0.1:${port}/api/count`
+    await expect(waitForJson(countUrl)).resolves.toEqual({ count: 0 })
+    const insert = await fetch(countUrl, { method: 'POST' })
+    expect(insert.ok).toBe(true)
+    await expect(waitForJson(countUrl)).resolves.toEqual({ count: 1 })
   })
 })
