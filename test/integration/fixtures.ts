@@ -1,139 +1,125 @@
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
+import type { LibSQLDatabase } from 'drizzle-orm/libsql'
+import type { MigrationConfig } from 'drizzle-orm/migrator'
+import type { MySql2Database } from 'drizzle-orm/mysql2'
+import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite'
+import type { PgliteDatabase } from 'drizzle-orm/pglite'
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { ResolvedDrizzleConfig } from '../../src/configuration/resolve'
-import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { sql } from 'drizzle-orm'
+import type { OpaqueDrizzleDatabase } from '../../src/database/drizzle'
+import type { DrizzleDriver } from '../../src/types'
+import { cp, readdir, readFile, writeFile } from 'node:fs/promises'
+import { basename, dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { migrate as migrateBetterSqlite3 } from 'drizzle-orm/better-sqlite3/migrator'
+import { migrate as migrateLibsql } from 'drizzle-orm/libsql/migrator'
+import { migrate as migrateMysql2 } from 'drizzle-orm/mysql2/migrator'
+import { migrate as migrateNodeSqlite } from 'drizzle-orm/node-sqlite/migrator'
+import { migrate as migratePglite } from 'drizzle-orm/pglite/migrator'
+import { migrate as migratePostgresJs } from 'drizzle-orm/postgres-js/migrator'
 import { createDrizzleClient } from '../../src/database/client'
 
 export type IntegrationDialect = 'sqlite' | 'postgresql' | 'mysql'
 
-export interface MigrationWorkspace {
-  readonly rootDir: string
-  readonly migrationsFolder: string
+/** The committed Nitro app every integration test migrates, builds, or runs. */
+const fixtureRoot = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'base')
+
+/** How the fixture config imports the module from the repository source. */
+const FIXTURE_MODULE_IMPORT = `'../../../../src/index'`
+
+/** Generated output that never belongs in a copy of the fixture app. */
+const generatedEntries = new Set(['.nitro', '.data', '.output', 'dist', 'node_modules'])
+
+export function fixtureMigrationsFolder(dialect: IntegrationDialect): string {
+  return join(fixtureRoot, 'server/db/migrations', dialect)
 }
 
-const createUsersSql: Record<IntegrationDialect, string> = {
-  sqlite: `CREATE TABLE users (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  name text NOT NULL
-);`,
-  postgresql: `CREATE TABLE users (
-  id serial PRIMARY KEY,
-  name text NOT NULL
-);`,
-  mysql: `CREATE TABLE users (
-  id int AUTO_INCREMENT PRIMARY KEY,
-  name varchar(255) NOT NULL
-);`,
-}
-
-const addUsersEmailSql: Record<IntegrationDialect, string> = {
-  sqlite: `ALTER TABLE users ADD COLUMN email text;`,
-  postgresql: `ALTER TABLE users ADD COLUMN email text;`,
-  mysql: `ALTER TABLE users ADD COLUMN email varchar(255);`,
-}
-
-/**
- * Writes a Drizzle v1 migration folder (per-migration directories with
- * `migration.sql`) covering a fresh table plus a follow-up column change.
- */
-export async function createMigrationWorkspace(
-  prefix: string,
+/** The fixture's migration directory names, in application order. */
+export async function fixtureMigrationNames(
   dialect: IntegrationDialect,
-): Promise<MigrationWorkspace> {
-  const rootDir = await mkdtemp(join(tmpdir(), `nitro-drizzle-${prefix}-`))
-  const migrationsFolder = join(rootDir, 'migrations')
-  await writeMigration(migrationsFolder, '20260819000000_create_users', createUsersSql[dialect])
-  await writeMigration(migrationsFolder, '20260819000001_add_users_email', addUsersEmailSql[dialect])
-  return { rootDir, migrationsFolder }
+): Promise<readonly string[]> {
+  const entries = await readdir(fixtureMigrationsFolder(dialect), { withFileTypes: true })
+  return entries.filter(entry => entry.isDirectory()).map(entry => entry.name).sort()
 }
 
-async function writeMigration(
-  migrationsFolder: string,
-  name: string,
-  sql: string,
+export interface CopyFixtureOptions {
+  /**
+   * Replaces the fixture config's module import: copies inside the repository
+   * point at the source entry, the tarball test points at the published
+   * package name.
+   */
+  readonly moduleSpecifier?: string
+}
+
+/** Copies the fixture app into `rootDir`, skipping generated output. */
+export async function copyFixture(
+  rootDir: string,
+  options: CopyFixtureOptions = {},
 ): Promise<void> {
-  const folder = join(migrationsFolder, name)
-  await mkdir(folder, { recursive: true })
-  await writeFile(join(folder, 'migration.sql'), sql)
-}
-
-const migrationsTable: Record<IntegrationDialect, string> = {
-  sqlite: `CREATE TABLE IF NOT EXISTS __drizzle_migrations (
-  id integer PRIMARY KEY AUTOINCREMENT,
-  name text NOT NULL
-)`,
-  postgresql: `CREATE SCHEMA IF NOT EXISTS drizzle;
-CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
-  id serial PRIMARY KEY,
-  name text NOT NULL
-)`,
-  mysql: `CREATE TABLE IF NOT EXISTS __drizzle_migrations (
-  id int AUTO_INCREMENT PRIMARY KEY,
-  name varchar(255) NOT NULL
-)`,
-}
-
-const migrationsRow: Record<IntegrationDialect, string> = {
-  sqlite: '__drizzle_migrations',
-  postgresql: 'drizzle.__drizzle_migrations',
-  mysql: '__drizzle_migrations',
+  await cp(fixtureRoot, rootDir, {
+    recursive: true,
+    filter: source => !generatedEntries.has(basename(source)),
+  })
+  if (options.moduleSpecifier === undefined) {
+    return
+  }
+  const configFile = join(rootDir, 'nitro.config.ts')
+  const config = await readFile(configFile, 'utf8')
+  await writeFile(
+    configFile,
+    config.replace(FIXTURE_MODULE_IMPORT, JSON.stringify(options.moduleSpecifier)),
+  )
 }
 
 /**
- * Test-only stand-in for the removed runtime migration task: applies each
- * `migration.sql` in order, exactly once, recording names the same way the
- * tests verify them.
+ * Runs drizzle-orm's own per-driver migrator — the same engine
+ * `drizzle-kit migrate` drives. It reads the v1 migration folder layout,
+ * applies pending `migration.sql` files in a transaction, and records a
+ * `name` row per migration in the dialect's migrations table, so calling it
+ * again is a no-op. The casts narrow the opaque client database back to the
+ * concrete type each migrator was built for.
  */
-export async function applyMigrationWorkspace(
-  config: ResolvedDrizzleConfig,
-  migrationsFolder: string,
-): Promise<{ ok: true }> {
-  const client = await createDrizzleClient(config)
-  // The wrapped executor is write-only, so reads go through the raw drizzle
-  // instance: `all()` on sqlite, `execute()` everywhere else.
-  const query = async (statement: string): Promise<readonly unknown[]> => {
-    const raw = sql.raw(statement)
-    if (config.dialect === 'sqlite') {
-      return await (client.db as {
-        all: (query: unknown) => Promise<unknown[]>
-      }).all(raw)
-    }
-    const result = await (client.db as {
-      // postgres-js resolves to the rows array, mysql2 to a [rows, fields]
-      // tuple; everything else follows the { rows } result shape.
-      execute: (query: unknown) => Promise<{ rows: unknown[] } | unknown[] | [unknown[], unknown]>
-    }).execute(raw)
-    if (Array.isArray(result)) {
-      return Array.isArray(result[0]) ? result[0] : result
-    }
-    return result.rows
+async function migrateForDriver(
+  driver: DrizzleDriver,
+  db: OpaqueDrizzleDatabase,
+  config: MigrationConfig,
+): Promise<void> {
+  switch (driver) {
+    case 'better-sqlite3':
+      migrateBetterSqlite3(db as BetterSQLite3Database, config)
+      return
+    case 'node-sqlite':
+      migrateNodeSqlite(db as NodeSQLiteDatabase, config)
+      return
+    case 'libsql':
+      await migrateLibsql(db as LibSQLDatabase, config)
+      return
+    case 'pglite':
+      await migratePglite(db as PgliteDatabase, config)
+      return
+    case 'postgres-js':
+      await migratePostgresJs(db as PostgresJsDatabase, config)
+      return
+    case 'mysql2':
+      await migrateMysql2(db as MySql2Database, config)
+      return
+    default:
+      throw new Error(`No drizzle migrator wired for driver "${driver}".`)
   }
+}
+
+/** Applies the fixture's migrations for `dialect` through the client under test. */
+export async function applyFixtureMigrations(
+  config: ResolvedDrizzleConfig,
+  dialect: IntegrationDialect,
+): Promise<void> {
+  const client = await createDrizzleClient(config)
   try {
-    for (const statement of migrationsTable[config.dialect].split(';\n')) {
-      await client.execute(statement)
-    }
-    const entries = (await readdir(migrationsFolder, { withFileTypes: true }))
-      .filter(entry => entry.isDirectory())
-      .map(entry => entry.name)
-      .sort()
-    for (const name of entries) {
-      const applied = await query(
-        `SELECT 1 FROM ${migrationsRow[config.dialect]} WHERE name = '${name}'`,
-      )
-      if (applied.length > 0) {
-        continue
-      }
-      await client.execute(
-        await readFile(join(migrationsFolder, name, 'migration.sql'), 'utf8'),
-      )
-      await client.execute(
-        `INSERT INTO ${migrationsRow[config.dialect]} (name) VALUES ('${name}')`,
-      )
-    }
+    await migrateForDriver(config.driver, client.db, {
+      migrationsFolder: fixtureMigrationsFolder(dialect),
+    })
   }
   finally {
     await client.close()
   }
-  return { ok: true }
 }
