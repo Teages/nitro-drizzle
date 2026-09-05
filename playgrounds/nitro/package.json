@@ -4,8 +4,9 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite dev",
-    "preview": "vite preview",
-    "drizzle:check": "drizzle-kit check"
+    "drizzle:check": "drizzle-kit check",
+    "prepare": "node prepare.mjs",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
