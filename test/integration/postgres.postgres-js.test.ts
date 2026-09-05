@@ -3,7 +3,7 @@ import { PGLiteSocketServer } from '@electric-sql/pglite-socket'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createDrizzleClient } from '../../src/database/client'
-import { applyMigrationWorkspace, createMigrationWorkspace } from './fixtures'
+import { applyFixtureMigrations, fixtureMigrationNames } from './fixtures'
 
 describe('postgres-js driver integration', () => {
   // A real PostgreSQL wire server backed by an in-process PGlite instance,
@@ -24,38 +24,35 @@ describe('postgres-js driver integration', () => {
     await pglite.close()
   })
 
-  it('applies the migration folder, stays idempotent, and smoke-checks queries', async () => {
-    // Given a TCP PostgreSQL endpoint and a v1 migration folder
-    const { migrationsFolder } = await createMigrationWorkspace('postgres-js', 'postgresql')
+  it('applies the fixture migrations, stays idempotent, and smoke-checks queries', async () => {
+    // Given the base fixture's PostgreSQL migrations and a TCP endpoint
     const config = {
       dialect: 'postgresql',
       driver: 'postgres-js',
       connection: { url: `postgres://postgres@127.0.0.1:${port}/postgres` },
     } as const
+    const migrations = await fixtureMigrationNames('postgresql')
 
-    // When migrations are applied twice through the fixture helper
-    const apply = () => applyMigrationWorkspace(config, migrationsFolder)
-    await expect(apply()).resolves.toEqual({ ok: true })
-    await expect(apply()).resolves.toEqual({ ok: true })
+    // When migrations are applied twice through drizzle-orm's own migrator
+    await applyFixtureMigrations(config, 'postgresql')
+    await applyFixtureMigrations(config, 'postgresql')
 
     // Then a write through the generated client executor lands in the database
+    // and every migration is recorded exactly once
     const client = await createDrizzleClient(config)
-    await client.execute(`INSERT INTO users (name) VALUES ('integration')`)
+    await client.execute(`INSERT INTO counts (id, title) VALUES ('driver-row', 'integration')`)
     await client.close()
 
     const verify = postgres(`postgres://postgres@127.0.0.1:${port}/postgres`)
     try {
-      const users = await verify<{ id: number, name: string, email: string | null }[]>`
-        SELECT id, name, email FROM users
+      const counts = await verify<{ id: string, title: string }[]>`
+        SELECT id, title FROM counts
       `
-      expect(users).toEqual([{ id: 1, name: 'integration', email: null }])
-      const migrations = await verify<{ name: string }[]>`
+      expect(counts).toEqual([{ id: 'driver-row', title: 'integration' }])
+      const applied = await verify<{ name: string }[]>`
         SELECT name FROM drizzle.__drizzle_migrations ORDER BY id
       `
-      expect(migrations.map(row => row.name)).toEqual([
-        '20260819000000_create_users',
-        '20260819000001_add_users_email',
-      ])
+      expect(applied.map(row => row.name)).toEqual(migrations)
     }
     finally {
       await verify.end()
