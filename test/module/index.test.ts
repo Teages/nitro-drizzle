@@ -255,13 +255,14 @@ describe('@teages/nitro-drizzle', () => {
     expect(configModule).toContain('"devMock": true')
     expect(configModule).toContain('"driver": "postgres-js"')
 
-    // And — the generated types follow the dev engine, written during
-    // module setup into the default types directory
+    // And — the generated types keep describing the configured driver: the
+    // dev database swaps only the runtime client, never the declarations
     const modules = await readFile(
       join(nitro.options.rootDir, 'node_modules/.nitro-drizzle/modules.d.ts'),
       'utf8',
     )
-    expect(modules).toContain('drizzle-orm/pglite')
+    expect(modules).toContain('drizzle-orm/postgres-js')
+    expect(modules).not.toContain('drizzle-orm/pglite')
 
     // And — the dev plugin is registered
     expect(nitro.options.plugins).toContainEqual(

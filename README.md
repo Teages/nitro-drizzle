@@ -168,6 +168,10 @@ resolve from the project root — update the tsconfig `include` to match) or to
 `false` to disable type generation. The option does not apply in Nuxt — see
 below.
 
+The declarations always describe the configured driver: the dev database (see
+below) swaps only the runtime client, so dev and build sessions produce
+identical declaration files for the same configuration.
+
 The module declares `#drizzle` directly. It does not add aliases or write a
 synthetic package into `node_modules`.
 

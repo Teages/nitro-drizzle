@@ -150,6 +150,27 @@ describe('@teages/nitro-drizzle/nuxt', () => {
     expect(modules).toContain(`declare module '#drizzle'`)
   })
 
+  it('keeps the declarations on the configured driver in dev sessions', async () => {
+    // Given — a dev session whose dev mock runs a different engine than the
+    // configured driver
+    const { hooks, buildDir } = await setupModule({
+      dialect: 'postgresql',
+      driver: 'postgres-js',
+      schemaPath: './server/db/schema.ts',
+      devMock: { driver: 'pglite' },
+    }, true)
+
+    // Then — the declarations describe the configured driver, so type
+    // preparation yields the same files no matter which session wrote last
+    const typesHook = hooks.find(({ event }) => event === 'prepare:types')
+    const payload = { references: [] as { path: string }[] }
+    await typesHook?.handler(payload as never)
+    const modules = await readFile(join(buildDir, 'drizzle/modules.d.ts'), 'utf8')
+    expect(modules).toContain('drizzle-orm/postgres-js')
+    expect(modules).not.toContain('drizzle-orm/pglite')
+    expect(payload.references.length).toBe(3)
+  })
+
   it('owns the type lifecycle regardless of the typesDir option', async () => {
     // Given — a typesDir the user configured
     const { hooks } = await setupModule({ ...VALID_DRIZZLE, typesDir: 'types/drizzle' }, false)
