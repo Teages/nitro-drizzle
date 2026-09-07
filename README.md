@@ -328,7 +328,9 @@ delete the file before restarting.
 
 Two environment variables control the dev database: `NITRO_DRIZZLE_DEV_MOCK=false`
 disables it for a single run, and `NITRO_DRIZZLE_DEV_MOCK_FILE` overrides
-`drizzle.devMock.file`. Production builds ignore `drizzle.devMock` entirely.
+`drizzle.devMock.file`. Production builds never start the dev database, but
+they still read `drizzle.devMock` to type `mockDb` in the declarations — that
+is what keeps the generated files identical across sessions.
 
 ## Drizzle Studio
 
