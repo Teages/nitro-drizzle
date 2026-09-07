@@ -62,10 +62,15 @@ export function sourceHeader(imports: SourceImports): string {
  * Process-level lazy singleton: `initDrizzle` runs on the first
  * `useDrizzle()` call so credentials resolve from runtime config and
  * environment variables at request time, not at module evaluation.
+ *
+ * `mock` marks the dev-baked variant — the module only exists in a session
+ * that activated the dev database, so `mockDb` carries the same instance as
+ * `db`. Runtime-resolved sources pass nothing and expose `mockDb: undefined`.
  */
 export function lazyUseDrizzleSource(
   imports: SourceImports,
   initBody: string,
+  mock?: boolean,
 ): string {
   return `${sourceHeader(imports)}
 
@@ -77,7 +82,7 @@ ${initBody}
 
 export function useDrizzle() {
   _db ??= initDrizzle()
-  return { db: _db, schema, relations }
+  return { db: _db, schema, relations, mockDb: ${mock === true ? '_db' : 'undefined'} }
 }
 `
 }

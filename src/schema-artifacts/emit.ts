@@ -23,7 +23,9 @@ export async function emitDrizzleArtifacts(
     ),
     writeFile(
       artifacts.modulesFile,
-      createModulesDeclaration(options.clientDriver ?? options.config.driver),
+      // The declarations describe the configured driver — the dev database
+      // swaps only the runtime client, so every context emits the same files.
+      createModulesDeclaration(options.config.driver, options.mockEngine),
     ),
     writeFile(artifacts.hooksFile, createRuntimeHooksDeclaration()),
   ])

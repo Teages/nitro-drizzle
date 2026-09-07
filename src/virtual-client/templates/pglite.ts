@@ -11,7 +11,7 @@ ${dev.connection === undefined
   : `    connection: ${quote(dev.connection)},
 `}    schema,
     relations,
-  })`)
+  })`, true)
     },
     runtime: imports =>
       lazyUseDrizzleSource(imports, `  const connection = useDrizzleConnection()

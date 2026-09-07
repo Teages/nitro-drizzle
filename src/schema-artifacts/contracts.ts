@@ -1,5 +1,5 @@
 import type { ResolvedDrizzleConfig } from '../configuration/resolve'
-import type { DrizzleDriver } from '../types'
+import type { DrizzleLocalDriver } from '../types'
 
 export interface GenerateDrizzleArtifactsOptions {
   /** Absolute directory the declaration files are written to. */
@@ -8,11 +8,12 @@ export interface GenerateDrizzleArtifactsOptions {
   readonly schemaPath: string
   readonly relationsExport?: string
   /**
-   * Driver the `#drizzle` types are declared for. Defaults to the configured
-   * driver; the dev database overrides it with the resolved local engine
-   * while the drizzle-kit config keeps targeting the real database.
+   * Local engine the declarations type `mockDb` for — the engine a dev
+   * session actually runs, resolved from the configured `drizzle.devMock`.
+   * Absent when devMock is unset or cannot resolve: `mockDb` then types as
+   * plain `undefined`.
    */
-  readonly clientDriver?: DrizzleDriver
+  readonly mockEngine?: DrizzleLocalDriver
 }
 
 export interface DrizzleArtifacts {

@@ -168,6 +168,10 @@ resolve from the project root — update the tsconfig `include` to match) or to
 `false` to disable type generation. The option does not apply in Nuxt — see
 below.
 
+The declarations always describe the configured driver: the dev database (see
+below) swaps only the runtime client, so dev and build sessions produce
+identical declaration files for the same configuration.
+
 The module declares `#drizzle` directly. It does not add aliases or write a
 synthetic package into `node_modules`.
 
@@ -300,13 +304,33 @@ export default definePlugin((nitro) => {
 })
 ```
 
+`useDrizzle()` also returns `mockDb`, the dev database handle for
+engine-specific code:
+
+- In dev-database sessions it is the same instance as `db`; everywhere else —
+  production builds, `NITRO_DRIZZLE_DEV_MOCK=false` runs — it is `undefined`.
+- Its type follows the configured dev engine and includes `undefined`, so
+  engine-specific access narrows with a plain guard instead of a cast. Without
+  a resolvable `drizzle.devMock` it types as plain `undefined`.
+
+```ts
+const { db, mockDb } = useDrizzle()
+
+if (mockDb) {
+  // dev engine is pglite: the client is a full PGlite instance
+  await mockDb.$client.query('select 1')
+}
+```
+
 To start from a clean slate, restart the dev server: in-memory databases are
 recreated on startup, and for a `drizzle.devMock.file` database it is enough to
 delete the file before restarting.
 
 Two environment variables control the dev database: `NITRO_DRIZZLE_DEV_MOCK=false`
 disables it for a single run, and `NITRO_DRIZZLE_DEV_MOCK_FILE` overrides
-`drizzle.devMock.file`. Production builds ignore `drizzle.devMock` entirely.
+`drizzle.devMock.file`. Production builds never start the dev database, but
+they still read `drizzle.devMock` to type `mockDb` in the declarations — that
+is what keeps the generated files identical across sessions.
 
 ## Drizzle Studio
 

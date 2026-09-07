@@ -148,6 +148,11 @@ describe('published runtime entries in Nitro dev', () => {
     await expect(
       waitForJson(`http://127.0.0.1:${devPort}/api/count`, dev.output),
     ).resolves.toEqual({ count: 1 })
+    // And the dev database exposes itself through mockDb as the same
+    // instance as db
+    await expect(
+      waitForJson(`http://127.0.0.1:${devPort}/api/mock-db`, dev.output),
+    ).resolves.toEqual({ mocked: true, same: true })
 
     // Then #drizzle resolves inside the consumer graph
     const devBundle = await readFile(
