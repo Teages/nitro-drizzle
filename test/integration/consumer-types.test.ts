@@ -83,7 +83,7 @@ export const users = sqliteTable('users', {
       return
     }
     const artifacts = await generateDrizzleArtifacts({
-      buildDir: join(rootDir, '.nitro'),
+      directory: join(rootDir, 'node_modules/.nitro-drizzle'),
       config,
       schemaPath,
     })
@@ -131,7 +131,7 @@ useNitroHooks().hook('drizzle:dev-mock:seed', async () => {
             strict: true,
           },
           // The README-documented include for the generated declarations —
-          // `node_modules/.nitro/drizzle/**/*.d.ts`. Every emitted artifact
+          // `node_modules/.nitro-drizzle/**/*.d.ts`. Every emitted artifact
           // must match this glob, so no `*.d.mts` companion is added here.
           include: [
             configFile,

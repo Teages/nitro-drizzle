@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createNitro } from 'nitro/builder'
@@ -254,11 +255,10 @@ describe('@teages/nitro-drizzle', () => {
     expect(configModule).toContain('"devMock": true')
     expect(configModule).toContain('"driver": "postgres-js"')
 
-    // And — the generated types follow the dev engine; artifact generation
-    // defers to the types:extend hook so Nuxt keeps control of the timing
-    await nitro.hooks.callHook('types:extend', { routes: {} })
+    // And — the generated types follow the dev engine, written during
+    // module setup into the default types directory
     const modules = await readFile(
-      join(nitro.options.buildDir, 'drizzle/modules.d.ts'),
+      join(nitro.options.rootDir, 'node_modules/.nitro-drizzle/modules.d.ts'),
       'utf8',
     )
     expect(modules).toContain('drizzle-orm/pglite')
@@ -268,6 +268,60 @@ describe('@teages/nitro-drizzle', () => {
       expect.stringContaining('dev-database/runtime/plugin'),
     )
     expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
+    await nitro.close()
+  })
+
+  it('writes type declarations to a custom typesDir', async () => {
+    // Given
+    const rootDir = await createTemporaryRoot()
+
+    // When
+    const nitro = await createNitro({
+      rootDir,
+      serverDir: './server',
+      buildDir: './node_modules/.nitro',
+      modules: [NitroDrizzle],
+      drizzle: {
+        dialect: 'sqlite',
+        driver: 'libsql',
+        schemaPath: './server/db/schema.ts',
+        typesDir: 'types/drizzle',
+      },
+    })
+
+    // Then — the declarations land in the configured directory and the
+    // default directory stays untouched
+    const modules = await readFile(
+      join(rootDir, 'types/drizzle/modules.d.ts'),
+      'utf8',
+    )
+    expect(modules).toContain(`declare module '#drizzle'`)
+    expect(modules).toContain('drizzle-orm/libsql')
+    expect(existsSync(join(rootDir, 'node_modules/.nitro-drizzle'))).toBe(false)
+    await nitro.close()
+  })
+
+  it('skips type generation when typesDir is false', async () => {
+    // Given
+    const rootDir = await createTemporaryRoot()
+
+    // When
+    const nitro = await createNitro({
+      rootDir,
+      serverDir: './server',
+      buildDir: './node_modules/.nitro',
+      modules: [NitroDrizzle],
+      drizzle: {
+        dialect: 'sqlite',
+        driver: 'libsql',
+        schemaPath: './server/db/schema.ts',
+        typesDir: false,
+      },
+    })
+
+    // Then — no declarations are written while the runtime virtuals stay up
+    expect(existsSync(join(rootDir, 'node_modules/.nitro-drizzle'))).toBe(false)
+    expect(virtualSource(nitro, '#drizzle')).toContain('useDrizzle')
     await nitro.close()
   })
 

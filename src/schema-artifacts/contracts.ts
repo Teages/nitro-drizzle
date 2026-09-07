@@ -2,7 +2,8 @@ import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { DrizzleDriver } from '../types'
 
 export interface GenerateDrizzleArtifactsOptions {
-  readonly buildDir: string
+  /** Absolute directory the declaration files are written to. */
+  readonly directory: string
   readonly config: ResolvedDrizzleConfig
   readonly schemaPath: string
   readonly relationsExport?: string

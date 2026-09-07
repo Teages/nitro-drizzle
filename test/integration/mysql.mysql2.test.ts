@@ -2,7 +2,7 @@ import type { DatabaseConnection } from '../../src/types'
 import { createConnection } from 'mysql2/promise'
 import { describe, expect, it } from 'vitest'
 import { createDrizzleClient } from '../../src/database/client'
-import { applyMigrationWorkspace, createMigrationWorkspace } from './fixtures'
+import { applyFixtureMigrations, fixtureMigrationNames } from './fixtures'
 
 // Runs only when a MySQL endpoint is provided; CI wires a service container.
 // Locally: docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root
@@ -36,36 +36,33 @@ describe.skipIf(mysql === undefined)('mysql2 driver integration', () => {
   // (https://github.com/drizzle-team/drizzle-orm/issues/5972). Passing a
   // callback-style pool as `client` works; until that lands in create.ts and
   // the mysql2 template, this stays a known-red canary.
-  it.fails('applies the migration folder, stays idempotent, and smoke-checks queries', async () => {
-    // Given a running MySQL server and a v1 migration folder
-    const { migrationsFolder } = await createMigrationWorkspace('mysql2', 'mysql')
+  it.fails('applies the fixture migrations, stays idempotent, and smoke-checks queries', async () => {
+    // Given the base fixture's MySQL migrations and a running MySQL server
     const config = {
       dialect: 'mysql',
       driver: 'mysql2',
       connection: mysql!.connection,
     } as const
+    const migrations = await fixtureMigrationNames('mysql')
 
-    // When migrations are applied twice through the fixture helper
-    const apply = () => applyMigrationWorkspace(config, migrationsFolder)
-    await expect(apply()).resolves.toEqual({ ok: true })
-    await expect(apply()).resolves.toEqual({ ok: true })
+    // When migrations are applied twice through drizzle-orm's own migrator
+    await applyFixtureMigrations(config, 'mysql')
+    await applyFixtureMigrations(config, 'mysql')
 
     // Then a write through the generated client executor lands in the database
+    // and every migration is recorded exactly once
     const client = await createDrizzleClient(config)
-    await client.execute(`INSERT INTO users (name) VALUES ('integration')`)
+    await client.execute(`INSERT INTO counts (id, title) VALUES ('driver-row', 'integration')`)
     await client.close()
 
     const verify = await createConnection(mysql!.url)
     try {
-      const [users] = await verify.query('SELECT id, name, email FROM users')
-      expect(users).toEqual([{ id: 1, name: 'integration', email: null }])
-      const [migrations] = await verify.query(
+      const [counts] = await verify.query('SELECT id, title FROM counts')
+      expect(counts).toEqual([{ id: 'driver-row', title: 'integration' }])
+      const [applied] = await verify.query(
         'SELECT name FROM __drizzle_migrations ORDER BY id',
       )
-      expect(migrations).toEqual([
-        { name: '20260819000000_create_users' },
-        { name: '20260819000001_add_users_email' },
-      ])
+      expect(applied).toEqual(migrations.map(name => ({ name })))
     }
     finally {
       await verify.end()

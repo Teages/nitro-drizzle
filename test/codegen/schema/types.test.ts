@@ -59,7 +59,7 @@ export const appRelations = defineRelations({ users })
 
     // When
     const artifacts = await generateDrizzleArtifacts({
-      buildDir: join(rootDir, 'node_modules/.nitro'),
+      directory: join(rootDir, 'node_modules/.nitro-drizzle'),
       config,
       schemaPath,
       relationsExport: 'appRelations',
@@ -140,7 +140,7 @@ context.db.query.users.findMany()
       return
     }
     const artifacts = await generateDrizzleArtifacts({
-      buildDir: join(rootDir, 'node_modules/.nitro'),
+      directory: join(rootDir, 'node_modules/.nitro-drizzle'),
       config,
       schemaPath,
     })

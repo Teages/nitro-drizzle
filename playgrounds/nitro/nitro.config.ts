@@ -14,16 +14,4 @@ export default defineConfig({
       url: 'file:./playground.db',
     },
   },
-  typescript: {
-    generatedTypesDir: './.nitro',
-    generateTsConfig: true,
-    tsConfig: {
-      compilerOptions: {
-        noEmit: true,
-        paths: {
-          '~/*': ['./*'],
-        },
-      },
-    },
-  },
 })

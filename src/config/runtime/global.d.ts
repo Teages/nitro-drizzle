@@ -1,7 +1,7 @@
 /**
  * Ambient declaration for the `#drizzle/config` virtual module consumed by
  * this package's runtime plugins. Unlike the schema-derived `#drizzle`
- * types (generated per project into `.nitro/drizzle`), the config shape is
+ * types (generated per project into `node_modules/.nitro-drizzle`), the config shape is
  * package-fixed and mirrors `RuntimeDrizzleConfig` in
  * `src/virtual-client/runtime-config.ts`.
  */

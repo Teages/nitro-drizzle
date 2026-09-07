@@ -1,11 +1,13 @@
 import type { AddressInfo } from 'node:net'
 import { execFile, spawn } from 'node:child_process'
-import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readFile, rm, symlink } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import process from 'node:process'
 import { promisify } from 'node:util'
 import { afterEach, describe, expect, it } from 'vitest'
+import { copyFixture } from './fixtures'
 import { packRepository } from './pack'
 
 const execFileAsync = promisify(execFile)
@@ -94,7 +96,8 @@ async function startNitroDev(
 
 describe('published runtime entries in Nitro dev', () => {
   it('resolves app virtuals inside the installed package', { timeout: 600_000 }, async () => {
-    // Given an isolated consumer installed from the actual package tarball
+    // Given an isolated consumer installed from the actual package tarball,
+    // running the base fixture app against it
     const rootDir = await mkdtemp(join(tmpdir(), 'nitro-drizzle-runtime-tarball-'))
     temporaryDirectories.push(rootDir)
     const tarball = await packRepository(rootDir)
@@ -116,13 +119,7 @@ describe('published runtime entries in Nitro dev', () => {
     ]) {
       await access(join(packageDir, 'dist', `${entry}.mjs`))
     }
-    await writeFile(
-      join(rootDir, 'package.json'),
-      `${JSON.stringify({
-        private: true,
-        type: 'module',
-      }, null, 2)}\n`,
-    )
+    await copyFixture(rootDir, { moduleSpecifier: '@teages/nitro-drizzle' })
     for (const dependency of [
       'drizzle-kit',
       'drizzle-orm',
@@ -141,95 +138,20 @@ describe('published runtime entries in Nitro dev', () => {
       join(rootDir, 'node_modules/.bin/nitro'),
       'file',
     )
-
-    const serverDir = join(rootDir, 'server')
-    const migrationDir = join(
-      serverDir,
-      'db/migrations/20260824000000_create_todos',
-    )
-    await Promise.all([
-      mkdir(join(serverDir, 'api'), { recursive: true }),
-      mkdir(join(serverDir, 'plugins'), { recursive: true }),
-      mkdir(migrationDir, { recursive: true }),
-    ])
-    await writeFile(
-      join(serverDir, 'db/schema.ts'),
-      `import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-
-export const todos = sqliteTable('todos', {
-  id: integer('id').primaryKey(),
-  title: text('title').notNull(),
-})
-`,
-    )
-    await writeFile(
-      join(migrationDir, 'migration.sql'),
-      'CREATE TABLE todos (id integer PRIMARY KEY, title text NOT NULL);\n',
-    )
-    await writeFile(
-      join(serverDir, 'plugins/seed.ts'),
-      `import { definePlugin } from 'nitro'
-import { useDrizzle } from '#drizzle'
-
-export default definePlugin((nitro) => {
-  nitro.hooks.hook('drizzle:dev-mock:seed', async () => {
-    const { db, schema } = useDrizzle()
-    await db.insert(schema.todos)
-      .values({ id: 1, title: 'seeded' })
-      .onConflictDoNothing()
-  })
-})
-`,
-    )
-    await writeFile(
-      join(serverDir, 'api/todos.get.ts'),
-      `import { defineHandler } from 'nitro'
-import { useDrizzle } from '#drizzle'
-
-export default defineHandler(async () => {
-  const { db, schema } = useDrizzle()
-  return db.select().from(schema.todos)
-})
-`,
-    )
-    await writeFile(
-      join(serverDir, 'api/health.get.ts'),
-      `import { defineHandler } from 'nitro'
-
-export default defineHandler(() => ({ ok: true }))
-`,
-    )
-    const devDatabase = join(rootDir, 'dev.db')
-    const realDatabase = join(rootDir, 'real.db')
-    await writeFile(
-      join(rootDir, 'nitro.config.ts'),
-      `import { defineConfig } from 'nitro/config'
-import NitroDrizzle from '@teages/nitro-drizzle'
-
-export default defineConfig({
-  serverDir: './server',
-  modules: [NitroDrizzle],
-  drizzle: {
-    dialect: 'sqlite',
-    driver: 'node-sqlite',
-    schemaPath: './server/db/schema.ts',
-    devMock: { driver: 'node-sqlite', file: ${JSON.stringify(devDatabase)} },
-    connection: { url: ${JSON.stringify(realDatabase)} },
-  },
-})
-`,
-    )
+    // The fixture seeds one row through the dev database, so the first served
+    // count proves the whole chain: installed runtime, dev database, schema
+    // push, and the app's seed hook.
 
     // When Nitro dev starts from the installed package
     const devPort = await reservePort()
     const dev = await startNitroDev(rootDir, devPort)
     await expect(
-      waitForJson(`http://127.0.0.1:${devPort}/api/todos`, dev.output),
-    ).resolves.toEqual([{ id: 1, title: 'seeded' }])
+      waitForJson(`http://127.0.0.1:${devPort}/api/count`, dev.output),
+    ).resolves.toEqual({ count: 1 })
 
     // Then #drizzle resolves inside the consumer graph
     const devBundle = await readFile(
-      join(rootDir, 'node_modules/.nitro/dev/index.mjs'),
+      join(rootDir, '.nitro/dev/index.mjs'),
       'utf8',
     )
     expect(devBundle).not.toMatch(/from\s+["']#drizzle["']/)
