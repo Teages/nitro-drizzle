@@ -304,6 +304,24 @@ export default definePlugin((nitro) => {
 })
 ```
 
+`useDrizzle()` also returns `mockDb`, the dev database handle for
+engine-specific code:
+
+- In dev-database sessions it is the same instance as `db`; everywhere else —
+  production builds, `NITRO_DRIZZLE_DEV_MOCK=false` runs — it is `undefined`.
+- Its type follows the configured dev engine and includes `undefined`, so
+  engine-specific access narrows with a plain guard instead of a cast. Without
+  a resolvable `drizzle.devMock` it types as plain `undefined`.
+
+```ts
+const { db, mockDb } = useDrizzle()
+
+if (mockDb) {
+  // dev engine is pglite: the client is a full PGlite instance
+  await mockDb.$client.query('select 1')
+}
+```
+
 To start from a clean slate, restart the dev server: in-memory databases are
 recreated on startup, and for a `drizzle.devMock.file` database it is enough to
 delete the file before restarting.

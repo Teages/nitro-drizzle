@@ -239,6 +239,8 @@ describe('@teages/nitro-drizzle', () => {
     expect(virtual).toContain(`from 'drizzle-orm/pglite'`)
     expect(virtual).not.toContain('drizzle-orm/postgres-js')
     expect(virtual).not.toContain('useRuntimeConfig')
+    // And — the dev-baked module carries the mock db as the same instance
+    expect(virtual).toContain('mockDb: _db')
 
     // And — the schema imports its explicit entry through a virtual module so
     // the host bundler owns the complete dependency graph
@@ -255,14 +257,17 @@ describe('@teages/nitro-drizzle', () => {
     expect(configModule).toContain('"devMock": true')
     expect(configModule).toContain('"driver": "postgres-js"')
 
-    // And — the generated types keep describing the configured driver: the
-    // dev database swaps only the runtime client, never the declarations
+    // And — the generated types keep describing the configured driver for
+    // db, while mockDb types from the dev engine the session runs
     const modules = await readFile(
       join(nitro.options.rootDir, 'node_modules/.nitro-drizzle/modules.d.ts'),
       'utf8',
     )
     expect(modules).toContain('drizzle-orm/postgres-js')
-    expect(modules).not.toContain('drizzle-orm/pglite')
+    expect(modules).toContain(
+      `typeof import("drizzle-orm/pglite").drizzle<`,
+    )
+    expect(modules).toContain('readonly mockDb: MockDatabase | undefined')
 
     // And — the dev plugin is registered
     expect(nitro.options.plugins).toContainEqual(

@@ -1,13 +1,21 @@
 import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { ResolvedDevDatabase } from '../dev-database/contracts'
 import type { ResolvedDevStudio } from '../studio/resolve'
-import type { DatabaseConnection, DrizzleOptions } from '../types'
+import type {
+  DatabaseConnection,
+  DrizzleDevMockOptions,
+  DrizzleDialect,
+  DrizzleDriver,
+  DrizzleLocalDriver,
+  DrizzleOptions,
+} from '../types'
 import { env } from 'node:process'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../configuration/resolve'
 import {
   assertLocalDriverInstalled,
   detectDevRuntimeEngines,
   DEV_ENV_FLAG,
+  DrizzleDevDatabaseError,
   resolveDevDatabase,
 } from '../dev-database/resolve'
 import { resolveDrizzleTypesDir } from '../schema-artifacts/generate'
@@ -30,6 +38,14 @@ export interface DrizzleModuleContext {
   readonly schemaPath: string
   readonly relationsExport: string | undefined
   readonly devDb: ResolvedDevDatabase | undefined
+  /**
+   * Engine the declarations type `mockDb` for, resolved from the configured
+   * `drizzle.devMock` regardless of whether this session activated the dev
+   * database — dev and production preparations emit identical declarations.
+   * `undefined` when devMock is unset or cannot resolve to a local engine;
+   * invalid combos only fail dev sessions, which surface the real error.
+   */
+  readonly mockEngine: DrizzleLocalDriver | undefined
   /** Normalized, domain-minted `drizzle.devMock.studio`; `undefined` means disabled. */
   readonly devStudio: ResolvedDevStudio | undefined
   readonly userConnection: DatabaseConnection
@@ -73,6 +89,11 @@ export async function resolveDrizzleModuleContext(
     assertLocalDriverInstalled(devDb.engine, host.rootDir)
   }
 
+  const mockEngine = devDb?.engine
+    ?? (drizzle.devMock === undefined
+      ? undefined
+      : tryResolveMockEngine(drizzle.devMock, config.dialect, config.driver))
+
   const schemaPath = resolveDrizzleSchemaPath(
     drizzle.schemaPath,
     config.dialect,
@@ -92,11 +113,41 @@ export async function resolveDrizzleModuleContext(
     schemaPath,
     relationsExport: drizzle.relationsExport,
     devDb,
+    mockEngine,
     devStudio,
     userConnection,
     typesDir: resolveDrizzleTypesDir(
       host.rootDir,
       drizzle.typesDir,
     ),
+  }
+}
+
+/**
+ * Engine the declarations type `mockDb` for, resolved exactly the way a dev
+ * session resolves it so both agree on the same machine. `env` stays empty:
+ * the file override never picks the engine. Sessions that ignore dev must
+ * not fail on an invalid devMock — typing degrades to `undefined` instead.
+ */
+function tryResolveMockEngine(
+  dev: true | DrizzleDevMockOptions,
+  dialect: DrizzleDialect,
+  driver: DrizzleDriver,
+): DrizzleLocalDriver | undefined {
+  try {
+    const resolved = resolveDevDatabase({
+      dev,
+      dialect,
+      driver,
+      env: {},
+      runtime: detectDevRuntimeEngines(),
+    })
+    return resolved.engine
+  }
+  catch (error) {
+    if (error instanceof DrizzleDevDatabaseError) {
+      return undefined
+    }
+    throw error
   }
 }

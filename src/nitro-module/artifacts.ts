@@ -28,6 +28,7 @@ export async function createDrizzleArtifactsLifecycle(
       config: ctx.config,
       schemaPath: ctx.schemaPath,
       ...(ctx.relationsExport === undefined ? {} : { relationsExport: ctx.relationsExport }),
+      ...(ctx.mockEngine === undefined ? {} : { mockEngine: ctx.mockEngine }),
     })
   }
 

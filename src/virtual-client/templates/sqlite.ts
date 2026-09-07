@@ -13,7 +13,7 @@ export function sqliteFileSource(imports: SourceImports, dev?: DevClientConnecti
     connection: ${quote(dev.connection ?? ':memory:')},
     schema,
     relations,
-  })`),
+  })`, true),
     runtime: imports =>
       lazyUseDrizzleSource(imports, `  const connection = useDrizzleConnection()
   return drizzle({

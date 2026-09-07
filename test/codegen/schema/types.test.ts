@@ -113,7 +113,102 @@ context.db.query.users.findMany()
       `typeof import('./schema.d.ts')`,
     )
     expect(modulesDeclaration).toContain('drizzle-orm/libsql')
+    // Without a configured devMock the context exposes no mock database
+    expect(modulesDeclaration).toContain('readonly mockDb: undefined')
+    expect(modulesDeclaration).not.toContain('MockDatabase')
     expect(modulesDeclaration).toContain('export function useDrizzle(): DrizzleContext')
+    await expect(
+      execFileAsync(
+        join(process.cwd(), 'node_modules/.bin/tsc'),
+        ['--project', tsconfigFile],
+      ),
+    ).resolves.toBeDefined()
+  })
+
+  it('types mockDb from the configured dev engine while db keeps the configured driver', async () => {
+    // Given
+    const rootDir = await createTemporaryRoot()
+    const schemaPath = join(rootDir, 'schema.ts')
+    await writeFile(
+      schemaPath,
+      `import { defineRelations } from 'drizzle-orm'
+import { integer, pgTable, text } from 'drizzle-orm/pg-core'
+
+export const users = pgTable('users', {
+  id: integer('id').primaryKey(),
+  name: text('name').notNull(),
+})
+
+export const relations = defineRelations({ users })
+`,
+    )
+    const config = resolveDrizzleConfig(
+      {
+        dialect: 'postgresql',
+        driver: 'postgres-js',
+        connection: { connectionString: 'postgres://localhost/database' },
+      },
+      { serverDir: join(rootDir, 'server') },
+    )
+    expect(config).toBeDefined()
+    if (config === undefined) {
+      return
+    }
+
+    // When the declarations are generated for a pglite dev mock
+    const artifacts = await generateDrizzleArtifacts({
+      directory: join(rootDir, 'node_modules/.nitro-drizzle'),
+      config,
+      schemaPath,
+      mockEngine: 'pglite',
+    })
+    const consumerFile = join(rootDir, 'consumer.ts')
+    const tsconfigFile = join(rootDir, 'tsconfig.json')
+    await Promise.all([
+      writeFile(
+        consumerFile,
+        `import { useDrizzle, type DrizzleContext } from '#drizzle'
+
+const context: DrizzleContext = useDrizzle()
+context.db.query.users.findMany()
+
+const mock = context.mockDb
+if (mock) {
+  // Engine-specific access: the dev mock runs on PGlite, so the client
+  // narrows to the PGlite instance only after the undefined guard
+  const client: import('@electric-sql/pglite').PGlite = mock.$client
+  client.query('select 1')
+}
+`,
+      ),
+      writeFile(
+        tsconfigFile,
+        JSON.stringify({
+          compilerOptions: {
+            module: 'ESNext',
+            moduleResolution: 'Bundler',
+            noEmit: true,
+            skipLibCheck: true,
+            strict: true,
+          },
+          include: [
+            consumerFile,
+            artifacts.schemaTypesFile,
+            artifacts.modulesFile,
+          ],
+        }),
+      ),
+    ])
+
+    // Then the declarations keep the configured driver for db and type
+    // mockDb from the dev engine
+    const modulesDeclaration = await readFile(artifacts.modulesFile, 'utf8')
+    expect(modulesDeclaration).toContain('drizzle-orm/postgres-js')
+    expect(modulesDeclaration).toContain(
+      `typeof import("drizzle-orm/pglite").drizzle<`,
+    )
+    expect(modulesDeclaration).toContain('readonly mockDb: MockDatabase | undefined')
+    // And the consumer typechecks: db stays postgres-js, mockDb narrows to pglite
     await expect(
       execFileAsync(
         join(process.cwd(), 'node_modules/.bin/tsc'),

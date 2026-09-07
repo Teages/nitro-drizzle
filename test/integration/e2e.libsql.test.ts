@@ -120,5 +120,9 @@ describe('@teages/nitro-drizzle end-to-end build', () => {
     const insert = await fetch(countUrl, { method: 'POST' })
     expect(insert.ok).toBe(true)
     await expect(waitForJson(countUrl)).resolves.toEqual({ count: 1 })
+
+    // And the mock database stays absent in production: mockDb is undefined
+    // and never aliases db
+    await expect(waitForJson(`http://127.0.0.1:${port}/api/mock-db`)).resolves.toEqual({ mocked: false, same: false })
   })
 })

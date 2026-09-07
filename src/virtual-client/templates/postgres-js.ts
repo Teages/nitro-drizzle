@@ -46,7 +46,7 @@ export function useDrizzle() {
   const request = useRequestContext('POSTGRES')
   const binding = requireBinding(request.runtime.cloudflare.env.POSTGRES, 'POSTGRES')
   request.context.__nitroDrizzlePostgresDb ??= createDb(binding)
-  return { db: request.context.__nitroDrizzlePostgresDb, schema, relations }
+  return { db: request.context.__nitroDrizzlePostgresDb, schema, relations, mockDb: undefined }
 }
 `
     default:

@@ -37,7 +37,7 @@ export function useDrizzle() {
   const request = useRequestContext('MYSQL')
   const binding = requireBinding(request.runtime.cloudflare.env.MYSQL, 'MYSQL')
   request.context.__nitroDrizzleMysqlDb ??= createDb(binding)
-  return { db: request.context.__nitroDrizzleMysqlDb, schema, relations }
+  return { db: request.context.__nitroDrizzleMysqlDb, schema, relations, mockDb: undefined }
 }
 `
     default:
