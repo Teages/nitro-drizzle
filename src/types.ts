@@ -19,7 +19,14 @@ export type DrizzleLocalDriver
 // TODO: make it accept string only
 export type DrizzleSchemaPath = string | { sqlite?: string, postgresql?: string, mysql?: string }
 
-export interface DrizzleOptions {
+/**
+ * The connection fields a driver recognizes. Extra fields are still allowed —
+ * drivers forward options beyond this known set — so the known fields drive
+ * editor completion only, they do not reject configurations.
+ */
+type DriverConnection<K extends keyof DatabaseConnection> = Pick<DatabaseConnection, K> & Record<string, unknown>
+
+export type DrizzleOptions = {
   /**
    * Database dialect
    */
@@ -39,12 +46,6 @@ export interface DrizzleOptions {
    * its table exports.
    */
   schemaPath: DrizzleSchemaPath
-  /**
-   * Static database connection. Values are used as-is by default; `{{VAR}}`
-   * templates expand at runtime when the user enables Nitro's
-   * `experimental.envExpansion`.
-   */
-  connection?: DatabaseConnection
   /**
    * Name of the Drizzle v1 relations value exported by the schema entry.
    * The generated client always exposes it as `relations`.
@@ -77,6 +78,54 @@ export interface DrizzleOptions {
    * Set `NITRO_DRIZZLE_DEV_MOCK=false` to opt out for a single run.
    */
   devMock?: true | DrizzleDevMockOptions
+  /**
+   * Static database connection. Values are used as-is by default; `{{VAR}}`
+   * templates expand at runtime when the user enables Nitro's
+   * `experimental.envExpansion`.
+   */
+  connection?: Record<string, unknown>
+} & DrizzleDriverOptions
+
+export type DrizzleDriverOptions = {
+  dialect: 'sqlite'
+  driver: 'better-sqlite3'
+  connection?: DriverConnection<'url' | 'connectionString'>
+} | {
+  dialect: 'sqlite'
+  driver: 'libsql'
+  connection?: DriverConnection<'url' | 'authToken'>
+} | {
+  dialect: 'sqlite'
+  driver: 'bun-sqlite'
+  connection?: DriverConnection<'url' | 'connectionString'>
+} | {
+  dialect: 'sqlite'
+  driver: 'node-sqlite'
+  connection?: DriverConnection<'url' | 'connectionString'>
+} | {
+  dialect: 'sqlite'
+  driver: 'd1'
+  connection?: DriverConnection<'databaseId' | 'accountId' | 'apiToken'>
+} | {
+  dialect: 'sqlite'
+  driver: 'd1-http'
+  connection?: DriverConnection<'accountId' | 'apiToken' | 'databaseId'>
+} | {
+  dialect: 'postgresql'
+  driver: 'postgres-js'
+  connection?: DriverConnection<'url' | 'connectionString' | 'host' | 'port' | 'user' | 'password' | 'database' | 'hyperdriveId' | 'prepare'>
+} | {
+  dialect: 'postgresql'
+  driver: 'pglite'
+  connection?: DriverConnection<'dataDir' | 'url' | 'connectionString'>
+} | {
+  dialect: 'postgresql'
+  driver: 'neon-http'
+  connection?: DriverConnection<'url' | 'connectionString'>
+} | {
+  dialect: 'mysql'
+  driver: 'mysql2'
+  connection?: DriverConnection<'url' | 'uri' | 'connectionString' | 'host' | 'port' | 'user' | 'password' | 'database' | 'hyperdriveId'>
 }
 
 export interface DrizzleDevMockOptions {
