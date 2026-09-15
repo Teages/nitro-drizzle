@@ -13,10 +13,9 @@ type DevDrizzleConfig = Parameters<
   import('nitro/types').NitroRuntimeHooks[typeof DEV_DATABASE_CONFIG_HOOK]
 >[0]
 
-/** The dev variant of `#drizzle` builds its client from an injected drizzle config. */
+/** The dev variant of `#drizzle` exposes its memoized drizzle config. */
 interface DevDrizzleModule {
   devDrizzleConfig?: () => DevDrizzleConfig
-  configureDevDrizzle?: (config: DevDrizzleConfig) => void
 }
 
 export default definePlugin((nitro) => {
@@ -30,15 +29,14 @@ export default definePlugin((nitro) => {
 
   const ready = (async () => {
     // The config hook mutates the exact object the engine's drizzle() call
-    // receives: pull the baked config from the dev module, run it through
-    // the handlers, inject it back. An in-memory pglite bakes no connection
-    // at all, so its config carries no `connection` key until a handler
-    // adds one.
+    // receives: the dev module's builder memoizes its config, so the
+    // handlers and the later construction share one object. An in-memory
+    // pglite bakes no connection at all, so its config carries no
+    // `connection` key until a handler adds one.
     const devClient = await import('#drizzle') as unknown as DevDrizzleModule
     const config = devClient.devDrizzleConfig?.()
     if (config !== undefined) {
       await nitro.hooks.callHook(DEV_DATABASE_CONFIG_HOOK, config)
-      devClient.configureDevDrizzle?.(config)
     }
     const { mockDb, schema } = useDrizzle()
     if (mockDb === undefined) {

@@ -69,11 +69,10 @@ export function sourceHeader(imports: SourceImports): string {
  *
  * The body argument shifts meaning with the variant: runtime sources pass
  * `initDrizzle` statements, dev sources pass the drizzle config object
- * literal. The dev variant exposes that object through `devDrizzleConfig()`:
- * the dev-database plugin runs it through the `drizzle:dev-mock:config`
- * hook and injects the mutated object back via `configureDevDrizzle`, so the
- * same object the handlers saw reaches `drizzle()` — an untouched fallback
- * keeps the baked config for code constructing before the plugin ran.
+ * literal. The dev variant exposes that object through a memoized
+ * `devDrizzleConfig()`: the dev-database plugin pulls it once, runs it
+ * through the `drizzle:dev-mock:config` hook, and the later lazy
+ * construction receives the same mutated object.
  */
 export function lazyUseDrizzleSource(
   imports: SourceImports,
@@ -81,22 +80,19 @@ export function lazyUseDrizzleSource(
   mock?: boolean,
 ): string {
   const init = mock === true
-    ? `export function devDrizzleConfig() {
-  return ${body}
-}
-
-let _config
+    ? `let _config
 
 /**
- * Internal to the dev database: the runtime plugin injects the
- * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
+ * Internal to the dev database: memoized so the runtime plugin can run the
+ * single config object through the \`drizzle:dev-mock:config\` hook before
+ * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
  */
-export function configureDevDrizzle(config) {
-  _config = config
+export function devDrizzleConfig() {
+  return _config ??= ${body}
 }
 
 function initDrizzle() {
-  return drizzle(_config ?? devDrizzleConfig())
+  return drizzle(devDrizzleConfig())
 }`
     : `function initDrizzle() {
 ${body}
