@@ -27,6 +27,6 @@ export async function emitDrizzleArtifacts(
       // swaps only the runtime client, so every context emits the same files.
       createModulesDeclaration(options.config.driver, options.mockEngine),
     ),
-    writeFile(artifacts.hooksFile, createRuntimeHooksDeclaration()),
+    writeFile(artifacts.hooksFile, createRuntimeHooksDeclaration(options.mockEngine)),
   ])
 }
