@@ -8,11 +8,7 @@ let _db = null
 
 let _config
 
-/**
- * Internal to the dev database: memoized so the runtime plugin can run the
- * single config object through the \`drizzle:dev-mock:config\` hook before
- * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
- */
+/** Internal to the dev database. */
 export function devDrizzleConfig() {
   return _config ??= {
     schema,
@@ -39,11 +35,7 @@ let _db = null
 
 let _config
 
-/**
- * Internal to the dev database: memoized so the runtime plugin can run the
- * single config object through the \`drizzle:dev-mock:config\` hook before
- * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
- */
+/** Internal to the dev database. */
 export function devDrizzleConfig() {
   return _config ??= {
     connection: 'file:.data/dev.db',
@@ -71,11 +63,7 @@ let _db = null
 
 let _config
 
-/**
- * Internal to the dev database: memoized so the runtime plugin can run the
- * single config object through the \`drizzle:dev-mock:config\` hook before
- * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
- */
+/** Internal to the dev database. */
 export function devDrizzleConfig() {
   return _config ??= {
     connection: 'file:.data/dev.db',
@@ -103,11 +91,7 @@ let _db = null
 
 let _config
 
-/**
- * Internal to the dev database: memoized so the runtime plugin can run the
- * single config object through the \`drizzle:dev-mock:config\` hook before
- * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
- */
+/** Internal to the dev database. */
 export function devDrizzleConfig() {
   return _config ??= {
     connection: { url: 'file:.data/dev.db' },
@@ -135,11 +119,7 @@ let _db = null
 
 let _config
 
-/**
- * Internal to the dev database: memoized so the runtime plugin can run the
- * single config object through the \`drizzle:dev-mock:config\` hook before
- * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
- */
+/** Internal to the dev database. */
 export function devDrizzleConfig() {
   return _config ??= {
     connection: 'file:.data/dev.db',
@@ -167,11 +147,7 @@ let _db = null
 
 let _config
 
-/**
- * Internal to the dev database: memoized so the runtime plugin can run the
- * single config object through the \`drizzle:dev-mock:config\` hook before
- * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
- */
+/** Internal to the dev database. */
 export function devDrizzleConfig() {
   return _config ??= {
     connection: '.data/pglite',
