@@ -267,4 +267,13 @@ describe('dev-database lifecycle hooks', () => {
     const libsql = createRuntimeHooksDeclaration('libsql')
     expect(libsql).toContain(`connection?: string | import('@libsql/client').Config`)
   })
+
+  it('types the bun-sqlite connection through bun:sqlite', () => {
+    // The adapter's own declaration imports bun:sqlite, so a bun-sqlite
+    // consumer already resolves bun types — no degraded record needed.
+    const bun = createRuntimeHooksDeclaration('bun-sqlite')
+    expect(bun).toContain(
+      `connection?: string | { source?: string } & Partial<import('bun:sqlite').DatabaseOptions>`,
+    )
+  })
 })

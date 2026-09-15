@@ -374,4 +374,74 @@ useNitroHooks().hook('drizzle:dev-mock:setup', async (client) => {
       ),
     ).resolves.toBeDefined()
   })
+
+  it('types the hooks for a bun-sqlite dev engine through bun:sqlite', async () => {
+    // Given
+    const rootDir = await createTemporaryRoot()
+    const schemaPath = join(rootDir, 'schema.ts')
+    await writeFile(schemaPath, 'export const users = {}\n')
+    const config = resolveDrizzleConfig(
+      {
+        dialect: 'sqlite',
+        driver: 'bun-sqlite',
+        connection: { url: 'file:.data/dev.db' },
+      },
+      { serverDir: join(rootDir, 'server') },
+    )
+    expect(config).toBeDefined()
+    if (config === undefined) {
+      return
+    }
+    const artifacts = await generateDrizzleArtifacts({
+      directory: join(rootDir, 'node_modules/.nitro-drizzle'),
+      config,
+      schemaPath,
+      mockEngine: 'bun-sqlite',
+    })
+
+    // Then the connection types through bun:sqlite itself, like every
+    // other engine — the adapter's own declaration imports bun:sqlite
+    const hooksDeclaration = await readFile(artifacts.hooksFile, 'utf8')
+    expect(hooksDeclaration).toContain(
+      `connection?: string | { source?: string } & Partial<import('bun:sqlite').DatabaseOptions>`,
+    )
+
+    // And consumers get engine-precise payloads against the installed bun types
+    const consumerFile = join(rootDir, 'plugin.ts')
+    const tsconfigFile = join(rootDir, 'tsconfig.json')
+    await Promise.all([
+      writeFile(
+        consumerFile,
+        `import { useNitroHooks } from 'nitro/app'
+
+useNitroHooks().hook('drizzle:dev-mock:config', async (config) => {
+  config.connection = { source: 'file:dev.db', readonly: true }
+})
+
+useNitroHooks().hook('drizzle:dev-mock:setup', async (client) => {
+  client.exec('PRAGMA user_version = 42')
+})
+`,
+      ),
+      writeFile(
+        tsconfigFile,
+        JSON.stringify({
+          compilerOptions: {
+            module: 'ESNext',
+            moduleResolution: 'Bundler',
+            noEmit: true,
+            skipLibCheck: true,
+            strict: true,
+          },
+          include: [consumerFile, artifacts.hooksFile],
+        }),
+      ),
+    ])
+    await expect(
+      execFileAsync(
+        join(process.cwd(), 'node_modules/.bin/tsc'),
+        ['--project', tsconfigFile],
+      ),
+    ).resolves.toBeDefined()
+  })
 })
