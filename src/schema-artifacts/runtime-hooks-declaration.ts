@@ -2,13 +2,12 @@ import type { DrizzleLocalDriver } from '../types'
 import { resolveDriverAdapterPath } from '../database/registry'
 import { DEV_DATABASE_CONFIG_HOOK, DEV_DATABASE_SEED_HOOK, DEV_DATABASE_SETUP_HOOK } from '../dev-database/contracts'
 
-/** `bun-sqlite` options live in `bun:sqlite`, whose types only exist under Bun. */
 const DEV_CONNECTION_TYPES: Readonly<Record<DrizzleLocalDriver, string>> = {
   'pglite': `Partial<import('@electric-sql/pglite').PGliteOptions> & { dataDir?: string }`,
   'better-sqlite3': `{ source?: string } & Partial<import('better-sqlite3').Options>`,
   'libsql': `import('@libsql/client').Config`,
   'node-sqlite': `{ path?: string } & Partial<import('node:sqlite').DatabaseSyncOptions>`,
-  'bun-sqlite': `Record<string, unknown>`,
+  'bun-sqlite': `{ source?: string } & Partial<import('bun:sqlite').DatabaseOptions>`,
 }
 
 function payloadTypes(mockEngine: DrizzleLocalDriver | undefined): {
