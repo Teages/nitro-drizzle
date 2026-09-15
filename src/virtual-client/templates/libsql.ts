@@ -4,12 +4,11 @@ import { connectionAwareSource, lazyUseDrizzleSource, quote } from './helpers'
 export function libsqlSource(imports: SourceImports, dev?: DevClientConnection): string {
   return connectionAwareSource(imports, dev, {
     dev: (imports, dev) =>
-      lazyUseDrizzleSource(imports, `  return drizzle({
+      lazyUseDrizzleSource(imports, `{
     connection: { url: ${quote(dev.connection ?? ':memory:')} },
-    ..._overrides,
     schema,
     relations,
-  })`, true),
+  }`, true),
     runtime: imports =>
       lazyUseDrizzleSource(imports, `  const connection = useDrizzleConnection()
   return drizzle({

@@ -66,36 +66,46 @@ export function sourceHeader(imports: SourceImports): string {
  * `mock` marks the dev-baked variant — the module only exists in a session
  * that activated the dev database, so `mockDb` carries the same instance as
  * `db`. Runtime-resolved sources pass nothing and expose `mockDb: undefined`.
- * The dev variant also exports `configureDevDrizzle`: the dev-database
- * plugin injects the `drizzle:dev-mock:config` hook result there before the
- * first construction, and `initDrizzle` spreads it over the baked
- * connection.
+ *
+ * The body argument shifts meaning with the variant: runtime sources pass
+ * `initDrizzle` statements, dev sources pass the drizzle config object
+ * literal. The dev variant exposes that object through `devDrizzleConfig()`:
+ * the dev-database plugin runs it through the `drizzle:dev-mock:config`
+ * hook and injects the mutated object back via `configureDevDrizzle`, so the
+ * same object the handlers saw reaches `drizzle()` — an untouched fallback
+ * keeps the baked config for code constructing before the plugin ran.
  */
 export function lazyUseDrizzleSource(
   imports: SourceImports,
-  initBody: string,
+  body: string,
   mock?: boolean,
 ): string {
-  const devOverrides = mock === true
-    ? `let _overrides
+  const init = mock === true
+    ? `export function devDrizzleConfig() {
+  return ${body}
+}
+
+let _config
 
 /**
  * Internal to the dev database: the runtime plugin injects the
  * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
  */
-export function configureDevDrizzle(overrides) {
-  _overrides = overrides
+export function configureDevDrizzle(config) {
+  _config = config
 }
 
-`
-    : ''
+function initDrizzle() {
+  return drizzle(_config ?? devDrizzleConfig())
+}`
+    : `function initDrizzle() {
+${body}
+}`
   return `${sourceHeader(imports)}
 
 let _db = null
 
-${devOverrides}function initDrizzle() {
-${initBody}
-}
+${init}
 
 export function useDrizzle() {
   _db ??= initDrizzle()
