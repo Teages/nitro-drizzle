@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { promisify } from 'node:util'
+import Database from 'better-sqlite3'
 import { afterEach, describe, expect, it } from 'vitest'
 import { copyFixture } from './fixtures'
 import { packRepository } from './pack'
@@ -142,9 +143,14 @@ describe('published runtime entries in Nitro dev', () => {
     // count proves the whole chain: installed runtime, dev database, schema
     // push, and the app's seed hook.
 
-    // When Nitro dev starts from the installed package
+    // When Nitro dev starts from the installed package, with the config hook
+    // redirecting the dev database at a probe file
     const devPort = await reservePort()
-    const dev = await startNitroDev(rootDir, devPort)
+    const probeFile = join(rootDir, 'config-hook.db')
+    const dev = await startNitroDev(rootDir, devPort, {
+      ...process.env,
+      DEV_MOCK_DATABASE_FILE: probeFile,
+    })
     await expect(
       waitForJson(`http://127.0.0.1:${devPort}/api/count`, dev.output),
     ).resolves.toEqual({ count: 1 })
@@ -153,6 +159,22 @@ describe('published runtime entries in Nitro dev', () => {
     await expect(
       waitForJson(`http://127.0.0.1:${devPort}/api/mock-db`, dev.output),
     ).resolves.toEqual({ mocked: true, same: true })
+    // And the setup hook ran against that same dev database before the push
+    await expect(
+      waitForJson(`http://127.0.0.1:${devPort}/api/setup`, dev.output),
+    ).resolves.toEqual({ userVersion: 42 })
+    // And the rewritten connection took effect: the probe file carries the
+    // pushed schema and the setup marker
+    const probe = new Database(probeFile)
+    try {
+      expect(
+        probe.prepare('SELECT name FROM sqlite_master WHERE type = \'table\' AND name = \'counts\'').all(),
+      ).toHaveLength(1)
+      expect(probe.prepare('PRAGMA user_version').get()).toEqual({ user_version: 42 })
+    }
+    finally {
+      probe.close()
+    }
 
     // Then #drizzle resolves inside the consumer graph
     const devBundle = await readFile(
