@@ -4,9 +4,19 @@ import { drizzleConfig } from '#drizzle/config'
 import { DEV_DATABASE_CONFIG_HOOK, DEV_DATABASE_SEED_HOOK, DEV_DATABASE_SETUP_HOOK } from '../contracts'
 import { pushDevSchema } from './push-schema'
 
-/** The dev variant of `#drizzle` accepts injected construction overrides. */
+/**
+ * Payload the `drizzle:dev-mock:config` hook receives, derived from the
+ * generated hooks declaration so the plugin relays exactly what handlers
+ * and the engine's `drizzle()` call agree on.
+ */
+type DevDrizzleConfig = Parameters<
+  import('nitro/types').NitroRuntimeHooks[typeof DEV_DATABASE_CONFIG_HOOK]
+>[0]
+
+/** The dev variant of `#drizzle` builds its client from an injected drizzle config. */
 interface DevDrizzleModule {
-  configureDevDrizzle?: (overrides: { connection: string | object }) => void
+  devDrizzleConfig?: () => DevDrizzleConfig
+  configureDevDrizzle?: (config: DevDrizzleConfig) => void
 }
 
 export default definePlugin((nitro) => {
@@ -19,16 +29,16 @@ export default definePlugin((nitro) => {
   const dialect = drizzleConfig.dialect
 
   const ready = (async () => {
-    // Construction-time config: handlers replace `config.connection`, and
-    // only a replaced value is injected — an untouched in-memory pglite bakes
-    // no connection at all, so injecting the base `:memory:` string would
-    // give it a data directory literally named `:memory:`.
-    const base = drizzleConfig.devConnection ?? ':memory:'
-    const config = { connection: base }
-    await nitro.hooks.callHook(DEV_DATABASE_CONFIG_HOOK, config)
-    if (config.connection !== base) {
-      const devClient = await import('#drizzle') as unknown as DevDrizzleModule
-      devClient.configureDevDrizzle?.({ connection: config.connection })
+    // The config hook mutates the exact object the engine's drizzle() call
+    // receives: pull the baked config from the dev module, run it through
+    // the handlers, inject it back. An in-memory pglite bakes no connection
+    // at all, so its config carries no `connection` key until a handler
+    // adds one.
+    const devClient = await import('#drizzle') as unknown as DevDrizzleModule
+    const config = devClient.devDrizzleConfig?.()
+    if (config !== undefined) {
+      await nitro.hooks.callHook(DEV_DATABASE_CONFIG_HOOK, config)
+      devClient.configureDevDrizzle?.(config)
     }
     const { mockDb, schema } = useDrizzle()
     if (mockDb === undefined) {
