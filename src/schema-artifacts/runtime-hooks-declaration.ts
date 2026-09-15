@@ -3,15 +3,16 @@ import { resolveDriverAdapterPath } from '../database/registry'
 import { DEV_DATABASE_CONFIG_HOOK, DEV_DATABASE_SEED_HOOK, DEV_DATABASE_SETUP_HOOK } from '../dev-database/contracts'
 
 /**
- * Options-object half of `config.connection` per dev engine, mirroring what
- * each adapter's `drizzle({ connection })` accepts. `bun-sqlite` options live
- * in `bun:sqlite`, whose types only exist under Bun, so it degrades to a
- * plain record.
+ * Object half of `config.connection` per dev engine, mirroring what each
+ * adapter's `drizzle({ connection })` accepts. `libsql` keeps `Config` as-is
+ * so the required `url` stays required; `bun-sqlite` options live in
+ * `bun:sqlite`, whose types only exist under Bun, so it degrades to a plain
+ * record.
  */
 const DEV_CONNECTION_TYPES: Readonly<Record<DrizzleLocalDriver, string>> = {
   'pglite': `Partial<import('@electric-sql/pglite').PGliteOptions> & { dataDir?: string }`,
   'better-sqlite3': `{ source?: string } & Partial<import('better-sqlite3').Options>`,
-  'libsql': `Partial<import('@libsql/client').Config>`,
+  'libsql': `import('@libsql/client').Config`,
   'node-sqlite': `{ path?: string } & Partial<import('node:sqlite').DatabaseSyncOptions>`,
   'bun-sqlite': `Record<string, unknown>`,
 }
@@ -47,13 +48,13 @@ export function createRuntimeHooksDeclaration(mockEngine?: DrizzleLocalDriver): 
 declare module 'nitro/types' {
   interface NitroRuntimeHooks {
     /**
-     * The dev database is about to be constructed. Replace
-     * \`config.connection\` — a string or the engine's options object — to
-     * customize construction, for example registering PGlite extension
-     * packages through \`{ extensions: [...] }\`. Handlers mutate the config
-     * in place; the replacement wins over the baked connection. Called
-     * before every (re)construction; only fired when the dev database is
-     * enabled.
+     * The dev database is about to be constructed. The config object the
+     * engine's \`drizzle()\` call receives arrives here: mutate it in place,
+     * most notably \`config.connection\` — a string or the engine's options
+     * object — to customize construction, for example registering PGlite
+     * extension packages through \`{ extensions: [...] }\`. An in-memory
+     * pglite carries no connection until a handler adds one. Called before
+     * every (re)construction; only fired when the dev database is enabled.
      */
     '${DEV_DATABASE_CONFIG_HOOK}': (config: NitroDrizzleMockConfig) => void | Promise<void>
     /**
@@ -76,9 +77,10 @@ interface NitroDrizzleMockConfig {
   /**
    * Connection the dev engine's drizzle() call builds with. Replacing it
    * with an options object customizes construction (PGlite extensions,
-   * native client options); the baked value stays when left untouched.
+   * native client options); the baked value stays when left untouched —
+   * and may never have existed, for an in-memory pglite.
    */
-  connection: ${connection}
+  connection?: ${connection}
 }
 
 type NitroDrizzleMockClient = ${client}
