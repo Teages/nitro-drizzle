@@ -6,22 +6,25 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-let _overrides
+export function devDrizzleConfig() {
+  return {
+    schema,
+    relations,
+  }
+}
+
+let _config
 
 /**
  * Internal to the dev database: the runtime plugin injects the
  * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
  */
-export function configureDevDrizzle(overrides) {
-  _overrides = overrides
+export function configureDevDrizzle(config) {
+  _config = config
 }
 
 function initDrizzle() {
-  return drizzle({
-    ..._overrides,
-    schema,
-    relations,
-  })
+  return drizzle(_config ?? devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -37,23 +40,26 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-let _overrides
+export function devDrizzleConfig() {
+  return {
+    connection: 'file:.data/dev.db',
+    schema,
+    relations,
+  }
+}
+
+let _config
 
 /**
  * Internal to the dev database: the runtime plugin injects the
  * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
  */
-export function configureDevDrizzle(overrides) {
-  _overrides = overrides
+export function configureDevDrizzle(config) {
+  _config = config
 }
 
 function initDrizzle() {
-  return drizzle({
-    connection: 'file:.data/dev.db',
-    ..._overrides,
-    schema,
-    relations,
-  })
+  return drizzle(_config ?? devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -69,23 +75,26 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-let _overrides
+export function devDrizzleConfig() {
+  return {
+    connection: 'file:.data/dev.db',
+    schema,
+    relations,
+  }
+}
+
+let _config
 
 /**
  * Internal to the dev database: the runtime plugin injects the
  * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
  */
-export function configureDevDrizzle(overrides) {
-  _overrides = overrides
+export function configureDevDrizzle(config) {
+  _config = config
 }
 
 function initDrizzle() {
-  return drizzle({
-    connection: 'file:.data/dev.db',
-    ..._overrides,
-    schema,
-    relations,
-  })
+  return drizzle(_config ?? devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -101,23 +110,26 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-let _overrides
+export function devDrizzleConfig() {
+  return {
+    connection: { url: 'file:.data/dev.db' },
+    schema,
+    relations,
+  }
+}
+
+let _config
 
 /**
  * Internal to the dev database: the runtime plugin injects the
  * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
  */
-export function configureDevDrizzle(overrides) {
-  _overrides = overrides
+export function configureDevDrizzle(config) {
+  _config = config
 }
 
 function initDrizzle() {
-  return drizzle({
-    connection: { url: 'file:.data/dev.db' },
-    ..._overrides,
-    schema,
-    relations,
-  })
+  return drizzle(_config ?? devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -133,23 +145,26 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-let _overrides
+export function devDrizzleConfig() {
+  return {
+    connection: 'file:.data/dev.db',
+    schema,
+    relations,
+  }
+}
+
+let _config
 
 /**
  * Internal to the dev database: the runtime plugin injects the
  * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
  */
-export function configureDevDrizzle(overrides) {
-  _overrides = overrides
+export function configureDevDrizzle(config) {
+  _config = config
 }
 
 function initDrizzle() {
-  return drizzle({
-    connection: 'file:.data/dev.db',
-    ..._overrides,
-    schema,
-    relations,
-  })
+  return drizzle(_config ?? devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -165,23 +180,26 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-let _overrides
+export function devDrizzleConfig() {
+  return {
+    connection: '.data/pglite',
+    schema,
+    relations,
+  }
+}
+
+let _config
 
 /**
  * Internal to the dev database: the runtime plugin injects the
  * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
  */
-export function configureDevDrizzle(overrides) {
-  _overrides = overrides
+export function configureDevDrizzle(config) {
+  _config = config
 }
 
 function initDrizzle() {
-  return drizzle({
-    connection: '.data/pglite',
-    ..._overrides,
-    schema,
-    relations,
-  })
+  return drizzle(_config ?? devDrizzleConfig())
 }
 
 export function useDrizzle() {

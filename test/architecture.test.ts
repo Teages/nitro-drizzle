@@ -160,10 +160,12 @@ describe('runtime wiring', () => {
     // And — the virtual modules keep their export shapes
     expect(virtualSource(nitro, '#drizzle')).toContain('export function useDrizzle()')
     expect(virtualSource(nitro, '#drizzle')).toContain(`import { relations, schema } from '#drizzle/schema'`)
-    // And — the dev variant accepts injected construction overrides from the
-    // config hook: the setter ships only in dev-database sessions
-    expect(virtualSource(nitro, '#drizzle')).toContain('export function configureDevDrizzle(overrides)')
-    expect(virtualSource(nitro, '#drizzle')).toContain('..._overrides')
+    // And — the dev variant hands the runtime plugin the config object the
+    // engine's drizzle() call receives: the builder and the inject-back
+    // setter ship only in dev-database sessions
+    expect(virtualSource(nitro, '#drizzle')).toContain('export function devDrizzleConfig()')
+    expect(virtualSource(nitro, '#drizzle')).toContain('export function configureDevDrizzle(config)')
+    expect(virtualSource(nitro, '#drizzle')).toContain('drizzle(_config ?? devDrizzleConfig())')
     expect(virtualSource(nitro, '#drizzle/schema'))
       .toContain('export const { ["relations"]: relations = {}, ...schema } = source')
     expect(virtualSource(nitro, '#drizzle/config')).toContain('export const drizzleConfig = {')
@@ -246,15 +248,23 @@ describe('dev-database lifecycle hooks', () => {
 
   it('degrades the config and setup payloads without a resolvable engine', () => {
     const unresolved = createRuntimeHooksDeclaration()
-    expect(unresolved).toContain('connection: unknown')
+    expect(unresolved).toContain('connection?: unknown')
     expect(unresolved).toContain('type NitroDrizzleMockClient = unknown')
 
     const pglite = createRuntimeHooksDeclaration('pglite')
     expect(pglite).toContain(
-      `connection: string | Partial<import('@electric-sql/pglite').PGliteOptions> & { dataDir?: string }`,
+      `connection?: string | Partial<import('@electric-sql/pglite').PGliteOptions> & { dataDir?: string }`,
     )
     expect(pglite).toContain(
       `type NitroDrizzleMockClient = ReturnType<typeof import("drizzle-orm/pglite").drizzle>['$client']`,
     )
+  })
+
+  it('keeps libsql\'s required url when typing the connection', () => {
+    // A replaced connection object wholly replaces the baked `{ url }`, so
+    // the payload type must demand the url `@libsql/client` itself demands
+    // instead of loosening the whole config to Partial.
+    const libsql = createRuntimeHooksDeclaration('libsql')
+    expect(libsql).toContain(`connection?: string | import('@libsql/client').Config`)
   })
 })

@@ -248,7 +248,7 @@ if (mock) {
     expect(hooksDeclaration).toContain(
       `'drizzle:dev-mock:config': (config: NitroDrizzleMockConfig) => void | Promise<void>`,
     )
-    expect(hooksDeclaration).toContain('connection: unknown')
+    expect(hooksDeclaration).toContain('connection?: unknown')
     expect(hooksDeclaration).toContain(
       `'drizzle:dev-mock:setup': (client: NitroDrizzleMockClient) => void | Promise<void>`,
     )
@@ -327,7 +327,7 @@ useNitroHooks().hook('drizzle:dev-mock:seed', async () => {
     // without importing the schema types
     const hooksDeclaration = await readFile(artifacts.hooksFile, 'utf8')
     expect(hooksDeclaration).toContain(
-      `connection: string | Partial<import('@electric-sql/pglite').PGliteOptions> & { dataDir?: string }`,
+      `connection?: string | Partial<import('@electric-sql/pglite').PGliteOptions> & { dataDir?: string }`,
     )
     expect(hooksDeclaration).toContain(
       `type NitroDrizzleMockClient = ReturnType<typeof import("drizzle-orm/pglite").drizzle>['$client']`,
