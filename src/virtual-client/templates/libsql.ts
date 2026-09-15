@@ -11,13 +11,13 @@ export function libsqlSource(imports: SourceImports, dev?: DevClientConnection):
   }`, true),
     runtime: imports =>
       lazyUseDrizzleSource(imports, `  const connection = useDrizzleConnection()
-  return drizzle({
+  return {
     connection: {
       url: connection.url,
       ...(connection.authToken ? { authToken: connection.authToken } : {}),
     },
     schema,
     relations,
-  })`),
+  }`),
   })
 }

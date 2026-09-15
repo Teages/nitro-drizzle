@@ -1,5 +1,4 @@
 import type { Nitro } from 'nitro/types'
-import type { ResolvedDevDatabase } from '../dev-database/contracts'
 import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -14,8 +13,8 @@ function runtimeEntry(path: string): string {
   // actually holds the runtime entries instead of assuming one layout.
   let dir = import.meta.dirname
   while (
-    !existsSync(resolve(dir, 'dev-database/runtime/plugin.mjs'))
-    && !existsSync(resolve(dir, 'dev-database/runtime/plugin.ts'))
+    !existsSync(resolve(dir, 'runtime/plugin.mjs'))
+    && !existsSync(resolve(dir, 'runtime/plugin.ts'))
   ) {
     if (dir === resolve(dir, '..')) {
       throw new Error(`Could not locate the ${PACKAGE_NAME} runtime entries from ${import.meta.dirname}.`)
@@ -25,10 +24,7 @@ function runtimeEntry(path: string): string {
   return resolve(dir, path)
 }
 
-export function configureRuntime(
-  nitro: Nitro,
-  devDb: ResolvedDevDatabase | undefined,
-): void {
+export function configureRuntime(nitro: Nitro): void {
   // Nitro externalizes dependencies during `nitro dev`. These runtime entries
   // import app-scoped virtual modules and Nitro context APIs, so they must be
   // compiled inside the consumer's server graph instead of loaded directly
@@ -46,11 +42,9 @@ export function configureRuntime(
   if (!nitro.options.traceDeps.includes('drizzle-orm*')) {
     nitro.options.traceDeps.push('drizzle-orm*')
   }
-  if (devDb !== undefined) {
-    nitro.options.plugins.push(
-      runtimeEntry('dev-database/runtime/plugin'),
-    )
-  }
+  nitro.options.plugins.push(
+    runtimeEntry('runtime/plugin'),
+  )
   // The generated `#drizzle/config` imports this path bare. Alias it to
   // the real entry in every build: bundlers otherwise resolve it from
   // node_modules, which works for installed consumers but externalizes the

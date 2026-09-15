@@ -53,14 +53,14 @@ export function useDrizzle() {
       return lazyUseDrizzleSource(
         { ...options.imports, extras: [USE_CONNECTION_IMPORT] },
         `  ${CONNECTION_OPTIONS_DESTRUCTURE}
-  return drizzle({
+  return {
     connection: {
       ...(url || connectionString ? { url: url || connectionString } : {}),
       ...options,
     },
     schema,
     relations,
-  })`,
+  }`,
       )
   }
 }

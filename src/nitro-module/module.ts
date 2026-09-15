@@ -43,7 +43,7 @@ export default {
     }
 
     const lifecycle = await createDrizzleArtifactsLifecycle(nitro, ctx)
-    configureRuntime(nitro, ctx.devDb)
+    configureRuntime(nitro)
     logger.info(
       ctx.devDb === undefined
         ? `Using ${ctx.config.dialect} with ${ctx.config.driver}`
