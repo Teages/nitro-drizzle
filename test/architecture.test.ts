@@ -5,7 +5,6 @@ import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
-import { DEV_DATABASE_SEED_HOOK, DEV_DATABASE_SETUP_HOOK, DRIZZLE_CONFIG_HOOK } from '../src/dev-database/contracts'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
 
@@ -203,17 +202,16 @@ describe('runtime wiring', () => {
 })
 
 describe('dev-database lifecycle hooks', () => {
-  it('derives the generated declarations and the plugin calls from one constant each', async () => {
-    // Given — the hooks reach consumers through exactly one declaration:
-    // the generated .nitro/drizzle/hooks.d.ts. The runtime plugin never
-    // names a hook literally; both sides derive from the constants.
+  it('keeps the plugin hook calls and the generated declaration in agreement', async () => {
+    // Given — the hook names reach consumers through the generated
+    // .nitro/drizzle/hooks.d.ts and reach the runtime through literal
+    // callHook sites in the plugin; the NitroRuntimeHooks augmentation
+    // typechecks both sides against each other, and this pins drift
+    // immediately instead of after the declarations regenerate.
     const generated = createRuntimeHooksDeclaration('postgres-js')
     const plugin = await readFile('src/runtime/plugin.ts', 'utf8')
 
-    // Then — constants, declarations, and call sites agree on the names
-    expect(DRIZZLE_CONFIG_HOOK).toBe(CONFIG_HOOK)
-    expect(DEV_DATABASE_SETUP_HOOK).toBe(SETUP_HOOK)
-    expect(DEV_DATABASE_SEED_HOOK).toBe(SEED_HOOK)
+    // Then — every hook the plugin fires is declared for consumers
     expect(generated).toContain(
       `'${CONFIG_HOOK}': (config: NitroDrizzleConfig) => void | Promise<void>`,
     )
@@ -221,16 +219,16 @@ describe('dev-database lifecycle hooks', () => {
       `'${SETUP_HOOK}': (client: NitroDrizzleMockClient) => void | Promise<void>`,
     )
     expect(generated).toContain(`'${SEED_HOOK}': () => void | Promise<void>`)
-    expect(plugin).toContain('callHook(DRIZZLE_CONFIG_HOOK,')
-    expect(plugin).toContain('callHook(DEV_DATABASE_SETUP_HOOK,')
+    expect(plugin).toContain(`callHook('${CONFIG_HOOK}',`)
+    expect(plugin).toContain(`callHook('${SETUP_HOOK}',`)
 
     // And — the plugin fires config before construction, setup after it but
     // before the schema push, and seed after the push
-    const configCall = plugin.indexOf('callHook(DRIZZLE_CONFIG_HOOK,')
+    const configCall = plugin.indexOf(`callHook('${CONFIG_HOOK}',`)
     const constructCall = plugin.indexOf('const { mockDb, schema } = useDrizzle()')
-    const setupCall = plugin.indexOf('callHook(DEV_DATABASE_SETUP_HOOK,')
+    const setupCall = plugin.indexOf(`callHook('${SETUP_HOOK}',`)
     const pushCall = plugin.indexOf('pushDevSchema({')
-    const seedCall = plugin.indexOf('callHook(DEV_DATABASE_SEED_HOOK)')
+    const seedCall = plugin.indexOf(`callHook('${SEED_HOOK}')`)
     for (const call of [configCall, constructCall, setupCall, pushCall, seedCall]) {
       expect(call).toBeGreaterThan(-1)
     }

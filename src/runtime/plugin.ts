@@ -1,12 +1,11 @@
 import { definePlugin } from 'nitro'
 import { useDrizzle } from '#drizzle'
 import { drizzleConfig } from '#drizzle/config'
-import { DEV_DATABASE_SEED_HOOK, DEV_DATABASE_SETUP_HOOK, DRIZZLE_CONFIG_HOOK } from '../dev-database/contracts'
 import { pushDevSchema } from '../dev-database/runtime/push-schema'
 
 /** Config-hook payload, from the generated hooks declaration. */
 type DrizzleRuntimeConfig = Parameters<
-  import('nitro/types').NitroRuntimeHooks[typeof DRIZZLE_CONFIG_HOOK]
+  import('nitro/types').NitroRuntimeHooks['drizzle:config']
 >[0]
 
 /** The lazy `#drizzle` variants expose their memoized drizzle config. */
@@ -21,7 +20,7 @@ export default definePlugin((nitro) => {
     const module = await import('#drizzle') as unknown as DrizzleModule
     const config = module.drizzleConfig?.()
     if (config !== undefined) {
-      await nitro.hooks.callHook(DRIZZLE_CONFIG_HOOK, config)
+      await nitro.hooks.callHook('drizzle:config', config)
     }
 
     if (drizzleConfig.devMock !== true) {
@@ -34,9 +33,9 @@ export default definePlugin((nitro) => {
     if (mockDb === undefined) {
       throw new Error('The dev database client exposes no mockDb handle.')
     }
-    await nitro.hooks.callHook(DEV_DATABASE_SETUP_HOOK, mockDb.$client)
+    await nitro.hooks.callHook('drizzle:dev-mock:setup', mockDb.$client)
     await pushDevSchema({ dialect: drizzleConfig.dialect, db: mockDb, schema: schema as Record<string, unknown> })
-    await nitro.hooks.callHook(DEV_DATABASE_SEED_HOOK)
+    await nitro.hooks.callHook('drizzle:dev-mock:seed')
   })()
   ready.catch((error) => {
     console.error(

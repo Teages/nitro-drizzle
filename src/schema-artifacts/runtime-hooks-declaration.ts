@@ -1,6 +1,5 @@
 import type { DrizzleDriver, DrizzleLocalDriver } from '../types'
 import { resolveDriverAdapterPath } from '../database/registry'
-import { DEV_DATABASE_SEED_HOOK, DEV_DATABASE_SETUP_HOOK, DRIZZLE_CONFIG_HOOK } from '../dev-database/contracts'
 
 /**
  * Connection type per config-constructing driver, mirroring what each
@@ -45,16 +44,16 @@ export function createRuntimeHooksDeclaration(
      * Fired before the drizzle client is constructed; handlers mutate the
      * config in place.
      */
-    '${DRIZZLE_CONFIG_HOOK}': (config: NitroDrizzleConfig) => void | Promise<void>
+    'drizzle:config': (config: NitroDrizzleConfig) => void | Promise<void>
 `
   return `export {}
 
 declare module 'nitro/types' {
   interface NitroRuntimeHooks {
 ${configHook}    /** Fired once the dev client exists, before every schema push. */
-    '${DEV_DATABASE_SETUP_HOOK}': (client: NitroDrizzleMockClient) => void | Promise<void>
+    'drizzle:dev-mock:setup': (client: NitroDrizzleMockClient) => void | Promise<void>
     /** Fired once the schema is pushed. */
-    '${DEV_DATABASE_SEED_HOOK}': () => void | Promise<void>
+    'drizzle:dev-mock:seed': () => void | Promise<void>
   }
 }
 
