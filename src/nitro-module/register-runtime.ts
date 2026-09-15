@@ -45,6 +45,14 @@ export function configureRuntime(nitro: Nitro): void {
   nitro.options.plugins.push(
     runtimeEntry('runtime/plugin'),
   )
+  // Nitro swallows request-hook rejections: this middleware is what turns a
+  // failed drizzle initialization into failed requests instead of routing
+  // into handlers with an uninitialized client.
+  nitro.options.handlers.push({
+    route: '/**',
+    middleware: true,
+    handler: runtimeEntry('runtime/gate'),
+  })
   // The generated `#drizzle/config` imports this path bare. Alias it to
   // the real entry in every build: bundlers otherwise resolve it from
   // node_modules, which works for installed consumers but externalizes the

@@ -2,6 +2,7 @@ import { definePlugin } from 'nitro'
 import { useDrizzle } from '#drizzle'
 import { drizzleConfig } from '#drizzle/config'
 import { pushDevSchema } from '../dev-database/runtime/push-schema'
+import { bindDrizzleReady } from './lifecycle'
 
 /** Config-hook payload, from the generated hooks declaration. */
 type DrizzleRuntimeConfig = Parameters<
@@ -37,14 +38,11 @@ export default definePlugin((nitro) => {
     await pushDevSchema({ dialect: drizzleConfig.dialect, db: mockDb, schema: schema as Record<string, unknown> })
     await nitro.hooks.callHook('drizzle:dev-mock:seed')
   })()
+  bindDrizzleReady(ready)
   ready.catch((error) => {
     console.error(
       'Failed to initialize the drizzle database:',
       error,
     )
-  })
-
-  nitro.hooks.hook('request', async () => {
-    await ready
   })
 })
