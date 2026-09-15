@@ -114,7 +114,7 @@ export default defineConfig({
         `import { useNitroHooks } from 'nitro/app'
 import { useDrizzle } from '#drizzle'
 
-useNitroHooks().hook('drizzle:dev-mock:config', async (config) => {
+useNitroHooks().hook('drizzle:config', async (config) => {
   void config
 })
 

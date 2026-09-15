@@ -2,7 +2,7 @@ import process from 'node:process'
 import { definePlugin } from 'nitro'
 
 export default definePlugin((nitro) => {
-  nitro.hooks.hook('drizzle:dev-mock:config', async (config) => {
+  nitro.hooks.hook('drizzle:config', async (config) => {
     // Redirect construction at a file chosen by the test harness, proving
     // the rewritten connection reaches the engine.
     const file = process.env.DEV_MOCK_DATABASE_FILE

@@ -43,7 +43,6 @@ describe('generateVirtualClientSource', () => {
     'libsql',
     'bun-sqlite',
     'node-sqlite',
-    'd1-http',
     'postgres-js',
     'pglite',
     'neon-http',
@@ -71,14 +70,30 @@ describe('generateVirtualClientSource', () => {
       expect(source).toContain('_db ??= initDrizzle()')
       expect(source).toContain('export function useDrizzle()')
       expect(source).toContain('return { db: _db, schema, relations, mockDb: undefined }')
-      // And — config-hook injection ships only with the dev-baked variant
-      expect(source).not.toContain('configureDevDrizzle')
-      expect(source).not.toContain('devDrizzleConfig')
-      expect(source).not.toContain('_config')
+      // And — every config-constructing variant routes through the memoized
+      // builder the config hook mutates, runtime-resolved ones included
+      expect(source).toContain('export function drizzleConfig()')
+      expect(source).toContain('drizzle(drizzleConfig())')
+      expect(source).toContain('_config ??=')
       expect(source).not.toContain('export const db')
       expect(source).not.toMatch(/\b(?:casing|mode)\b/)
     })
   }
+
+  it('constructs d1-http from a client without a config hook builder', () => {
+    // Given
+    const config = { dialect: 'sqlite', driver: 'd1-http' } as const
+
+    // When
+    const source = generate(config)
+
+    // Then
+    expect(source).toContain('let _db = null')
+    expect(source).toContain('_db ??= initDrizzle()')
+    expect(source).not.toContain('drizzleConfig')
+    expect(source).not.toContain('_config')
+    expect(source).toContain('return { db: _db, schema, relations, mockDb: undefined }')
+  })
 
   it('resolves the D1 binding per request via useRequest', () => {
     // Given
@@ -246,9 +261,9 @@ describe('generateVirtualClientSource dev database', () => {
     // And — the dev-baked variant is the only one that carries the mock db,
     // as the same instance as `db`, and the only one routing construction
     // through the memoized config the config hook may have mutated
-    expect(source).toContain('export function devDrizzleConfig()')
+    expect(source).toContain('export function drizzleConfig()')
     expect(source).toContain('return _config ??= {')
-    expect(source).toContain('drizzle(devDrizzleConfig())')
+    expect(source).toContain('drizzle(drizzleConfig())')
     expect(source).toContain('return { db: _db, schema, relations, mockDb: _db }')
     expect(source).not.toContain('useRuntimeConfig')
   })
@@ -291,7 +306,7 @@ describe('generateVirtualClientSource dev database', () => {
     // Then — the baked config omits the connection entirely, and init
     // builds from whatever the memoized config carries
     expect(source).toContain('_config ??= {\n    schema,\n    relations,\n  }')
-    expect(source).toContain('drizzle(devDrizzleConfig())')
+    expect(source).toContain('drizzle(drizzleConfig())')
     expect(source).not.toContain('useRuntimeConfig')
   })
 

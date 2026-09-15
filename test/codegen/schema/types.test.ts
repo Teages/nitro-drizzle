@@ -243,12 +243,15 @@ if (mock) {
     const hooksDeclaration = await readFile(artifacts.hooksFile, 'utf8')
     expect(hooksDeclaration).toContain(`declare module 'nitro/types'`)
     expect(hooksDeclaration).toContain(`'drizzle:dev-mock:seed': () => void | Promise<void>`)
-    // Without a resolvable devMock the payloads degrade to unknown,
-    // mirroring how mockDb degrades to undefined
+    // Without a dev engine the connection types from the production
+    // driver while the setup client degrades to unknown, mirroring how
+    // mockDb degrades to undefined
     expect(hooksDeclaration).toContain(
-      `'drizzle:dev-mock:config': (config: NitroDrizzleMockConfig) => void | Promise<void>`,
+      `'drizzle:config': (config: NitroDrizzleConfig) => void | Promise<void>`,
     )
-    expect(hooksDeclaration).toContain('connection?: unknown')
+    expect(hooksDeclaration).toContain(
+      `connection?: string | import('@libsql/client').Config`,
+    )
     expect(hooksDeclaration).toContain(
       `'drizzle:dev-mock:setup': (client: NitroDrizzleMockClient) => void | Promise<void>`,
     )
@@ -261,7 +264,7 @@ if (mock) {
         consumerFile,
         `import { useNitroHooks } from 'nitro/app'
 
-useNitroHooks().hook('drizzle:dev-mock:config', async (config) => {
+useNitroHooks().hook('drizzle:config', async (config) => {
   void config
 })
 
@@ -343,7 +346,7 @@ useNitroHooks().hook('drizzle:dev-mock:seed', async () => {
         consumerFile,
         `import { useNitroHooks } from 'nitro/app'
 
-useNitroHooks().hook('drizzle:dev-mock:config', async (config) => {
+useNitroHooks().hook('drizzle:config', async (config) => {
   const extension = {} as import('@electric-sql/pglite').Extension
   config.connection = { extensions: { vector: extension } }
 })
@@ -414,7 +417,7 @@ useNitroHooks().hook('drizzle:dev-mock:setup', async (client) => {
         consumerFile,
         `import { useNitroHooks } from 'nitro/app'
 
-useNitroHooks().hook('drizzle:dev-mock:config', async (config) => {
+useNitroHooks().hook('drizzle:config', async (config) => {
   config.connection = { source: 'file:dev.db', readonly: true }
 })
 

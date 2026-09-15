@@ -114,7 +114,7 @@ describe('published runtime entries in Nitro dev', () => {
       'index',
       'config',
       'configuration/runtime/connection',
-      'dev-database/runtime/plugin',
+      'runtime/plugin',
       'studio/runtime/middleware',
       'studio/runtime/handler',
     ]) {

@@ -8,8 +8,8 @@ let _db = null
 
 let _config
 
-/** Internal to the dev database. */
-export function devDrizzleConfig() {
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
   return _config ??= {
     schema,
     relations,
@@ -17,7 +17,7 @@ export function devDrizzleConfig() {
 }
 
 function initDrizzle() {
-  return drizzle(devDrizzleConfig())
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -35,8 +35,8 @@ let _db = null
 
 let _config
 
-/** Internal to the dev database. */
-export function devDrizzleConfig() {
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
   return _config ??= {
     connection: 'file:.data/dev.db',
     schema,
@@ -45,7 +45,7 @@ export function devDrizzleConfig() {
 }
 
 function initDrizzle() {
-  return drizzle(devDrizzleConfig())
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -63,8 +63,8 @@ let _db = null
 
 let _config
 
-/** Internal to the dev database. */
-export function devDrizzleConfig() {
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
   return _config ??= {
     connection: 'file:.data/dev.db',
     schema,
@@ -73,7 +73,7 @@ export function devDrizzleConfig() {
 }
 
 function initDrizzle() {
-  return drizzle(devDrizzleConfig())
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -91,8 +91,8 @@ let _db = null
 
 let _config
 
-/** Internal to the dev database. */
-export function devDrizzleConfig() {
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
   return _config ??= {
     connection: { url: 'file:.data/dev.db' },
     schema,
@@ -101,7 +101,7 @@ export function devDrizzleConfig() {
 }
 
 function initDrizzle() {
-  return drizzle(devDrizzleConfig())
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -119,8 +119,8 @@ let _db = null
 
 let _config
 
-/** Internal to the dev database. */
-export function devDrizzleConfig() {
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
   return _config ??= {
     connection: 'file:.data/dev.db',
     schema,
@@ -129,7 +129,7 @@ export function devDrizzleConfig() {
 }
 
 function initDrizzle() {
-  return drizzle(devDrizzleConfig())
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -147,8 +147,8 @@ let _db = null
 
 let _config
 
-/** Internal to the dev database. */
-export function devDrizzleConfig() {
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
   return _config ??= {
     connection: '.data/pglite',
     schema,
@@ -157,7 +157,7 @@ export function devDrizzleConfig() {
 }
 
 function initDrizzle() {
-  return drizzle(devDrizzleConfig())
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -174,13 +174,22 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
+let _config
+
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
+  return _config ??= (() => {
   const connection = useDrizzleConnection()
-  return drizzle({
+  return {
     connection: connection.url || connection.connectionString || connection,
     schema,
     relations,
-  })
+  }
+  })()
+}
+
+function initDrizzle() {
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -197,13 +206,22 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
+let _config
+
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
+  return _config ??= (() => {
   const connection = useDrizzleConnection()
-  return drizzle({
+  return {
     connection: connection.url || connection.connectionString || connection,
     schema,
     relations,
-  })
+  }
+  })()
+}
+
+function initDrizzle() {
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -220,16 +238,25 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
+let _config
+
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
+  return _config ??= (() => {
   const connection = useDrizzleConnection()
-  return drizzle({
+  return {
     connection: {
       url: connection.url,
       ...(connection.authToken ? { authToken: connection.authToken } : {}),
     },
     schema,
     relations,
-  })
+  }
+  })()
+}
+
+function initDrizzle() {
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -246,13 +273,22 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
+let _config
+
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
+  return _config ??= (() => {
   const connection = useDrizzleConnection()
-  return drizzle({
+  return {
     connection: connection.url || connection.connectionString || connection,
     schema,
     relations,
-  })
+  }
+  })()
+}
+
+function initDrizzle() {
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
@@ -269,13 +305,22 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
+let _config
+
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
+  return _config ??= (() => {
   const connection = useDrizzleConnection()
-  return drizzle({
+  return {
     connection: connection.dataDir || connection.url || connection.connectionString,
     schema,
     relations,
-  })
+  }
+  })()
+}
+
+function initDrizzle() {
+  return drizzle(drizzleConfig())
 }
 
 export function useDrizzle() {
