@@ -321,9 +321,8 @@ options autocomplete). An untouched connection keeps the baked or
 runtime-resolved value — and an in-memory PGlite carries no connection at
 all until a handler adds one, which is what opts you in. The hook fires
 before every (re)construction, so code that calls `useDrizzle()` from an
-earlier plugin than this package's own bypasses it. Binding-driven
-variants (the `d1` driver) construct from a client instead of a config and
-never fire the hook.
+earlier plugin than this package's own bypasses it. Client-constructed
+variants (`d1` and `d1-http`) never fire the hook.
 
 Schemas that rely on engine capabilities — PostgreSQL extensions, SQLite
 extensions, pragmas — enable them through the `drizzle:dev-mock:setup` runtime

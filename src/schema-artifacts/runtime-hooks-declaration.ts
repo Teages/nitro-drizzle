@@ -60,7 +60,7 @@ ${configHook}    /** Fired once the dev client exists, before every schema push.
 interface NitroDrizzleConfig {
   connection?: ${connection ?? 'unknown'}
   casing?: 'snake_case' | 'camelCase'
-  logger?: import('drizzle-orm').Logger
+  logger?: boolean | import('drizzle-orm').Logger
 }
 
 type NitroDrizzleMockClient = ${setupClient(mockEngine)}
