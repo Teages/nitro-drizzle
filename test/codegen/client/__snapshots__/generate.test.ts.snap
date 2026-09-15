@@ -6,25 +6,22 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
+let _config
+
+/**
+ * Internal to the dev database: memoized so the runtime plugin can run the
+ * single config object through the \`drizzle:dev-mock:config\` hook before
+ * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
+ */
 export function devDrizzleConfig() {
-  return {
+  return _config ??= {
     schema,
     relations,
   }
 }
 
-let _config
-
-/**
- * Internal to the dev database: the runtime plugin injects the
- * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
- */
-export function configureDevDrizzle(config) {
-  _config = config
-}
-
 function initDrizzle() {
-  return drizzle(_config ?? devDrizzleConfig())
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -40,26 +37,23 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
+let _config
+
+/**
+ * Internal to the dev database: memoized so the runtime plugin can run the
+ * single config object through the \`drizzle:dev-mock:config\` hook before
+ * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
+ */
 export function devDrizzleConfig() {
-  return {
+  return _config ??= {
     connection: 'file:.data/dev.db',
     schema,
     relations,
   }
 }
 
-let _config
-
-/**
- * Internal to the dev database: the runtime plugin injects the
- * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
- */
-export function configureDevDrizzle(config) {
-  _config = config
-}
-
 function initDrizzle() {
-  return drizzle(_config ?? devDrizzleConfig())
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -75,26 +69,23 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
+let _config
+
+/**
+ * Internal to the dev database: memoized so the runtime plugin can run the
+ * single config object through the \`drizzle:dev-mock:config\` hook before
+ * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
+ */
 export function devDrizzleConfig() {
-  return {
+  return _config ??= {
     connection: 'file:.data/dev.db',
     schema,
     relations,
   }
 }
 
-let _config
-
-/**
- * Internal to the dev database: the runtime plugin injects the
- * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
- */
-export function configureDevDrizzle(config) {
-  _config = config
-}
-
 function initDrizzle() {
-  return drizzle(_config ?? devDrizzleConfig())
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -110,26 +101,23 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
+let _config
+
+/**
+ * Internal to the dev database: memoized so the runtime plugin can run the
+ * single config object through the \`drizzle:dev-mock:config\` hook before
+ * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
+ */
 export function devDrizzleConfig() {
-  return {
+  return _config ??= {
     connection: { url: 'file:.data/dev.db' },
     schema,
     relations,
   }
 }
 
-let _config
-
-/**
- * Internal to the dev database: the runtime plugin injects the
- * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
- */
-export function configureDevDrizzle(config) {
-  _config = config
-}
-
 function initDrizzle() {
-  return drizzle(_config ?? devDrizzleConfig())
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -145,26 +133,23 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
+let _config
+
+/**
+ * Internal to the dev database: memoized so the runtime plugin can run the
+ * single config object through the \`drizzle:dev-mock:config\` hook before
+ * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
+ */
 export function devDrizzleConfig() {
-  return {
+  return _config ??= {
     connection: 'file:.data/dev.db',
     schema,
     relations,
   }
 }
 
-let _config
-
-/**
- * Internal to the dev database: the runtime plugin injects the
- * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
- */
-export function configureDevDrizzle(config) {
-  _config = config
-}
-
 function initDrizzle() {
-  return drizzle(_config ?? devDrizzleConfig())
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -180,26 +165,23 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
+let _config
+
+/**
+ * Internal to the dev database: memoized so the runtime plugin can run the
+ * single config object through the \`drizzle:dev-mock:config\` hook before
+ * the first \`useDrizzle()\` — handlers and \`drizzle()\` share it.
+ */
 export function devDrizzleConfig() {
-  return {
+  return _config ??= {
     connection: '.data/pglite',
     schema,
     relations,
   }
 }
 
-let _config
-
-/**
- * Internal to the dev database: the runtime plugin injects the
- * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
- */
-export function configureDevDrizzle(config) {
-  _config = config
-}
-
 function initDrizzle() {
-  return drizzle(_config ?? devDrizzleConfig())
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {

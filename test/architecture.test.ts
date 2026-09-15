@@ -161,11 +161,11 @@ describe('runtime wiring', () => {
     expect(virtualSource(nitro, '#drizzle')).toContain('export function useDrizzle()')
     expect(virtualSource(nitro, '#drizzle')).toContain(`import { relations, schema } from '#drizzle/schema'`)
     // And — the dev variant hands the runtime plugin the config object the
-    // engine's drizzle() call receives: the builder and the inject-back
-    // setter ship only in dev-database sessions
+    // engine's drizzle() call receives: the memoized builder ships only in
+    // dev-database sessions, so handlers and drizzle() share one object
     expect(virtualSource(nitro, '#drizzle')).toContain('export function devDrizzleConfig()')
-    expect(virtualSource(nitro, '#drizzle')).toContain('export function configureDevDrizzle(config)')
-    expect(virtualSource(nitro, '#drizzle')).toContain('drizzle(_config ?? devDrizzleConfig())')
+    expect(virtualSource(nitro, '#drizzle')).toContain('return _config ??= {')
+    expect(virtualSource(nitro, '#drizzle')).toContain('drizzle(devDrizzleConfig())')
     expect(virtualSource(nitro, '#drizzle/schema'))
       .toContain('export const { ["relations"]: relations = {}, ...schema } = source')
     expect(virtualSource(nitro, '#drizzle/config')).toContain('export const drizzleConfig = {')
