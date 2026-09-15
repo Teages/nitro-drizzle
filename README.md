@@ -295,9 +295,9 @@ not for this feature.
 Construction-time engine configuration — PGlite extension packages that
 register through the constructor, native client options — goes through the
 `drizzle:dev-mock:config` runtime hook, fired before the dev database is
-constructed. Replace `config.connection` in place; a replacement string or
-options object reaches the engine's `drizzle()` call instead of the baked
-connection:
+constructed. The hook receives the exact config object the engine's
+`drizzle()` call builds with: mutate it in place, most notably
+`config.connection`, and the mutated object is what constructs the client.
 
 ```ts
 // server/plugins/db-config.ts
@@ -314,8 +314,9 @@ export default definePlugin((nitro) => {
 The connection type follows the resolved dev engine (`string |` its options
 object, so PGlite's `extensions`/`dataDir` and native client options
 autocomplete); without a resolvable `drizzle.devMock` it degrades to
-`unknown`. An untouched connection keeps the baked value — replacing it is
-what opts you in. The hook fires before every (re)construction, so code that
+`unknown`. An untouched connection keeps the baked value — and an in-memory
+PGlite carries no connection at all until a handler adds one, which is what
+opts you in. The hook fires before every (re)construction, so code that
 calls `useDrizzle()` from an earlier plugin than the dev database's own
 bypasses it.
 
