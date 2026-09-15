@@ -117,6 +117,7 @@ describe('package surface', () => {
       './src/devtool.ts',
       './src/index.ts',
       './src/nuxt.ts',
+      './src/runtime/gate.ts',
       './src/runtime/plugin.ts',
       './src/studio/runtime/handler.ts',
       './src/studio/runtime/middleware.ts',
@@ -179,8 +180,13 @@ describe('runtime wiring', () => {
     for (const plugin of nitro.options.plugins) {
       expect(moduleFileExists(plugin), `${plugin} must resolve to a file`).toBe(true)
     }
-    const studioGate = nitro.options.handlers.find(handler =>
+    const rootMiddlewares = nitro.options.handlers.filter(handler =>
       handler.route === '/**' && handler.middleware === true)
+    const readyGate = rootMiddlewares.find(handler =>
+      handler.handler.replaceAll('\\', '/').endsWith('runtime/gate'))
+    expect(readyGate, 'runtime/gate middleware must be registered').toBeDefined()
+    const studioGate = rootMiddlewares.find(handler =>
+      handler.handler.replaceAll('\\', '/').endsWith('studio/runtime/middleware'))
     expect(studioGate?.handler.replaceAll('\\', '/')).toMatch(/studio\/runtime\/middleware$/)
     expect(moduleFileExists(studioGate?.handler ?? '')).toBe(true)
     const studioRoute = nitro.options.routes[STUDIO_ROUTE]
@@ -250,7 +256,7 @@ describe('dev-database lifecycle hooks', () => {
       `connection?: string | { url?: string } & Partial<import('postgres').Options>`,
     )
     expect(runtime).toContain(`casing?: 'snake_case' | 'camelCase'`)
-    expect(runtime).toContain(`logger?: import('drizzle-orm').Logger`)
+    expect(runtime).toContain(`logger?: boolean | import('drizzle-orm').Logger`)
     expect(runtime).toContain('type NitroDrizzleMockClient = unknown')
 
     const mocked = createRuntimeHooksDeclaration('postgres-js', 'pglite')
