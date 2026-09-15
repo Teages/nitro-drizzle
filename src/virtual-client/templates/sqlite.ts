@@ -9,11 +9,11 @@ import { connectionAwareSource, lazyUseDrizzleSource, quote } from './helpers'
 export function sqliteFileSource(imports: SourceImports, dev?: DevClientConnection): string {
   return connectionAwareSource(imports, dev, {
     dev: (imports, dev) =>
-      lazyUseDrizzleSource(imports, `  return drizzle({
+      lazyUseDrizzleSource(imports, `{
     connection: ${quote(dev.connection ?? ':memory:')},
     schema,
     relations,
-  })`, true),
+  }`, true),
     runtime: imports =>
       lazyUseDrizzleSource(imports, `  const connection = useDrizzleConnection()
   return drizzle({

@@ -6,11 +6,18 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
-  return drizzle({
+let _config
+
+/** Internal to the dev database. */
+export function devDrizzleConfig() {
+  return _config ??= {
     schema,
     relations,
-  })
+  }
+}
+
+function initDrizzle() {
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -26,12 +33,19 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
-  return drizzle({
+let _config
+
+/** Internal to the dev database. */
+export function devDrizzleConfig() {
+  return _config ??= {
     connection: 'file:.data/dev.db',
     schema,
     relations,
-  })
+  }
+}
+
+function initDrizzle() {
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -47,12 +61,19 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
-  return drizzle({
+let _config
+
+/** Internal to the dev database. */
+export function devDrizzleConfig() {
+  return _config ??= {
     connection: 'file:.data/dev.db',
     schema,
     relations,
-  })
+  }
+}
+
+function initDrizzle() {
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -68,12 +89,19 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
-  return drizzle({
+let _config
+
+/** Internal to the dev database. */
+export function devDrizzleConfig() {
+  return _config ??= {
     connection: { url: 'file:.data/dev.db' },
     schema,
     relations,
-  })
+  }
+}
+
+function initDrizzle() {
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -89,12 +117,19 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
-  return drizzle({
+let _config
+
+/** Internal to the dev database. */
+export function devDrizzleConfig() {
+  return _config ??= {
     connection: 'file:.data/dev.db',
     schema,
     relations,
-  })
+  }
+}
+
+function initDrizzle() {
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {
@@ -110,12 +145,19 @@ import { relations, schema } from '#drizzle/schema'
 
 let _db = null
 
-function initDrizzle() {
-  return drizzle({
+let _config
+
+/** Internal to the dev database. */
+export function devDrizzleConfig() {
+  return _config ??= {
     connection: '.data/pglite',
     schema,
     relations,
-  })
+  }
+}
+
+function initDrizzle() {
+  return drizzle(devDrizzleConfig())
 }
 
 export function useDrizzle() {

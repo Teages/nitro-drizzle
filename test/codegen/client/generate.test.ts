@@ -71,6 +71,10 @@ describe('generateVirtualClientSource', () => {
       expect(source).toContain('_db ??= initDrizzle()')
       expect(source).toContain('export function useDrizzle()')
       expect(source).toContain('return { db: _db, schema, relations, mockDb: undefined }')
+      // And — config-hook injection ships only with the dev-baked variant
+      expect(source).not.toContain('configureDevDrizzle')
+      expect(source).not.toContain('devDrizzleConfig')
+      expect(source).not.toContain('_config')
       expect(source).not.toContain('export const db')
       expect(source).not.toMatch(/\b(?:casing|mode)\b/)
     })
@@ -240,7 +244,11 @@ describe('generateVirtualClientSource dev database', () => {
     // Then
     expect(source).toContain(`connection: ':memory:',`)
     // And — the dev-baked variant is the only one that carries the mock db,
-    // as the same instance as `db`
+    // as the same instance as `db`, and the only one routing construction
+    // through the memoized config the config hook may have mutated
+    expect(source).toContain('export function devDrizzleConfig()')
+    expect(source).toContain('return _config ??= {')
+    expect(source).toContain('drizzle(devDrizzleConfig())')
     expect(source).toContain('return { db: _db, schema, relations, mockDb: _db }')
     expect(source).not.toContain('useRuntimeConfig')
   })
@@ -280,8 +288,10 @@ describe('generateVirtualClientSource dev database', () => {
       dev: {},
     })
 
-    // Then
-    expect(source).toContain('return drizzle({\n    schema,\n    relations,\n  })')
+    // Then — the baked config omits the connection entirely, and init
+    // builds from whatever the memoized config carries
+    expect(source).toContain('_config ??= {\n    schema,\n    relations,\n  }')
+    expect(source).toContain('drizzle(devDrizzleConfig())')
     expect(source).not.toContain('useRuntimeConfig')
   })
 

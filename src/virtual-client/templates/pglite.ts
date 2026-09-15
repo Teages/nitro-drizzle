@@ -5,13 +5,13 @@ export function pgliteSource(imports: SourceImports, dev?: DevClientConnection):
   return connectionAwareSource(imports, dev, {
     dev: (imports, dev) => {
       // An absent connection constructs PGlite without a data directory: in-memory.
-      return lazyUseDrizzleSource(imports, `  return drizzle({
+      return lazyUseDrizzleSource(imports, `{
 ${dev.connection === undefined
   ? ''
   : `    connection: ${quote(dev.connection)},
 `}    schema,
     relations,
-  })`, true)
+  }`, true)
     },
     runtime: imports =>
       lazyUseDrizzleSource(imports, `  const connection = useDrizzleConnection()

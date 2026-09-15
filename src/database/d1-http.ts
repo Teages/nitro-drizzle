@@ -53,7 +53,7 @@ export function resolveD1HttpCredentials(
 
 export function createD1HttpTransport(
   credentials: D1HttpCredentials,
-  fetcher: typeof globalThis.fetch = globalThis.fetch,
+  fetcher: (input: string, init?: RequestInit) => Promise<Response> = globalThis.fetch,
 ): {
   readonly query: (
     sql: string,

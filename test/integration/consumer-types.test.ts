@@ -114,6 +114,14 @@ export default defineConfig({
         `import { useNitroHooks } from 'nitro/app'
 import { useDrizzle } from '#drizzle'
 
+useNitroHooks().hook('drizzle:dev-mock:config', async (config) => {
+  void config
+})
+
+useNitroHooks().hook('drizzle:dev-mock:setup', async (client) => {
+  void client
+})
+
 useNitroHooks().hook('drizzle:dev-mock:seed', async () => {
   const { db } = useDrizzle()
   void db

@@ -103,6 +103,7 @@
     "@nuxt/schema": "npm:@nuxt/schema-nightly@5.0.0-29809985.0842efa1",
     "@tsconfig/node24": "^24.0.5",
     "@types/better-sqlite3": "^9.6.0",
+    "@types/bun": "^1.4.2",
     "@types/node": "^24.12.4",
     "@typescript/native": "npm:typescript@^7.0.2",
     "@vitejs/devtools-kit": "^0.6.2",

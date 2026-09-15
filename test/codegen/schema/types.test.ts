@@ -217,7 +217,7 @@ if (mock) {
     ).resolves.toBeDefined()
   })
 
-  it('declares the drizzle:dev-mock:seed runtime hook for server code', async () => {
+  it('declares the dev-mock hooks for server code, degrading the setup client without an engine', async () => {
     // Given
     const rootDir = await createTemporaryRoot()
     const schemaPath = join(rootDir, 'schema.ts')
@@ -243,6 +243,16 @@ if (mock) {
     const hooksDeclaration = await readFile(artifacts.hooksFile, 'utf8')
     expect(hooksDeclaration).toContain(`declare module 'nitro/types'`)
     expect(hooksDeclaration).toContain(`'drizzle:dev-mock:seed': () => void | Promise<void>`)
+    // Without a resolvable devMock the payloads degrade to unknown,
+    // mirroring how mockDb degrades to undefined
+    expect(hooksDeclaration).toContain(
+      `'drizzle:dev-mock:config': (config: NitroDrizzleMockConfig) => void | Promise<void>`,
+    )
+    expect(hooksDeclaration).toContain('connection?: unknown')
+    expect(hooksDeclaration).toContain(
+      `'drizzle:dev-mock:setup': (client: NitroDrizzleMockClient) => void | Promise<void>`,
+    )
+    expect(hooksDeclaration).toContain('type NitroDrizzleMockClient = unknown')
 
     const consumerFile = join(rootDir, 'plugin.ts')
     const tsconfigFile = join(rootDir, 'tsconfig.json')
@@ -250,6 +260,14 @@ if (mock) {
       writeFile(
         consumerFile,
         `import { useNitroHooks } from 'nitro/app'
+
+useNitroHooks().hook('drizzle:dev-mock:config', async (config) => {
+  void config
+})
+
+useNitroHooks().hook('drizzle:dev-mock:setup', async (client) => {
+  void client
+})
 
 useNitroHooks().hook('drizzle:dev-mock:seed', async () => {
   console.log('seeded')
@@ -271,8 +289,154 @@ useNitroHooks().hook('drizzle:dev-mock:seed', async () => {
       ),
     ])
 
-    // Then: the hook name only typechecks when the generated declaration
+    // Then: the hook names only typecheck when the generated declaration
     // augments NitroRuntimeHooks.
+    await expect(
+      execFileAsync(
+        join(process.cwd(), 'node_modules/.bin/tsc'),
+        ['--project', tsconfigFile],
+      ),
+    ).resolves.toBeDefined()
+  })
+
+  it('types the setup hook client from the configured dev engine', async () => {
+    // Given
+    const rootDir = await createTemporaryRoot()
+    const schemaPath = join(rootDir, 'schema.ts')
+    await writeFile(schemaPath, 'export const users = {}\n')
+    const config = resolveDrizzleConfig(
+      {
+        dialect: 'postgresql',
+        driver: 'postgres-js',
+        connection: { connectionString: 'postgres://localhost/database' },
+      },
+      { serverDir: join(rootDir, 'server') },
+    )
+    expect(config).toBeDefined()
+    if (config === undefined) {
+      return
+    }
+    const artifacts = await generateDrizzleArtifacts({
+      directory: join(rootDir, 'node_modules/.nitro-drizzle'),
+      config,
+      schemaPath,
+      mockEngine: 'pglite',
+    })
+
+    // Then the declaration derives both payloads from the dev engine alone,
+    // without importing the schema types
+    const hooksDeclaration = await readFile(artifacts.hooksFile, 'utf8')
+    expect(hooksDeclaration).toContain(
+      `connection?: string | Partial<import('@electric-sql/pglite').PGliteOptions> & { dataDir?: string }`,
+    )
+    expect(hooksDeclaration).toContain(
+      `type NitroDrizzleMockClient = ReturnType<typeof import("drizzle-orm/pglite").drizzle>['$client']`,
+    )
+
+    // And consumers get engine-precise types: the config connection accepts
+    // construction-time PGlite extensions, and the setup client is the
+    // PGlite instance itself
+    const consumerFile = join(rootDir, 'plugin.ts')
+    const tsconfigFile = join(rootDir, 'tsconfig.json')
+    await Promise.all([
+      writeFile(
+        consumerFile,
+        `import { useNitroHooks } from 'nitro/app'
+
+useNitroHooks().hook('drizzle:dev-mock:config', async (config) => {
+  const extension = {} as import('@electric-sql/pglite').Extension
+  config.connection = { extensions: { vector: extension } }
+})
+
+useNitroHooks().hook('drizzle:dev-mock:setup', async (client) => {
+  await client.exec('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"')
+})
+`,
+      ),
+      writeFile(
+        tsconfigFile,
+        JSON.stringify({
+          compilerOptions: {
+            module: 'ESNext',
+            moduleResolution: 'Bundler',
+            noEmit: true,
+            skipLibCheck: true,
+            strict: true,
+          },
+          include: [consumerFile, artifacts.hooksFile],
+        }),
+      ),
+    ])
+    await expect(
+      execFileAsync(
+        join(process.cwd(), 'node_modules/.bin/tsc'),
+        ['--project', tsconfigFile],
+      ),
+    ).resolves.toBeDefined()
+  })
+
+  it('types the hooks for a bun-sqlite dev engine through bun:sqlite', async () => {
+    // Given
+    const rootDir = await createTemporaryRoot()
+    const schemaPath = join(rootDir, 'schema.ts')
+    await writeFile(schemaPath, 'export const users = {}\n')
+    const config = resolveDrizzleConfig(
+      {
+        dialect: 'sqlite',
+        driver: 'bun-sqlite',
+        connection: { url: 'file:.data/dev.db' },
+      },
+      { serverDir: join(rootDir, 'server') },
+    )
+    expect(config).toBeDefined()
+    if (config === undefined) {
+      return
+    }
+    const artifacts = await generateDrizzleArtifacts({
+      directory: join(rootDir, 'node_modules/.nitro-drizzle'),
+      config,
+      schemaPath,
+      mockEngine: 'bun-sqlite',
+    })
+
+    // Then the connection types through bun:sqlite itself, like every
+    // other engine — the adapter's own declaration imports bun:sqlite
+    const hooksDeclaration = await readFile(artifacts.hooksFile, 'utf8')
+    expect(hooksDeclaration).toContain(
+      `connection?: string | { source?: string } & Partial<import('bun:sqlite').DatabaseOptions>`,
+    )
+
+    // And consumers get engine-precise payloads against the installed bun types
+    const consumerFile = join(rootDir, 'plugin.ts')
+    const tsconfigFile = join(rootDir, 'tsconfig.json')
+    await Promise.all([
+      writeFile(
+        consumerFile,
+        `import { useNitroHooks } from 'nitro/app'
+
+useNitroHooks().hook('drizzle:dev-mock:config', async (config) => {
+  config.connection = { source: 'file:dev.db', readonly: true }
+})
+
+useNitroHooks().hook('drizzle:dev-mock:setup', async (client) => {
+  client.exec('PRAGMA user_version = 42')
+})
+`,
+      ),
+      writeFile(
+        tsconfigFile,
+        JSON.stringify({
+          compilerOptions: {
+            module: 'ESNext',
+            moduleResolution: 'Bundler',
+            noEmit: true,
+            skipLibCheck: true,
+            strict: true,
+          },
+          include: [consumerFile, artifacts.hooksFile],
+        }),
+      ),
+    ])
     await expect(
       execFileAsync(
         join(process.cwd(), 'node_modules/.bin/tsc'),

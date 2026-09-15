@@ -5,12 +5,14 @@ import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
-import { DEV_DATABASE_SEED_HOOK } from '../src/dev-database/contracts'
+import { DEV_DATABASE_CONFIG_HOOK, DEV_DATABASE_SEED_HOOK, DEV_DATABASE_SETUP_HOOK } from '../src/dev-database/contracts'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
 
 const CONNECTION_ALIAS_KEY = '@teages/nitro-drizzle/runtime/connection'
 const CONNECTION_IMPORT = `import { resolveDrizzleConnection } from '${CONNECTION_ALIAS_KEY}'`
+const CONFIG_HOOK = 'drizzle:dev-mock:config'
+const SETUP_HOOK = 'drizzle:dev-mock:setup'
 const SEED_HOOK = 'drizzle:dev-mock:seed'
 
 const temporaryDirectories: string[] = []
@@ -158,6 +160,12 @@ describe('runtime wiring', () => {
     // And — the virtual modules keep their export shapes
     expect(virtualSource(nitro, '#drizzle')).toContain('export function useDrizzle()')
     expect(virtualSource(nitro, '#drizzle')).toContain(`import { relations, schema } from '#drizzle/schema'`)
+    // And — the dev variant hands the runtime plugin the config object the
+    // engine's drizzle() call receives: the memoized builder ships only in
+    // dev-database sessions, so handlers and drizzle() share one object
+    expect(virtualSource(nitro, '#drizzle')).toContain('export function devDrizzleConfig()')
+    expect(virtualSource(nitro, '#drizzle')).toContain('return _config ??= {')
+    expect(virtualSource(nitro, '#drizzle')).toContain('drizzle(devDrizzleConfig())')
     expect(virtualSource(nitro, '#drizzle/schema'))
       .toContain('export const { ["relations"]: relations = {}, ...schema } = source')
     expect(virtualSource(nitro, '#drizzle/config')).toContain('export const drizzleConfig = {')
@@ -194,23 +202,78 @@ describe('runtime wiring', () => {
   })
 })
 
-describe('dev-database seed hook', () => {
-  it('derives the generated declaration and the plugin call from one constant', async () => {
-    // Given — the hook reaches consumers through exactly one declaration:
+describe('dev-database lifecycle hooks', () => {
+  it('derives the generated declarations and the plugin calls from one constant each', async () => {
+    // Given — the hooks reach consumers through exactly one declaration:
     // the generated .nitro/drizzle/hooks.d.ts. The runtime plugin never
-    // names the hook literally; both sides derive from the constant.
+    // names a hook literally; both sides derive from the constants.
     const generated = createRuntimeHooksDeclaration()
     const plugin = await readFile('src/dev-database/runtime/plugin.ts', 'utf8')
 
-    // Then — constant, declaration, and call site agree on the name
+    // Then — constants, declarations, and call sites agree on the names
+    expect(DEV_DATABASE_CONFIG_HOOK).toBe(CONFIG_HOOK)
+    expect(DEV_DATABASE_SETUP_HOOK).toBe(SETUP_HOOK)
     expect(DEV_DATABASE_SEED_HOOK).toBe(SEED_HOOK)
+    expect(generated).toContain(
+      `'${CONFIG_HOOK}': (config: NitroDrizzleMockConfig) => void | Promise<void>`,
+    )
+    expect(generated).toContain(
+      `'${SETUP_HOOK}': (client: NitroDrizzleMockClient) => void | Promise<void>`,
+    )
     expect(generated).toContain(`'${SEED_HOOK}': () => void | Promise<void>`)
-    expect(plugin).toContain('callHook(DEV_DATABASE_SEED_HOOK)')
+    expect(plugin).toContain('callHook(DEV_DATABASE_CONFIG_HOOK,')
+    expect(plugin).toContain('callHook(DEV_DATABASE_SETUP_HOOK,')
+
+    // And — the plugin fires config before construction, setup after it but
+    // before the schema push, and seed after the push
+    const configCall = plugin.indexOf('callHook(DEV_DATABASE_CONFIG_HOOK,')
+    const constructCall = plugin.indexOf('const { mockDb, schema } = useDrizzle()')
+    const setupCall = plugin.indexOf('callHook(DEV_DATABASE_SETUP_HOOK,')
+    const pushCall = plugin.indexOf('pushDevSchema({')
+    const seedCall = plugin.indexOf('callHook(DEV_DATABASE_SEED_HOOK)')
+    for (const call of [configCall, constructCall, setupCall, pushCall, seedCall]) {
+      expect(call).toBeGreaterThan(-1)
+    }
+    expect(configCall).toBeLessThan(constructCall)
+    expect(constructCall).toBeLessThan(setupCall)
+    expect(setupCall).toBeLessThan(pushCall)
+    expect(pushCall).toBeLessThan(seedCall)
 
     // And — the declaration must be a module: without the leading `export {}`
     // the file is a global script and `declare module 'nitro/types'` turns
     // from an augmentation into an ambient declaration that shadows the real
     // package, typing every `definePlugin` callback parameter as implicit any
     expect(generated.startsWith('export {}')).toBe(true)
+  })
+
+  it('degrades the config and setup payloads without a resolvable engine', () => {
+    const unresolved = createRuntimeHooksDeclaration()
+    expect(unresolved).toContain('connection?: unknown')
+    expect(unresolved).toContain('type NitroDrizzleMockClient = unknown')
+
+    const pglite = createRuntimeHooksDeclaration('pglite')
+    expect(pglite).toContain(
+      `connection?: string | Partial<import('@electric-sql/pglite').PGliteOptions> & { dataDir?: string }`,
+    )
+    expect(pglite).toContain(
+      `type NitroDrizzleMockClient = ReturnType<typeof import("drizzle-orm/pglite").drizzle>['$client']`,
+    )
+  })
+
+  it('keeps libsql\'s required url when typing the connection', () => {
+    // A replaced connection object wholly replaces the baked `{ url }`, so
+    // the payload type must demand the url `@libsql/client` itself demands
+    // instead of loosening the whole config to Partial.
+    const libsql = createRuntimeHooksDeclaration('libsql')
+    expect(libsql).toContain(`connection?: string | import('@libsql/client').Config`)
+  })
+
+  it('types the bun-sqlite connection through bun:sqlite', () => {
+    // The adapter's own declaration imports bun:sqlite, so a bun-sqlite
+    // consumer already resolves bun types — no degraded record needed.
+    const bun = createRuntimeHooksDeclaration('bun-sqlite')
+    expect(bun).toContain(
+      `connection?: string | { source?: string } & Partial<import('bun:sqlite').DatabaseOptions>`,
+    )
   })
 })
