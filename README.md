@@ -292,6 +292,56 @@ The drizzle-kit CLI always targets the real database. Switching between real
 databases (local Docker, staging, branches) is a job for your `.env` files,
 not for this feature.
 
+Construction-time engine configuration — PGlite extension packages that
+register through the constructor, native client options — goes through the
+`drizzle:dev-mock:config` runtime hook, fired before the dev database is
+constructed. Replace `config.connection` in place; a replacement string or
+options object reaches the engine's `drizzle()` call instead of the baked
+connection:
+
+```ts
+// server/plugins/db-config.ts
+import { vector } from '@electric-sql/pglite-vector'
+
+export default definePlugin((nitro) => {
+  nitro.hooks.hook('drizzle:dev-mock:config', (config) => {
+    // in-memory PGlite with the vector extension registered at construction
+    config.connection = { extensions: { vector } }
+  })
+})
+```
+
+The connection type follows the resolved dev engine (`string |` its options
+object, so PGlite's `extensions`/`dataDir` and native client options
+autocomplete); without a resolvable `drizzle.devMock` it degrades to
+`unknown`. An untouched connection keeps the baked value — replacing it is
+what opts you in. The hook fires before every (re)construction, so code that
+calls `useDrizzle()` from an earlier plugin than the dev database's own
+bypasses it.
+
+Schemas that rely on engine capabilities — PostgreSQL extensions, SQLite
+extensions, pragmas — enable them through the `drizzle:dev-mock:setup` runtime
+hook. It runs once the dev client exists and before every schema push, and
+receives the raw client of the resolved engine as its first argument:
+
+```ts
+// server/plugins/db-setup.ts
+export default definePlugin((nitro) => {
+  nitro.hooks.hook('drizzle:dev-mock:setup', async (client) => {
+    // pglite engine: built-in contrib extensions enable through SQL
+    await client.exec('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"')
+    // sqlite engines: client.loadExtension(...), client.exec('PRAGMA ...')
+  })
+})
+```
+
+The lifecycle per push cycle is `config` → client construction → `setup` →
+schema push → `seed`. Every re-push (HMR reloads included) re-runs all three
+hooks, so keep them idempotent — prefer `CREATE EXTENSION IF NOT EXISTS` and
+likewise. The setup client types from the resolved dev engine, exactly like
+`mockDb.$client`; without a resolvable `drizzle.devMock` it degrades to
+`unknown`.
+
 Seed data through the `drizzle:dev-mock:seed` runtime hook, called after every push:
 
 ```ts
