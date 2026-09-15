@@ -66,17 +66,34 @@ export function sourceHeader(imports: SourceImports): string {
  * `mock` marks the dev-baked variant — the module only exists in a session
  * that activated the dev database, so `mockDb` carries the same instance as
  * `db`. Runtime-resolved sources pass nothing and expose `mockDb: undefined`.
+ * The dev variant also exports `configureDevDrizzle`: the dev-database
+ * plugin injects the `drizzle:dev-mock:config` hook result there before the
+ * first construction, and `initDrizzle` spreads it over the baked
+ * connection.
  */
 export function lazyUseDrizzleSource(
   imports: SourceImports,
   initBody: string,
   mock?: boolean,
 ): string {
+  const devOverrides = mock === true
+    ? `let _overrides
+
+/**
+ * Internal to the dev database: the runtime plugin injects the
+ * \`drizzle:dev-mock:config\` hook result before the first \`useDrizzle()\`.
+ */
+export function configureDevDrizzle(overrides) {
+  _overrides = overrides
+}
+
+`
+    : ''
   return `${sourceHeader(imports)}
 
 let _db = null
 
-function initDrizzle() {
+${devOverrides}function initDrizzle() {
 ${initBody}
 }
 

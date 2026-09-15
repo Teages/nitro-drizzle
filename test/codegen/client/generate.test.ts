@@ -71,6 +71,9 @@ describe('generateVirtualClientSource', () => {
       expect(source).toContain('_db ??= initDrizzle()')
       expect(source).toContain('export function useDrizzle()')
       expect(source).toContain('return { db: _db, schema, relations, mockDb: undefined }')
+      // And — config-hook injection ships only with the dev-baked variant
+      expect(source).not.toContain('configureDevDrizzle')
+      expect(source).not.toContain('_overrides')
       expect(source).not.toContain('export const db')
       expect(source).not.toMatch(/\b(?:casing|mode)\b/)
     })
@@ -240,7 +243,10 @@ describe('generateVirtualClientSource dev database', () => {
     // Then
     expect(source).toContain(`connection: ':memory:',`)
     // And — the dev-baked variant is the only one that carries the mock db,
-    // as the same instance as `db`
+    // as the same instance as `db`, and the only one accepting config-hook
+    // overrides spread over the baked connection
+    expect(source).toContain('export function configureDevDrizzle(overrides)')
+    expect(source).toContain('..._overrides')
     expect(source).toContain('return { db: _db, schema, relations, mockDb: _db }')
     expect(source).not.toContain('useRuntimeConfig')
   })
@@ -281,7 +287,7 @@ describe('generateVirtualClientSource dev database', () => {
     })
 
     // Then
-    expect(source).toContain('return drizzle({\n    schema,\n    relations,\n  })')
+    expect(source).toContain('return drizzle({\n    ..._overrides,\n    schema,\n    relations,\n  })')
     expect(source).not.toContain('useRuntimeConfig')
   })
 

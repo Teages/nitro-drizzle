@@ -11,6 +11,7 @@ export function sqliteFileSource(imports: SourceImports, dev?: DevClientConnecti
     dev: (imports, dev) =>
       lazyUseDrizzleSource(imports, `  return drizzle({
     connection: ${quote(dev.connection ?? ':memory:')},
+    ..._overrides,
     schema,
     relations,
   })`, true),

@@ -9,7 +9,8 @@ export function pgliteSource(imports: SourceImports, dev?: DevClientConnection):
 ${dev.connection === undefined
   ? ''
   : `    connection: ${quote(dev.connection)},
-`}    schema,
+`}    ..._overrides,
+    schema,
     relations,
   })`, true)
     },

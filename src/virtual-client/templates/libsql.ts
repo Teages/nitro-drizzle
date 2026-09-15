@@ -6,6 +6,7 @@ export function libsqlSource(imports: SourceImports, dev?: DevClientConnection):
     dev: (imports, dev) =>
       lazyUseDrizzleSource(imports, `  return drizzle({
     connection: { url: ${quote(dev.connection ?? ':memory:')} },
+    ..._overrides,
     schema,
     relations,
   })`, true),
