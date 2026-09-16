@@ -5,9 +5,8 @@ import type { MySql2Database } from 'drizzle-orm/mysql2'
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite'
 import type { PgliteDatabase } from 'drizzle-orm/pglite'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
-import type { ResolvedDrizzleConfig } from '../../src/configuration/resolve'
-import type { OpaqueDrizzleDatabase } from '../../src/database/drizzle'
 import type { DrizzleDriver } from '../../src/types'
+import type { OpaqueDrizzleDatabase } from './generated-client'
 import { cp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,7 +16,6 @@ import { migrate as migrateMysql2 } from 'drizzle-orm/mysql2/migrator'
 import { migrate as migrateNodeSqlite } from 'drizzle-orm/node-sqlite/migrator'
 import { migrate as migratePglite } from 'drizzle-orm/pglite/migrator'
 import { migrate as migratePostgresJs } from 'drizzle-orm/postgres-js/migrator'
-import { createDrizzleClient } from '../../src/database/client'
 
 export type IntegrationDialect = 'sqlite' | 'postgresql' | 'mysql'
 
@@ -121,18 +119,21 @@ async function migrateForDriver(
   }
 }
 
-/** Applies the fixture's migrations for `dialect` through the client under test. */
+/** Absolute path of the fixture schema entry for `dialect`. */
+export function fixtureSchemaPath(dialect: IntegrationDialect): string {
+  return join(fixtureRoot, 'server/db', `schema.${dialect}.ts`)
+}
+
+/**
+ * Applies the fixture's migrations for `dialect` through the generated
+ * client's database. The caller owns the client lifecycle.
+ */
 export async function applyFixtureMigrations(
-  config: ResolvedDrizzleConfig,
+  db: OpaqueDrizzleDatabase,
+  driver: DrizzleDriver,
   dialect: IntegrationDialect,
 ): Promise<void> {
-  const client = await createDrizzleClient(config)
-  try {
-    await migrateForDriver(config.driver, client.db, {
-      migrationsFolder: fixtureMigrationsFolder(dialect),
-    })
-  }
-  finally {
-    await client.close()
-  }
+  await migrateForDriver(driver, db, {
+    migrationsFolder: fixtureMigrationsFolder(dialect),
+  })
 }
