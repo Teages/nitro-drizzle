@@ -168,7 +168,7 @@ describe('@teages/nitro-drizzle', () => {
     // Then — the static connection lands verbatim in the module-owned
     // virtual; Nitro's runtimeConfig is never touched.
     const configModule = virtualSource(nitro, '#drizzle/config')
-    expect(configModule).toContain(`import { resolveDrizzleConnection } from '@teages/nitro-drizzle/runtime/connection'`)
+    expect(configModule).toContain(`import { resolveDrizzleConnection } from '@teages/nitro-drizzle/runtime/utils/configuration/connection'`)
     expect(configModule).toContain('"driver": "libsql"')
     expect(configModule).toContain('"url": "file:custom.db"')
     expect(configModule).toContain('"host": "static-host"')
@@ -273,7 +273,7 @@ describe('@teages/nitro-drizzle', () => {
     expect(nitro.options.plugins).toContainEqual(
       expect.stringContaining('runtime/plugins/drizzle'),
     )
-    expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
+    expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle/runtime')
     await nitro.close()
   })
 
@@ -352,7 +352,7 @@ describe('@teages/nitro-drizzle', () => {
     // Then
     expect(nitro.options.noExternals).toEqual([
       'user-runtime',
-      '@teages/nitro-drizzle',
+      '@teages/nitro-drizzle/runtime',
     ])
     await nitro.close()
   })

@@ -8,19 +8,21 @@ import NitroDrizzle from '../src'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
 
-const CONNECTION_ALIAS_KEY = '@teages/nitro-drizzle/runtime/connection'
-const CONNECTION_IMPORT = `import { resolveDrizzleConnection } from '${CONNECTION_ALIAS_KEY}'`
+const CONNECTION_EXPORT_KEY = '@teages/nitro-drizzle/runtime/utils/configuration/connection'
+const CONNECTION_IMPORT = `import { resolveDrizzleConnection } from '${CONNECTION_EXPORT_KEY}'`
 const CONFIG_HOOK = 'drizzle:config'
 const SETUP_HOOK = 'drizzle:dev-mock:setup'
 const SEED_HOOK = 'drizzle:dev-mock:seed'
 
 const temporaryDirectories: string[] = []
 
-/** Accepts the extensionless specifiers Nitro registers for source builds. */
-function moduleFileExists(specifier: string): boolean {
-  return existsSync(specifier)
-    || existsSync(`${specifier}.ts`)
-    || existsSync(`${specifier}.mjs`)
+/**
+ * Runtime entries register as bare specifiers; each must map to a source
+ * file the transform pass ships through the `./runtime/*` export.
+ */
+function runtimeSpecifierShips(specifier: string): boolean {
+  const subpath = specifier.replaceAll('\\', '/').replace('@teages/nitro-drizzle/runtime/', '')
+  return existsSync(join('src/runtime', `${subpath}.ts`))
 }
 
 function virtualSource(
@@ -74,7 +76,14 @@ describe('package surface', () => {
 
     // Then — jiti reloads nitro.config.ts through CJS require.resolve, which
     // throws ERR_PACKAGE_PATH_NOT_EXPORTED without the default condition
-    expect(Object.keys(packageJson.exports)).toEqual(['.', './nuxt', './config', './types', './devtool'])
+    expect(Object.keys(packageJson.exports)).toEqual([
+      '.',
+      './nuxt',
+      './config',
+      './types',
+      './devtool',
+      './runtime/*',
+    ])
     for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config'], ['./types', 'types'], ['./devtool', 'devtool']] as const) {
       expect(packageJson.exports[entry]).toEqual({
         types: `./dist/${distFile}.d.mts`,
@@ -85,6 +94,9 @@ describe('package surface', () => {
         `./dist/${distFile}.d.mts`,
       ])
     }
+    // And — the wildcard hands every registered runtime specifier straight
+    // to the transform output, no per-entry exports maintenance
+    expect(packageJson.exports['./runtime/*']).toBe('./dist/runtime/*.mjs')
   })
 
   it('keeps @nuxt/kit as a runtime dependency, not a dev toolchain entry', async () => {
@@ -185,13 +197,10 @@ describe('runtime wiring', () => {
       },
     })
 
-    // Then — the frozen import in the generated #drizzle/config and the
-    // alias key registered at build time are the same string; only the
-    // alias target may change
+    // Then — the frozen import in the generated #drizzle/config resolves
+    // through the `./runtime/*` export for installed consumers; source
+    // checkouts redirect the package prefix with an alias
     expect(virtualSource(nitro, '#drizzle/config')).toContain(CONNECTION_IMPORT)
-    const aliasTarget = nitro.options.alias[CONNECTION_ALIAS_KEY]
-    expect(aliasTarget, 'alias key must be registered').toBeTypeOf('string')
-    expect(moduleFileExists(aliasTarget), `${aliasTarget} must resolve to a file`).toBe(true)
 
     // And — the virtual modules keep their export shapes
     expect(virtualSource(nitro, '#drizzle')).toContain('export function useDrizzle()')
@@ -214,7 +223,7 @@ describe('runtime wiring', () => {
       plugin.replaceAll('\\', '/').endsWith('runtime/plugins/drizzle'))
     expect(registered, 'runtime/plugins/drizzle must be registered').toBeDefined()
     for (const plugin of nitro.options.plugins) {
-      expect(moduleFileExists(plugin), `${plugin} must resolve to a file`).toBe(true)
+      expect(runtimeSpecifierShips(plugin), `${plugin} must resolve to a shipped runtime file`).toBe(true)
     }
     const rootMiddlewares = nitro.options.handlers.filter(handler =>
       handler.route === '/**' && handler.middleware === true)
@@ -224,16 +233,16 @@ describe('runtime wiring', () => {
     const studioGate = rootMiddlewares.find(handler =>
       handler.handler.replaceAll('\\', '/').endsWith('runtime/middleware/studio-gate'))
     expect(studioGate?.handler.replaceAll('\\', '/')).toMatch(/runtime\/middleware\/studio-gate$/)
-    expect(moduleFileExists(studioGate?.handler ?? '')).toBe(true)
+    expect(runtimeSpecifierShips(studioGate?.handler ?? '')).toBe(true)
     const studioRoute = nitro.options.routes[STUDIO_ROUTE]
     if (typeof studioRoute === 'string' || studioRoute === undefined) {
       throw new Error(`Expected ${STUDIO_ROUTE} to be a handler object.`)
     }
     expect(studioRoute.handler.replaceAll('\\', '/')).toMatch(/runtime\/routes\/_drizzle\/studio$/)
-    expect(moduleFileExists(studioRoute.handler)).toBe(true)
+    expect(runtimeSpecifierShips(studioRoute.handler)).toBe(true)
 
-    // And — the externalization escapes survive any file move
-    expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
+    // And — the externalization escape covers exactly the runtime tree
+    expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle/runtime')
     expect(nitro.options.traceDeps).toContain('drizzle-orm*')
     expect(nitro.options.replace[STUDIO_AUTH_KEY_MARKER]).toBeTypeOf('string')
     // And — without the `devtool` Vite plugin in this process, the keyed GET

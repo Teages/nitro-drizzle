@@ -32,7 +32,8 @@
       "types": "./dist/devtool.d.mts",
       "import": "./dist/devtool.mjs",
       "default": "./dist/devtool.mjs"
-    }
+    },
+    "./runtime/*": "./dist/runtime/*.mjs"
   },
   "module": "./dist/index.mjs",
   "typesVersions": {
