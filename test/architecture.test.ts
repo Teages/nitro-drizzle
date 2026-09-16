@@ -110,7 +110,7 @@ describe('package surface', () => {
     })
 
     // Then — the exact entry set: the five ABI facades at their
-    // dist-determining locations plus the four runtime entries
+    // dist-determining locations plus the five runtime entries
     expect([...entries].sort()).toEqual([
       './src/config.ts',
       './src/configuration/runtime/connection.ts',

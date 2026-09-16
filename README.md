@@ -343,9 +343,11 @@ export default definePlugin((nitro) => {
 The lifecycle per push cycle is `config` → client construction → `setup` →
 schema push → `seed`. Every re-push (HMR reloads included) re-runs all three
 hooks, so keep them idempotent — prefer `CREATE EXTENSION IF NOT EXISTS` and
-likewise. The setup client types from the resolved dev engine, exactly like
-`mockDb.$client`; without a resolvable `drizzle.devMock` it degrades to
-`unknown`.
+likewise. A failed hook fails initialization, and a ready-gate middleware
+turns that into failed requests instead of routing into handlers with an
+uninitialized client. The setup client types from the resolved dev engine,
+exactly like `mockDb.$client`; without a resolvable `drizzle.devMock` it
+degrades to `unknown`.
 
 Seed data through the `drizzle:dev-mock:seed` runtime hook, called after every push:
 
