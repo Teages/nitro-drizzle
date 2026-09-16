@@ -1,7 +1,7 @@
 import { defineHandler } from 'nitro/h3'
 import { drizzleConfig } from '#drizzle/config'
 import studioRoute from '../routes/_drizzle/studio'
-import { createStudioHostGate } from '../studio/host-gate'
+import { createStudioHostGate } from '../utils/studio/host-gate'
 
 export default defineHandler((event) => {
   const studio = drizzleConfig.devStudio

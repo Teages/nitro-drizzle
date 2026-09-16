@@ -57,7 +57,7 @@ export function configureRuntime(nitro: Nitro): void {
   // the real entry in every build: bundlers otherwise resolve it from
   // node_modules, which works for installed consumers but externalizes the
   // import (and breaks the server at runtime) wherever that link is absent.
-  nitro.options.alias['@teages/nitro-drizzle/runtime/connection'] = runtimeEntry('runtime/configuration/connection')
+  nitro.options.alias['@teages/nitro-drizzle/runtime/connection'] = runtimeEntry('runtime/utils/configuration/connection')
 }
 
 /** The auth key is baked in via `replace` — non-dev builds never get the route. */

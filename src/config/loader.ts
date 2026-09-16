@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import process from 'node:process'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../configuration/resolve'
-import { expandNitroEnv } from '../runtime/configuration/env'
+import { expandNitroEnv } from '../runtime/utils/configuration/env'
 
 export interface LoadDrizzleConfigOptions {
   /** Project root the framework config is loaded from. Defaults to process.cwd(). */

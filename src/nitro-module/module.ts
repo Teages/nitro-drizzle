@@ -1,6 +1,6 @@
 import type { NitroModule } from 'nitro/types'
 import { configureCloudflare } from '../cloudflare/configure'
-import { findEnvTemplateKeys } from '../runtime/configuration/env'
+import { findEnvTemplateKeys } from '../runtime/utils/configuration/env'
 import { isMacosWithoutLocalhostDomainSupport } from '../studio/localhost-domain'
 import { createDrizzleArtifactsLifecycle } from './artifacts'
 import { resolveDrizzleModuleContext } from './context'
