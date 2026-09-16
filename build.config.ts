@@ -15,14 +15,10 @@ export default defineBuildConfig({
       dts: { build: true },
     },
     {
-      type: 'bundle',
-      input: [
-        './src/runtime/configuration/connection.ts',
-        './src/runtime/middleware/drizzle-gate.ts',
-        './src/runtime/middleware/studio-gate.ts',
-        './src/runtime/plugins/drizzle.ts',
-        './src/runtime/routes/_drizzle/studio.ts',
-      ],
+      type: 'transform',
+      input: 'src/runtime',
+      filter: path => !path.endsWith('.d.ts'),
+      outDir: 'dist/runtime',
       dts: false,
     },
   ],

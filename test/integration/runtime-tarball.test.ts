@@ -133,6 +133,7 @@ describe('published runtime entries in Nitro dev', () => {
       'index',
       'config',
       'runtime/configuration/connection',
+      'runtime/configuration/env',
       'runtime/plugins/drizzle',
       'runtime/middleware/studio-gate',
       'runtime/routes/_drizzle/studio',

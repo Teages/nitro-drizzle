@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import buildConfig from '../build.config'
@@ -110,21 +110,57 @@ describe('package surface', () => {
     })
 
     // Then — the exact entry set: the five ABI facades at their
-    // dist-determining locations plus the five runtime entries
+    // dist-determining locations plus the runtime tree the transform
+    // pass ships file-for-file
     expect([...entries].sort()).toEqual([
       './src/config.ts',
       './src/devtool.ts',
       './src/index.ts',
       './src/nuxt.ts',
-      './src/runtime/configuration/connection.ts',
-      './src/runtime/middleware/drizzle-gate.ts',
-      './src/runtime/middleware/studio-gate.ts',
-      './src/runtime/plugins/drizzle.ts',
-      './src/runtime/routes/_drizzle/studio.ts',
       './src/types.ts',
+      'src/runtime',
     ])
     for (const input of entries) {
       expect(existsSync(input), `${input} must exist`).toBe(true)
+    }
+  })
+
+  it('keeps the runtime tree self-contained for the transform pass', async () => {
+    // Given — the transform pass ships src/runtime file-for-file and keeps
+    // relative imports as-is: a specifier escaping the tree points into
+    // module-side source that exists only inside the bundled facades, so
+    // the published runtime would import a file the package never contains
+    const files: string[] = []
+    const collect = async (dir: string): Promise<void> => {
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          await collect(join(dir, entry.name))
+        }
+        else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) {
+          files.push(join(dir, entry.name))
+        }
+      }
+    }
+    await collect('src/runtime')
+
+    // Then — every import that survives the transform resolves inside the
+    // tree; explicit `import type` lines are erased and may keep pointing
+    // at the shared src/types ABI
+    expect(files.length).toBeGreaterThan(0)
+    for (const file of files) {
+      for (const line of (await readFile(file, 'utf8')).split('\n')) {
+        if (/^\s*import\s+type\b/.test(line)) {
+          continue
+        }
+        for (const specifier of [...line.matchAll(/['"](\.[^'"]+)['"]/g)].map(match => match[1])) {
+          const resolved = join(dirname(file), specifier)
+          expect(
+            resolved.startsWith('src/runtime/'),
+            `${file} imports ${specifier}, which escapes src/runtime`,
+          ).toBe(true)
+          expect(existsSync(resolved) || existsSync(`${resolved}.ts`), `${resolved} must exist`).toBe(true)
+        }
+      }
     }
   })
 })
