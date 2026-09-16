@@ -1,5 +1,5 @@
 import type { DrizzleDriver, DrizzleLocalDriver } from '../types'
-import { resolveDriverAdapterPath } from '../database/registry'
+import { resolveDriverAdapterPath } from '../virtual-client/registry'
 
 /**
  * Connection type per config-constructing driver, mirroring what each
