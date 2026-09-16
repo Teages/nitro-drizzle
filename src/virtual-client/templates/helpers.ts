@@ -65,37 +65,62 @@ export function sourceHeader(imports: SourceImports): string {
  * `mock` marks the dev-baked variant: `mockDb` carries the same instance as
  * `db`; runtime-resolved sources expose `mockDb: undefined`.
  *
- * The body is `initDrizzle` statements for runtime sources, the drizzle
- * config object literal for dev sources.
+ * Both variants construct through a memoized `drizzleConfig()` — the body is
+ * the drizzle config object literal for dev sources, statements returning it
+ * for runtime sources — so the runtime plugin can run the single config
+ * object through the `drizzle:config` hook before the first construction.
  */
 export function lazyUseDrizzleSource(
   imports: SourceImports,
   body: string,
   mock?: boolean,
 ): string {
-  const init = mock === true
-    ? `let _config
-
-/** Internal to the dev database. */
-export function devDrizzleConfig() {
-  return _config ??= ${body}
-}
-
-function initDrizzle() {
-  return drizzle(devDrizzleConfig())
-}`
-    : `function initDrizzle() {
+  const built = mock === true
+    ? `return _config ??= ${body}`
+    : `return _config ??= (() => {
 ${body}
-}`
+  })()`
   return `${sourceHeader(imports)}
 
 let _db = null
 
-${init}
+let _config
+
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
+  ${built}
+}
+
+function initDrizzle() {
+  return drizzle(drizzleConfig())
+}
 
 export function useDrizzle() {
   _db ??= initDrizzle()
   return { db: _db, schema, relations, mockDb: ${mock === true ? '_db' : 'undefined'} }
+}
+`
+}
+
+/**
+ * Lazy singleton for sources that construct from a client instead of a
+ * config object: no config hook applies.
+ */
+export function lazyClientSource(
+  imports: SourceImports,
+  initBody: string,
+): string {
+  return `${sourceHeader(imports)}
+
+let _db = null
+
+function initDrizzle() {
+${initBody}
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations, mockDb: undefined }
 }
 `
 }

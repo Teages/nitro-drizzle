@@ -15,10 +15,10 @@ ${dev.connection === undefined
     },
     runtime: imports =>
       lazyUseDrizzleSource(imports, `  const connection = useDrizzleConnection()
-  return drizzle({
+  return {
     connection: connection.dataDir || connection.url || connection.connectionString,
     schema,
     relations,
-  })`),
+  }`),
   })
 }

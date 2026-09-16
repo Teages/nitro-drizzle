@@ -292,33 +292,37 @@ The drizzle-kit CLI always targets the real database. Switching between real
 databases (local Docker, staging, branches) is a job for your `.env` files,
 not for this feature.
 
-Construction-time engine configuration — PGlite extension packages that
-register through the constructor, native client options — goes through the
-`drizzle:dev-mock:config` runtime hook, fired before the dev database is
-constructed. The hook receives the exact config object the engine's
-`drizzle()` call builds with: mutate it in place, most notably
-`config.connection`, and the mutated object is what constructs the client.
+Construction-time configuration — engine connection (PGlite extension
+packages that register through the constructor, native client options),
+`casing`, `logger` — goes through the `drizzle:config` runtime hook, fired
+once before the drizzle client is constructed, in dev and production
+alike. The hook receives the exact config object the engine's `drizzle()`
+call builds with: mutate it in place, and the mutated object is what
+constructs the client.
 
 ```ts
 // server/plugins/db-config.ts
 import { vector } from '@electric-sql/pglite-vector'
 
 export default definePlugin((nitro) => {
-  nitro.hooks.hook('drizzle:dev-mock:config', (config) => {
+  nitro.hooks.hook('drizzle:config', (config) => {
     // in-memory PGlite with the vector extension registered at construction
     config.connection = { extensions: { vector } }
+    // applies to the dev database and the real one symmetrically
+    config.casing = 'snake_case'
   })
 })
 ```
 
-The connection type follows the resolved dev engine (`string |` its options
-object, so PGlite's `extensions`/`dataDir` and native client options
-autocomplete); without a resolvable `drizzle.devMock` it degrades to
-`unknown`. An untouched connection keeps the baked value — and an in-memory
-PGlite carries no connection at all until a handler adds one, which is what
-opts you in. The hook fires before every (re)construction, so code that
-calls `useDrizzle()` from an earlier plugin than the dev database's own
-bypasses it.
+The connection type follows the engine that constructs: the resolved dev
+engine in a dev-mock session, the configured driver otherwise (`string |`
+its options object, so PGlite's `extensions`/`dataDir` and native client
+options autocomplete). An untouched connection keeps the baked or
+runtime-resolved value — and an in-memory PGlite carries no connection at
+all until a handler adds one, which is what opts you in. The hook fires
+before every (re)construction, so code that calls `useDrizzle()` from an
+earlier plugin than this package's own bypasses it. Client-constructed
+variants (`d1` and `d1-http`) never fire the hook.
 
 Schemas that rely on engine capabilities — PostgreSQL extensions, SQLite
 extensions, pragmas — enable them through the `drizzle:dev-mock:setup` runtime
@@ -339,9 +343,11 @@ export default definePlugin((nitro) => {
 The lifecycle per push cycle is `config` → client construction → `setup` →
 schema push → `seed`. Every re-push (HMR reloads included) re-runs all three
 hooks, so keep them idempotent — prefer `CREATE EXTENSION IF NOT EXISTS` and
-likewise. The setup client types from the resolved dev engine, exactly like
-`mockDb.$client`; without a resolvable `drizzle.devMock` it degrades to
-`unknown`.
+likewise. A failed hook fails initialization, and a ready-gate middleware
+turns that into failed requests instead of routing into handlers with an
+uninitialized client. The setup client types from the resolved dev engine,
+exactly like `mockDb.$client`; without a resolvable `drizzle.devMock` it
+degrades to `unknown`.
 
 Seed data through the `drizzle:dev-mock:seed` runtime hook, called after every push:
 

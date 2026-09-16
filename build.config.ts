@@ -18,7 +18,8 @@ export default defineBuildConfig({
       type: 'bundle',
       input: [
         './src/configuration/runtime/connection.ts',
-        './src/dev-database/runtime/plugin.ts',
+        './src/runtime/gate.ts',
+        './src/runtime/plugin.ts',
         './src/studio/runtime/middleware.ts',
         './src/studio/runtime/handler.ts',
       ],

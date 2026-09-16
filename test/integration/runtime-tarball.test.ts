@@ -57,6 +57,25 @@ async function waitForJson(url: string, output: () => string): Promise<unknown> 
   throw new Error(`${String(lastError)}\n${output()}`)
 }
 
+async function waitForStatus(url: string, status: number, output: () => string): Promise<void> {
+  const deadline = Date.now() + 90_000
+  let lastError: unknown = new Error(`Timed out waiting for ${url} to answer HTTP ${status}`)
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url)
+      if (response.status === status) {
+        return
+      }
+      lastError = new Error(`${url} responded with HTTP ${response.status}`)
+    }
+    catch (error) {
+      lastError = error
+    }
+    await new Promise(resolve => setTimeout(resolve, 250))
+  }
+  throw new Error(`${String(lastError)}\n${output()}`)
+}
+
 async function stop(child: ReturnType<typeof spawn>): Promise<void> {
   const index = childProcesses.indexOf(child)
   if (index !== -1) {
@@ -114,7 +133,7 @@ describe('published runtime entries in Nitro dev', () => {
       'index',
       'config',
       'configuration/runtime/connection',
-      'dev-database/runtime/plugin',
+      'runtime/plugin',
       'studio/runtime/middleware',
       'studio/runtime/handler',
     ]) {
@@ -183,5 +202,23 @@ describe('published runtime entries in Nitro dev', () => {
     )
     expect(devBundle).not.toMatch(/from\s+["']#drizzle["']/)
     await stop(dev.child)
+
+    // And a failed config hook fails requests instead of routing into
+    // handlers with an uninitialized client: Nitro swallows request-hook
+    // rejections, so the ready-gate middleware is what turns the failure
+    // into a 500
+    const failPort = await reservePort()
+    const failing = await startNitroDev(rootDir, failPort, {
+      ...process.env,
+      DEV_MOCK_CONFIG_FAIL: '1',
+    })
+    try {
+      await expect(
+        waitForStatus(`http://127.0.0.1:${failPort}/api/count`, 500, failing.output),
+      ).resolves.toBeUndefined()
+    }
+    finally {
+      await stop(failing.child)
+    }
   })
 })

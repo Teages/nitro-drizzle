@@ -16,10 +16,10 @@ export function sqliteFileSource(imports: SourceImports, dev?: DevClientConnecti
   }`, true),
     runtime: imports =>
       lazyUseDrizzleSource(imports, `  const connection = useDrizzleConnection()
-  return drizzle({
+  return {
     connection: connection.url || connection.connectionString || connection,
     schema,
     relations,
-  })`),
+  }`),
   })
 }

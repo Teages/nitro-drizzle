@@ -5,13 +5,12 @@ import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
-import { DEV_DATABASE_CONFIG_HOOK, DEV_DATABASE_SEED_HOOK, DEV_DATABASE_SETUP_HOOK } from '../src/dev-database/contracts'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
 
 const CONNECTION_ALIAS_KEY = '@teages/nitro-drizzle/runtime/connection'
 const CONNECTION_IMPORT = `import { resolveDrizzleConnection } from '${CONNECTION_ALIAS_KEY}'`
-const CONFIG_HOOK = 'drizzle:dev-mock:config'
+const CONFIG_HOOK = 'drizzle:config'
 const SETUP_HOOK = 'drizzle:dev-mock:setup'
 const SEED_HOOK = 'drizzle:dev-mock:seed'
 
@@ -111,14 +110,15 @@ describe('package surface', () => {
     })
 
     // Then — the exact entry set: the five ABI facades at their
-    // dist-determining locations plus the four runtime entries
+    // dist-determining locations plus the five runtime entries
     expect([...entries].sort()).toEqual([
       './src/config.ts',
       './src/configuration/runtime/connection.ts',
-      './src/dev-database/runtime/plugin.ts',
       './src/devtool.ts',
       './src/index.ts',
       './src/nuxt.ts',
+      './src/runtime/gate.ts',
+      './src/runtime/plugin.ts',
       './src/studio/runtime/handler.ts',
       './src/studio/runtime/middleware.ts',
       './src/types.ts',
@@ -163,9 +163,9 @@ describe('runtime wiring', () => {
     // And — the dev variant hands the runtime plugin the config object the
     // engine's drizzle() call receives: the memoized builder ships only in
     // dev-database sessions, so handlers and drizzle() share one object
-    expect(virtualSource(nitro, '#drizzle')).toContain('export function devDrizzleConfig()')
+    expect(virtualSource(nitro, '#drizzle')).toContain('export function drizzleConfig()')
     expect(virtualSource(nitro, '#drizzle')).toContain('return _config ??= {')
-    expect(virtualSource(nitro, '#drizzle')).toContain('drizzle(devDrizzleConfig())')
+    expect(virtualSource(nitro, '#drizzle')).toContain('drizzle(drizzleConfig())')
     expect(virtualSource(nitro, '#drizzle/schema'))
       .toContain('export const { ["relations"]: relations = {}, ...schema } = source')
     expect(virtualSource(nitro, '#drizzle/config')).toContain('export const drizzleConfig = {')
@@ -175,13 +175,18 @@ describe('runtime wiring', () => {
     // its host-gating middleware, and every registered plugin, handler, and
     // route exists on disk
     const registered = nitro.options.plugins.find(plugin =>
-      plugin.replaceAll('\\', '/').endsWith('dev-database/runtime/plugin'))
-    expect(registered, 'dev-database/runtime/plugin must be registered').toBeDefined()
+      plugin.replaceAll('\\', '/').endsWith('runtime/plugin'))
+    expect(registered, 'runtime/plugin must be registered').toBeDefined()
     for (const plugin of nitro.options.plugins) {
       expect(moduleFileExists(plugin), `${plugin} must resolve to a file`).toBe(true)
     }
-    const studioGate = nitro.options.handlers.find(handler =>
+    const rootMiddlewares = nitro.options.handlers.filter(handler =>
       handler.route === '/**' && handler.middleware === true)
+    const readyGate = rootMiddlewares.find(handler =>
+      handler.handler.replaceAll('\\', '/').endsWith('runtime/gate'))
+    expect(readyGate, 'runtime/gate middleware must be registered').toBeDefined()
+    const studioGate = rootMiddlewares.find(handler =>
+      handler.handler.replaceAll('\\', '/').endsWith('studio/runtime/middleware'))
     expect(studioGate?.handler.replaceAll('\\', '/')).toMatch(/studio\/runtime\/middleware$/)
     expect(moduleFileExists(studioGate?.handler ?? '')).toBe(true)
     const studioRoute = nitro.options.routes[STUDIO_ROUTE]
@@ -203,34 +208,33 @@ describe('runtime wiring', () => {
 })
 
 describe('dev-database lifecycle hooks', () => {
-  it('derives the generated declarations and the plugin calls from one constant each', async () => {
-    // Given — the hooks reach consumers through exactly one declaration:
-    // the generated .nitro/drizzle/hooks.d.ts. The runtime plugin never
-    // names a hook literally; both sides derive from the constants.
-    const generated = createRuntimeHooksDeclaration()
-    const plugin = await readFile('src/dev-database/runtime/plugin.ts', 'utf8')
+  it('keeps the plugin hook calls and the generated declaration in agreement', async () => {
+    // Given — the hook names reach consumers through the generated
+    // .nitro/drizzle/hooks.d.ts and reach the runtime through literal
+    // callHook sites in the plugin; the NitroRuntimeHooks augmentation
+    // typechecks both sides against each other, and this pins drift
+    // immediately instead of after the declarations regenerate.
+    const generated = createRuntimeHooksDeclaration('postgres-js')
+    const plugin = await readFile('src/runtime/plugin.ts', 'utf8')
 
-    // Then — constants, declarations, and call sites agree on the names
-    expect(DEV_DATABASE_CONFIG_HOOK).toBe(CONFIG_HOOK)
-    expect(DEV_DATABASE_SETUP_HOOK).toBe(SETUP_HOOK)
-    expect(DEV_DATABASE_SEED_HOOK).toBe(SEED_HOOK)
+    // Then — every hook the plugin fires is declared for consumers
     expect(generated).toContain(
-      `'${CONFIG_HOOK}': (config: NitroDrizzleMockConfig) => void | Promise<void>`,
+      `'${CONFIG_HOOK}': (config: NitroDrizzleConfig) => void | Promise<void>`,
     )
     expect(generated).toContain(
       `'${SETUP_HOOK}': (client: NitroDrizzleMockClient) => void | Promise<void>`,
     )
     expect(generated).toContain(`'${SEED_HOOK}': () => void | Promise<void>`)
-    expect(plugin).toContain('callHook(DEV_DATABASE_CONFIG_HOOK,')
-    expect(plugin).toContain('callHook(DEV_DATABASE_SETUP_HOOK,')
+    expect(plugin).toContain(`callHook('${CONFIG_HOOK}',`)
+    expect(plugin).toContain(`callHook('${SETUP_HOOK}',`)
 
     // And — the plugin fires config before construction, setup after it but
     // before the schema push, and seed after the push
-    const configCall = plugin.indexOf('callHook(DEV_DATABASE_CONFIG_HOOK,')
+    const configCall = plugin.indexOf(`callHook('${CONFIG_HOOK}',`)
     const constructCall = plugin.indexOf('const { mockDb, schema } = useDrizzle()')
-    const setupCall = plugin.indexOf('callHook(DEV_DATABASE_SETUP_HOOK,')
+    const setupCall = plugin.indexOf(`callHook('${SETUP_HOOK}',`)
     const pushCall = plugin.indexOf('pushDevSchema({')
-    const seedCall = plugin.indexOf('callHook(DEV_DATABASE_SEED_HOOK)')
+    const seedCall = plugin.indexOf(`callHook('${SEED_HOOK}')`)
     for (const call of [configCall, constructCall, setupCall, pushCall, seedCall]) {
       expect(call).toBeGreaterThan(-1)
     }
@@ -246,18 +250,28 @@ describe('dev-database lifecycle hooks', () => {
     expect(generated.startsWith('export {}')).toBe(true)
   })
 
-  it('degrades the config and setup payloads without a resolvable engine', () => {
-    const unresolved = createRuntimeHooksDeclaration()
-    expect(unresolved).toContain('connection?: unknown')
-    expect(unresolved).toContain('type NitroDrizzleMockClient = unknown')
+  it('types the setup payload only with a dev engine, the connection from the driver', () => {
+    const runtime = createRuntimeHooksDeclaration('postgres-js')
+    expect(runtime).toContain(
+      `connection?: string | { url?: string } & Partial<import('postgres').Options>`,
+    )
+    expect(runtime).toContain(`casing?: 'snake_case' | 'camelCase'`)
+    expect(runtime).toContain(`logger?: boolean | import('drizzle-orm').Logger`)
+    expect(runtime).toContain('type NitroDrizzleMockClient = unknown')
 
-    const pglite = createRuntimeHooksDeclaration('pglite')
-    expect(pglite).toContain(
+    const mocked = createRuntimeHooksDeclaration('postgres-js', 'pglite')
+    expect(mocked).toContain(
       `connection?: string | Partial<import('@electric-sql/pglite').PGliteOptions> & { dataDir?: string }`,
     )
-    expect(pglite).toContain(
+    expect(mocked).toContain(
       `type NitroDrizzleMockClient = ReturnType<typeof import("drizzle-orm/pglite").drizzle>['$client']`,
     )
+  })
+
+  it('omits the config hook for client-constructed drivers', () => {
+    const d1 = createRuntimeHooksDeclaration('d1')
+    expect(d1).not.toContain(`'${CONFIG_HOOK}'`)
+    expect(d1).toContain(`'${SEED_HOOK}': () => void | Promise<void>`)
   })
 
   it('keeps libsql\'s required url when typing the connection', () => {

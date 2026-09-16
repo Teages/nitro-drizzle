@@ -271,7 +271,7 @@ describe('@teages/nitro-drizzle', () => {
 
     // And — the dev plugin is registered
     expect(nitro.options.plugins).toContainEqual(
-      expect.stringContaining('dev-database/runtime/plugin'),
+      expect.stringContaining('runtime/plugin'),
     )
     expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
     await nitro.close()
@@ -421,8 +421,11 @@ describe('@teages/nitro-drizzle', () => {
     expect(virtualSource(nitro, '#drizzle'))
       .toContain(`from 'drizzle-orm/postgres-js'`)
     expect(nitro.options.virtual['#drizzle/schema']).toBeDefined()
-    expect(nitro.options.plugins).not.toContainEqual(
-      expect.stringContaining('dev-database/runtime/plugin'),
+    // And — the runtime plugin stays registered outside dev mode: the
+    // config hook fires for the real database too, only setup/seed are
+    // dev-mock only
+    expect(nitro.options.plugins).toContainEqual(
+      expect.stringContaining('runtime/plugin'),
     )
     await nitro.close()
   })
