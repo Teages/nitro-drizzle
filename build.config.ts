@@ -15,14 +15,10 @@ export default defineBuildConfig({
       dts: { build: true },
     },
     {
-      type: 'bundle',
-      input: [
-        './src/configuration/runtime/connection.ts',
-        './src/runtime/gate.ts',
-        './src/runtime/plugin.ts',
-        './src/studio/runtime/middleware.ts',
-        './src/studio/runtime/handler.ts',
-      ],
+      type: 'transform',
+      input: 'src/runtime',
+      filter: path => !path.endsWith('.d.ts'),
+      outDir: 'dist/runtime',
       dts: false,
     },
   ],

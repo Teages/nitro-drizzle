@@ -1,7 +1,6 @@
 import type { NitroModule } from 'nitro/types'
 import { configureCloudflare } from '../cloudflare/configure'
-import { findEnvTemplateKeys } from '../configuration/env'
-import { studioLink } from '../studio/link'
+import { findEnvTemplateKeys } from '../runtime/utils/configuration/env'
 import { isMacosWithoutLocalhostDomainSupport } from '../studio/localhost-domain'
 import { createDrizzleArtifactsLifecycle } from './artifacts'
 import { resolveDrizzleModuleContext } from './context'
@@ -57,7 +56,10 @@ export default {
         // --port` never reaches module setup); the DevTools dock redirect
         // is built per request and stays accurate regardless.
         const devPort = nitro.options.devServer.port ?? 3000
-        logger.info(`Drizzle Studio: ${studioLink(ctx.devStudio.studioUrl, ctx.devStudio.localhostDomain, devPort)}`)
+        const studio = new URL(ctx.devStudio.studioUrl)
+        studio.searchParams.set('port', String(devPort))
+        studio.searchParams.set('host', ctx.devStudio.localhostDomain)
+        logger.info(`Drizzle Studio: ${studio}`)
       }
       // Safari defers `*.localhost` to the system resolver, which only
       // learned the suffix in macOS 26; Chrome and Firefox are unaffected.

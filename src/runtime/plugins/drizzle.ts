@@ -1,8 +1,8 @@
 import { definePlugin } from 'nitro'
 import { useDrizzle } from '#drizzle'
 import { drizzleConfig } from '#drizzle/config'
-import { pushDevSchema } from '../dev-database/runtime/push-schema'
-import { bindDrizzleReady } from './lifecycle'
+import { pushDevSchema } from '../utils/dev-database/push-schema'
+import { bindDrizzleReady } from '../utils/lifecycle'
 
 /** Config-hook payload, from the generated hooks declaration. */
 type DrizzleRuntimeConfig = Parameters<

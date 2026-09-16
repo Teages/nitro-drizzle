@@ -4,8 +4,8 @@ import type { DatabaseConnection, DrizzleOptions } from '../types'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import process from 'node:process'
-import { expandNitroEnv } from '../configuration/env'
 import { resolveDrizzleConfig, resolveDrizzleSchemaPath } from '../configuration/resolve'
+import { expandNitroEnv } from '../runtime/utils/configuration/env'
 
 export interface LoadDrizzleConfigOptions {
   /** Project root the framework config is loaded from. Defaults to process.cwd(). */

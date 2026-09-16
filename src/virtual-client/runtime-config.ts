@@ -24,7 +24,7 @@ export interface RuntimeDrizzleConfig {
 }
 
 export function createRuntimeConfigModule(config: RuntimeDrizzleConfig): string {
-  return `import { resolveDrizzleConnection } from '@teages/nitro-drizzle/runtime/connection'
+  return `import { resolveDrizzleConnection } from '@teages/nitro-drizzle/runtime/utils/configuration/connection'
 
 export const drizzleConfig = ${JSON.stringify(config, null, 2)}
 

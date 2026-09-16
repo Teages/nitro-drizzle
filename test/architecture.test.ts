@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import buildConfig from '../build.config'
@@ -8,19 +8,21 @@ import NitroDrizzle from '../src'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
 
-const CONNECTION_ALIAS_KEY = '@teages/nitro-drizzle/runtime/connection'
-const CONNECTION_IMPORT = `import { resolveDrizzleConnection } from '${CONNECTION_ALIAS_KEY}'`
+const CONNECTION_EXPORT_KEY = '@teages/nitro-drizzle/runtime/utils/configuration/connection'
+const CONNECTION_IMPORT = `import { resolveDrizzleConnection } from '${CONNECTION_EXPORT_KEY}'`
 const CONFIG_HOOK = 'drizzle:config'
 const SETUP_HOOK = 'drizzle:dev-mock:setup'
 const SEED_HOOK = 'drizzle:dev-mock:seed'
 
 const temporaryDirectories: string[] = []
 
-/** Accepts the extensionless specifiers Nitro registers for source builds. */
-function moduleFileExists(specifier: string): boolean {
-  return existsSync(specifier)
-    || existsSync(`${specifier}.ts`)
-    || existsSync(`${specifier}.mjs`)
+/**
+ * Runtime entries register as bare specifiers; each must map to a source
+ * file the transform pass ships through the `./runtime/*` export.
+ */
+function runtimeSpecifierShips(specifier: string): boolean {
+  const subpath = specifier.replaceAll('\\', '/').replace('@teages/nitro-drizzle/runtime/', '')
+  return existsSync(join('src/runtime', `${subpath}.ts`))
 }
 
 function virtualSource(
@@ -74,7 +76,14 @@ describe('package surface', () => {
 
     // Then — jiti reloads nitro.config.ts through CJS require.resolve, which
     // throws ERR_PACKAGE_PATH_NOT_EXPORTED without the default condition
-    expect(Object.keys(packageJson.exports)).toEqual(['.', './nuxt', './config', './types', './devtool'])
+    expect(Object.keys(packageJson.exports)).toEqual([
+      '.',
+      './nuxt',
+      './config',
+      './types',
+      './devtool',
+      './runtime/*',
+    ])
     for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config'], ['./types', 'types'], ['./devtool', 'devtool']] as const) {
       expect(packageJson.exports[entry]).toEqual({
         types: `./dist/${distFile}.d.mts`,
@@ -85,6 +94,9 @@ describe('package surface', () => {
         `./dist/${distFile}.d.mts`,
       ])
     }
+    // And — the wildcard hands every registered runtime specifier straight
+    // to the transform output, no per-entry exports maintenance
+    expect(packageJson.exports['./runtime/*']).toBe('./dist/runtime/*.mjs')
   })
 
   it('keeps @nuxt/kit as a runtime dependency, not a dev toolchain entry', async () => {
@@ -110,21 +122,57 @@ describe('package surface', () => {
     })
 
     // Then — the exact entry set: the five ABI facades at their
-    // dist-determining locations plus the five runtime entries
+    // dist-determining locations plus the runtime tree the transform
+    // pass ships file-for-file
     expect([...entries].sort()).toEqual([
       './src/config.ts',
-      './src/configuration/runtime/connection.ts',
       './src/devtool.ts',
       './src/index.ts',
       './src/nuxt.ts',
-      './src/runtime/gate.ts',
-      './src/runtime/plugin.ts',
-      './src/studio/runtime/handler.ts',
-      './src/studio/runtime/middleware.ts',
       './src/types.ts',
+      'src/runtime',
     ])
     for (const input of entries) {
       expect(existsSync(input), `${input} must exist`).toBe(true)
+    }
+  })
+
+  it('keeps the runtime tree self-contained for the transform pass', async () => {
+    // Given — the transform pass ships src/runtime file-for-file and keeps
+    // relative imports as-is: a specifier escaping the tree points into
+    // module-side source that exists only inside the bundled facades, so
+    // the published runtime would import a file the package never contains
+    const files: string[] = []
+    const collect = async (dir: string): Promise<void> => {
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          await collect(join(dir, entry.name))
+        }
+        else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) {
+          files.push(join(dir, entry.name))
+        }
+      }
+    }
+    await collect('src/runtime')
+
+    // Then — every import that survives the transform resolves inside the
+    // tree; explicit `import type` lines are erased and may keep pointing
+    // at the shared src/types ABI
+    expect(files.length).toBeGreaterThan(0)
+    for (const file of files) {
+      for (const line of (await readFile(file, 'utf8')).split('\n')) {
+        if (/^\s*import\s+type\b/.test(line)) {
+          continue
+        }
+        for (const specifier of [...line.matchAll(/['"](\.[^'"]+)['"]/g)].map(match => match[1])) {
+          const resolved = join(dirname(file), specifier)
+          expect(
+            resolved.startsWith('src/runtime/'),
+            `${file} imports ${specifier}, which escapes src/runtime`,
+          ).toBe(true)
+          expect(existsSync(resolved) || existsSync(`${resolved}.ts`), `${resolved} must exist`).toBe(true)
+        }
+      }
     }
   })
 })
@@ -149,13 +197,10 @@ describe('runtime wiring', () => {
       },
     })
 
-    // Then — the frozen import in the generated #drizzle/config and the
-    // alias key registered at build time are the same string; only the
-    // alias target may change
+    // Then — the frozen import in the generated #drizzle/config resolves
+    // through the `./runtime/*` export for installed consumers; source
+    // checkouts redirect the package prefix with an alias
     expect(virtualSource(nitro, '#drizzle/config')).toContain(CONNECTION_IMPORT)
-    const aliasTarget = nitro.options.alias[CONNECTION_ALIAS_KEY]
-    expect(aliasTarget, 'alias key must be registered').toBeTypeOf('string')
-    expect(moduleFileExists(aliasTarget), `${aliasTarget} must resolve to a file`).toBe(true)
 
     // And — the virtual modules keep their export shapes
     expect(virtualSource(nitro, '#drizzle')).toContain('export function useDrizzle()')
@@ -175,29 +220,29 @@ describe('runtime wiring', () => {
     // its host-gating middleware, and every registered plugin, handler, and
     // route exists on disk
     const registered = nitro.options.plugins.find(plugin =>
-      plugin.replaceAll('\\', '/').endsWith('runtime/plugin'))
-    expect(registered, 'runtime/plugin must be registered').toBeDefined()
+      plugin.replaceAll('\\', '/').endsWith('runtime/plugins/drizzle'))
+    expect(registered, 'runtime/plugins/drizzle must be registered').toBeDefined()
     for (const plugin of nitro.options.plugins) {
-      expect(moduleFileExists(plugin), `${plugin} must resolve to a file`).toBe(true)
+      expect(runtimeSpecifierShips(plugin), `${plugin} must resolve to a shipped runtime file`).toBe(true)
     }
     const rootMiddlewares = nitro.options.handlers.filter(handler =>
       handler.route === '/**' && handler.middleware === true)
     const readyGate = rootMiddlewares.find(handler =>
-      handler.handler.replaceAll('\\', '/').endsWith('runtime/gate'))
-    expect(readyGate, 'runtime/gate middleware must be registered').toBeDefined()
+      handler.handler.replaceAll('\\', '/').endsWith('runtime/middleware/drizzle-gate'))
+    expect(readyGate, 'runtime/middleware/drizzle-gate must be registered').toBeDefined()
     const studioGate = rootMiddlewares.find(handler =>
-      handler.handler.replaceAll('\\', '/').endsWith('studio/runtime/middleware'))
-    expect(studioGate?.handler.replaceAll('\\', '/')).toMatch(/studio\/runtime\/middleware$/)
-    expect(moduleFileExists(studioGate?.handler ?? '')).toBe(true)
+      handler.handler.replaceAll('\\', '/').endsWith('runtime/middleware/studio-gate'))
+    expect(studioGate?.handler.replaceAll('\\', '/')).toMatch(/runtime\/middleware\/studio-gate$/)
+    expect(runtimeSpecifierShips(studioGate?.handler ?? '')).toBe(true)
     const studioRoute = nitro.options.routes[STUDIO_ROUTE]
     if (typeof studioRoute === 'string' || studioRoute === undefined) {
       throw new Error(`Expected ${STUDIO_ROUTE} to be a handler object.`)
     }
-    expect(studioRoute.handler.replaceAll('\\', '/')).toMatch(/studio\/runtime\/handler$/)
-    expect(moduleFileExists(studioRoute.handler)).toBe(true)
+    expect(studioRoute.handler.replaceAll('\\', '/')).toMatch(/runtime\/routes\/_drizzle\/studio$/)
+    expect(runtimeSpecifierShips(studioRoute.handler)).toBe(true)
 
-    // And — the externalization escapes survive any file move
-    expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
+    // And — the externalization escape covers exactly the runtime tree
+    expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle/runtime')
     expect(nitro.options.traceDeps).toContain('drizzle-orm*')
     expect(nitro.options.replace[STUDIO_AUTH_KEY_MARKER]).toBeTypeOf('string')
     // And — without the `devtool` Vite plugin in this process, the keyed GET
@@ -215,7 +260,7 @@ describe('dev-database lifecycle hooks', () => {
     // typechecks both sides against each other, and this pins drift
     // immediately instead of after the declarations regenerate.
     const generated = createRuntimeHooksDeclaration('postgres-js')
-    const plugin = await readFile('src/runtime/plugin.ts', 'utf8')
+    const plugin = await readFile('src/runtime/plugins/drizzle.ts', 'utf8')
 
     // Then — every hook the plugin fires is declared for consumers
     expect(generated).toContain(

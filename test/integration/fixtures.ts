@@ -24,8 +24,14 @@ export type IntegrationDialect = 'sqlite' | 'postgresql' | 'mysql'
 /** The committed Nitro app every integration test migrates, builds, or runs. */
 const fixtureRoot = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'base')
 
+/** Repository root, for source-mode redirects into the package source tree. */
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../..')
+
 /** How the fixture config imports the module from the repository source. */
 const FIXTURE_MODULE_IMPORT = `'../../../../src/index'`
+
+/** Fixture-config placeholder replaced with the source-mode runtime redirect. */
+const FIXTURE_RUNTIME_ALIAS = '  // %RUNTIME_ALIAS%'
 
 /** Generated output that never belongs in a copy of the fixture app. */
 const generatedEntries = new Set(['.nitro', '.data', '.output', 'dist', 'node_modules'])
@@ -60,15 +66,22 @@ export async function copyFixture(
     recursive: true,
     filter: source => !generatedEntries.has(basename(source)),
   })
-  if (options.moduleSpecifier === undefined) {
-    return
-  }
   const configFile = join(rootDir, 'nitro.config.ts')
-  const config = await readFile(configFile, 'utf8')
-  await writeFile(
-    configFile,
-    config.replace(FIXTURE_MODULE_IMPORT, JSON.stringify(options.moduleSpecifier)),
-  )
+  let config = await readFile(configFile, 'utf8')
+  if (options.moduleSpecifier !== undefined) {
+    config = config.replace(FIXTURE_MODULE_IMPORT, JSON.stringify(options.moduleSpecifier))
+  }
+  // Bare runtime specifiers cannot self-reference from virtual-module
+  // importers: source-mode copies redirect the package prefix into the
+  // repository tree, while the installed-package tarball test keeps
+  // exports-map resolution.
+  if (options.moduleSpecifier !== '@teages/nitro-drizzle') {
+    config = config.replace(
+      FIXTURE_RUNTIME_ALIAS,
+      `  alias: { '@teages/nitro-drizzle/runtime': ${JSON.stringify(join(repoRoot, 'src/runtime'))} },`,
+    )
+  }
+  await writeFile(configFile, config)
 }
 
 /**
