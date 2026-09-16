@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createStudioHostGate, studioRequestHost } from '../../../src/studio/runtime/host-gate'
+import { createStudioHostGate, studioRequestHost } from '../../../src/runtime/studio/host-gate'
 
 const STUDIO_URL = 'https://local.drizzle.studio'
 const STUDIO_DOMAIN = '6f9c9e22-c1dc-4c76-93e2-076b8f4c4a65.localhost'

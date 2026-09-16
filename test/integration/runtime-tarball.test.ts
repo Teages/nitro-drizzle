@@ -132,10 +132,10 @@ describe('published runtime entries in Nitro dev', () => {
     for (const entry of [
       'index',
       'config',
-      'configuration/runtime/connection',
-      'runtime/plugin',
-      'studio/runtime/middleware',
-      'studio/runtime/handler',
+      'runtime/configuration/connection',
+      'runtime/plugins/drizzle',
+      'runtime/middleware/studio-gate',
+      'runtime/routes/_drizzle/studio',
     ]) {
       await access(join(packageDir, 'dist', `${entry}.mjs`))
     }

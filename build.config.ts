@@ -17,11 +17,11 @@ export default defineBuildConfig({
     {
       type: 'bundle',
       input: [
-        './src/configuration/runtime/connection.ts',
-        './src/runtime/gate.ts',
-        './src/runtime/plugin.ts',
-        './src/studio/runtime/middleware.ts',
-        './src/studio/runtime/handler.ts',
+        './src/runtime/configuration/connection.ts',
+        './src/runtime/middleware/drizzle-gate.ts',
+        './src/runtime/middleware/studio-gate.ts',
+        './src/runtime/plugins/drizzle.ts',
+        './src/runtime/routes/_drizzle/studio.ts',
       ],
       dts: false,
     },

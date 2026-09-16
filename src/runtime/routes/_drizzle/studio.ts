@@ -1,8 +1,8 @@
 import { defineHandler, getQuery, getRequestURL, HTTPError, redirect } from 'nitro/h3'
 import { useDrizzle } from '#drizzle'
 import { drizzleConfig } from '#drizzle/config'
-import { createStudioExecutor } from './adapters'
-import { handleStudioProtocol, studioCorsHeaders, studioDevtoolsRedirect, validateStudioAuthorization } from './protocol'
+import { createStudioExecutor } from '../../studio/adapters'
+import { handleStudioProtocol, studioCorsHeaders, studioDevtoolsRedirect, validateStudioAuthorization } from '../../studio/protocol'
 
 export default defineHandler(async (event) => {
   // The redirect must point the iframe's browser at a port it can reach: the

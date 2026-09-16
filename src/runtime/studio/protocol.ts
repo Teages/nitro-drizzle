@@ -2,7 +2,7 @@ import type { DrizzleDialect, DrizzleLocalDriver } from '../../types'
 import type { StudioExecutor, StudioQuery } from './adapters'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
-import { studioLink } from '../link'
+import { studioLink } from '../../studio/link'
 
 /** Protocol version the Studio web app accepts (6 … 6.3). */
 const STUDIO_PROTOCOL_VERSION = '6.3'

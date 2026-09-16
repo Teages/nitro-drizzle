@@ -271,7 +271,7 @@ describe('@teages/nitro-drizzle', () => {
 
     // And — the dev plugin is registered
     expect(nitro.options.plugins).toContainEqual(
-      expect.stringContaining('runtime/plugin'),
+      expect.stringContaining('runtime/plugins/drizzle'),
     )
     expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle')
     await nitro.close()
@@ -425,7 +425,7 @@ describe('@teages/nitro-drizzle', () => {
     // config hook fires for the real database too, only setup/seed are
     // dev-mock only
     expect(nitro.options.plugins).toContainEqual(
-      expect.stringContaining('runtime/plugin'),
+      expect.stringContaining('runtime/plugins/drizzle'),
     )
     await nitro.close()
   })

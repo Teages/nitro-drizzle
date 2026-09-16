@@ -113,14 +113,14 @@ describe('package surface', () => {
     // dist-determining locations plus the five runtime entries
     expect([...entries].sort()).toEqual([
       './src/config.ts',
-      './src/configuration/runtime/connection.ts',
       './src/devtool.ts',
       './src/index.ts',
       './src/nuxt.ts',
-      './src/runtime/gate.ts',
-      './src/runtime/plugin.ts',
-      './src/studio/runtime/handler.ts',
-      './src/studio/runtime/middleware.ts',
+      './src/runtime/configuration/connection.ts',
+      './src/runtime/middleware/drizzle-gate.ts',
+      './src/runtime/middleware/studio-gate.ts',
+      './src/runtime/plugins/drizzle.ts',
+      './src/runtime/routes/_drizzle/studio.ts',
       './src/types.ts',
     ])
     for (const input of entries) {
@@ -175,25 +175,25 @@ describe('runtime wiring', () => {
     // its host-gating middleware, and every registered plugin, handler, and
     // route exists on disk
     const registered = nitro.options.plugins.find(plugin =>
-      plugin.replaceAll('\\', '/').endsWith('runtime/plugin'))
-    expect(registered, 'runtime/plugin must be registered').toBeDefined()
+      plugin.replaceAll('\\', '/').endsWith('runtime/plugins/drizzle'))
+    expect(registered, 'runtime/plugins/drizzle must be registered').toBeDefined()
     for (const plugin of nitro.options.plugins) {
       expect(moduleFileExists(plugin), `${plugin} must resolve to a file`).toBe(true)
     }
     const rootMiddlewares = nitro.options.handlers.filter(handler =>
       handler.route === '/**' && handler.middleware === true)
     const readyGate = rootMiddlewares.find(handler =>
-      handler.handler.replaceAll('\\', '/').endsWith('runtime/gate'))
-    expect(readyGate, 'runtime/gate middleware must be registered').toBeDefined()
+      handler.handler.replaceAll('\\', '/').endsWith('runtime/middleware/drizzle-gate'))
+    expect(readyGate, 'runtime/middleware/drizzle-gate must be registered').toBeDefined()
     const studioGate = rootMiddlewares.find(handler =>
-      handler.handler.replaceAll('\\', '/').endsWith('studio/runtime/middleware'))
-    expect(studioGate?.handler.replaceAll('\\', '/')).toMatch(/studio\/runtime\/middleware$/)
+      handler.handler.replaceAll('\\', '/').endsWith('runtime/middleware/studio-gate'))
+    expect(studioGate?.handler.replaceAll('\\', '/')).toMatch(/runtime\/middleware\/studio-gate$/)
     expect(moduleFileExists(studioGate?.handler ?? '')).toBe(true)
     const studioRoute = nitro.options.routes[STUDIO_ROUTE]
     if (typeof studioRoute === 'string' || studioRoute === undefined) {
       throw new Error(`Expected ${STUDIO_ROUTE} to be a handler object.`)
     }
-    expect(studioRoute.handler.replaceAll('\\', '/')).toMatch(/studio\/runtime\/handler$/)
+    expect(studioRoute.handler.replaceAll('\\', '/')).toMatch(/runtime\/routes\/_drizzle\/studio$/)
     expect(moduleFileExists(studioRoute.handler)).toBe(true)
 
     // And — the externalization escapes survive any file move
@@ -215,7 +215,7 @@ describe('dev-database lifecycle hooks', () => {
     // typechecks both sides against each other, and this pins drift
     // immediately instead of after the declarations regenerate.
     const generated = createRuntimeHooksDeclaration('postgres-js')
-    const plugin = await readFile('src/runtime/plugin.ts', 'utf8')
+    const plugin = await readFile('src/runtime/plugins/drizzle.ts', 'utf8')
 
     // Then — every hook the plugin fires is declared for consumers
     expect(generated).toContain(

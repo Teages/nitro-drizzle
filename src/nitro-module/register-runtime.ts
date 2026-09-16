@@ -13,8 +13,8 @@ function runtimeEntry(path: string): string {
   // actually holds the runtime entries instead of assuming one layout.
   let dir = import.meta.dirname
   while (
-    !existsSync(resolve(dir, 'runtime/plugin.mjs'))
-    && !existsSync(resolve(dir, 'runtime/plugin.ts'))
+    !existsSync(resolve(dir, 'runtime/plugins/drizzle.mjs'))
+    && !existsSync(resolve(dir, 'runtime/plugins/drizzle.ts'))
   ) {
     if (dir === resolve(dir, '..')) {
       throw new Error(`Could not locate the ${PACKAGE_NAME} runtime entries from ${import.meta.dirname}.`)
@@ -43,7 +43,7 @@ export function configureRuntime(nitro: Nitro): void {
     nitro.options.traceDeps.push('drizzle-orm*')
   }
   nitro.options.plugins.push(
-    runtimeEntry('runtime/plugin'),
+    runtimeEntry('runtime/plugins/drizzle'),
   )
   // Nitro swallows request-hook rejections: this middleware is what turns a
   // failed drizzle initialization into failed requests instead of routing
@@ -51,13 +51,13 @@ export function configureRuntime(nitro: Nitro): void {
   nitro.options.handlers.push({
     route: '/**',
     middleware: true,
-    handler: runtimeEntry('runtime/gate'),
+    handler: runtimeEntry('runtime/middleware/drizzle-gate'),
   })
   // The generated `#drizzle/config` imports this path bare. Alias it to
   // the real entry in every build: bundlers otherwise resolve it from
   // node_modules, which works for installed consumers but externalizes the
   // import (and breaks the server at runtime) wherever that link is absent.
-  nitro.options.alias['@teages/nitro-drizzle/runtime/connection'] = runtimeEntry('configuration/runtime/connection')
+  nitro.options.alias['@teages/nitro-drizzle/runtime/connection'] = runtimeEntry('runtime/configuration/connection')
 }
 
 /** The auth key is baked in via `replace` — non-dev builds never get the route. */
@@ -79,9 +79,9 @@ export function configureStudioRuntime(nitro: Nitro): void {
   nitro.options.handlers.push({
     route: '/**',
     middleware: true,
-    handler: runtimeEntry('studio/runtime/middleware'),
+    handler: runtimeEntry('runtime/middleware/studio-gate'),
   })
   nitro.options.routes[STUDIO_ROUTE] = {
-    handler: runtimeEntry('studio/runtime/handler'),
+    handler: runtimeEntry('runtime/routes/_drizzle/studio'),
   }
 }

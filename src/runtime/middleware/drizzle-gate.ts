@@ -1,5 +1,5 @@
 import { defineHandler } from 'nitro/h3'
-import { awaitDrizzleReady } from './lifecycle'
+import { awaitDrizzleReady } from '../lifecycle'
 
 /**
  * Nitro swallows request-hook rejections, so failed initialization would
