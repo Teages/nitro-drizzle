@@ -2,8 +2,8 @@ import { PGlite } from '@electric-sql/pglite'
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket'
 import postgres from 'postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { createDrizzleClient } from '../../src/database/client'
-import { applyFixtureMigrations, fixtureMigrationNames } from './fixtures'
+import { applyFixtureMigrations, fixtureMigrationNames, fixtureSchemaPath } from './fixtures'
+import { loadGeneratedClient } from './generated-client'
 
 describe('postgres-js driver integration', () => {
   // A real PostgreSQL wire server backed by an in-process PGlite instance,
@@ -32,16 +32,23 @@ describe('postgres-js driver integration', () => {
       connection: { url: `postgres://postgres@127.0.0.1:${port}/postgres` },
     } as const
     const migrations = await fixtureMigrationNames('postgresql')
+    const client = await loadGeneratedClient({
+      config,
+      schemaPath: fixtureSchemaPath('postgresql'),
+    })
+    try {
+      // When migrations are applied twice through drizzle-orm's own migrator
+      await applyFixtureMigrations(client.useDrizzle().db, 'postgres-js', 'postgresql')
+      await applyFixtureMigrations(client.useDrizzle().db, 'postgres-js', 'postgresql')
 
-    // When migrations are applied twice through drizzle-orm's own migrator
-    await applyFixtureMigrations(config, 'postgresql')
-    await applyFixtureMigrations(config, 'postgresql')
-
-    // Then a write through the generated client executor lands in the database
-    // and every migration is recorded exactly once
-    const client = await createDrizzleClient(config)
-    await client.execute(`INSERT INTO counts (id, title) VALUES ('driver-row', 'integration')`)
-    await client.close()
+      // Then a write through the generated client lands in the database
+      // and every migration is recorded exactly once
+      await client.execute(`INSERT INTO counts (id, title) VALUES ('driver-row', 'integration')`)
+    }
+    finally {
+      await client.close()
+      await client.dispose()
+    }
 
     const verify = postgres(`postgres://postgres@127.0.0.1:${port}/postgres`)
     try {

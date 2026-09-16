@@ -1,8 +1,8 @@
 import type { DatabaseConnection } from '../../src/types'
 import { createConnection } from 'mysql2/promise'
 import { describe, expect, it } from 'vitest'
-import { createDrizzleClient } from '../../src/database/client'
-import { applyFixtureMigrations, fixtureMigrationNames } from './fixtures'
+import { applyFixtureMigrations, fixtureMigrationNames, fixtureSchemaPath } from './fixtures'
+import { loadGeneratedClient } from './generated-client'
 
 // Runs only when a MySQL endpoint is provided; CI wires a service container.
 // Locally: docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root
@@ -44,16 +44,23 @@ describe.skipIf(mysql === undefined)('mysql2 driver integration', () => {
       connection: mysql!.connection,
     } as const
     const migrations = await fixtureMigrationNames('mysql')
+    const client = await loadGeneratedClient({
+      config,
+      schemaPath: fixtureSchemaPath('mysql'),
+    })
+    try {
+      // When migrations are applied twice through drizzle-orm's own migrator
+      await applyFixtureMigrations(client.useDrizzle().db, 'mysql2', 'mysql')
+      await applyFixtureMigrations(client.useDrizzle().db, 'mysql2', 'mysql')
 
-    // When migrations are applied twice through drizzle-orm's own migrator
-    await applyFixtureMigrations(config, 'mysql')
-    await applyFixtureMigrations(config, 'mysql')
-
-    // Then a write through the generated client executor lands in the database
-    // and every migration is recorded exactly once
-    const client = await createDrizzleClient(config)
-    await client.execute(`INSERT INTO counts (id, title) VALUES ('driver-row', 'integration')`)
-    await client.close()
+      // Then a write through the generated client lands in the database
+      // and every migration is recorded exactly once
+      await client.execute(`INSERT INTO counts (id, title) VALUES ('driver-row', 'integration')`)
+    }
+    finally {
+      await client.close()
+      await client.dispose()
+    }
 
     const verify = await createConnection(mysql!.url)
     try {
