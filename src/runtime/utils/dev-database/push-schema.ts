@@ -12,13 +12,29 @@ type PushSchema = (
   apply: () => Promise<void>
 }>
 
+/**
+ * Indirection keeps the bundler from folding the specifier back to a literal
+ * (rolldown constant-propagates ternaries/assignments, which would make it
+ * resolve `drizzle-kit` at build time — see `loadPushSchema`).
+ */
+function importKitModule(specifier: string): Promise<unknown> {
+  return import(/* @vite-ignore */ specifier)
+}
+
 async function loadPushSchema(dialect: DevDialect): Promise<PushSchema> {
-  if (dialect === 'postgresql') {
-    const api = await import('drizzle-kit/api-postgres')
-    return api.pushSchema as PushSchema
+  // The specifier must stay opaque to the bundler. A literal here makes
+  // rolldown follow `drizzle-kit` into the server bundle graph: its
+  // all-dialect entries reference every optional driver peer (@aws-sdk/*,
+  // mysql2, @libsql/client, ...) through `__vite-optional-peer-dep` stubs,
+  // and the build dies on their missing exports. drizzle-kit is only ever
+  // imported at runtime, when the dev database is actually active.
+  const specifier = dialect === 'postgresql'
+    ? 'drizzle-kit/api-postgres'
+    : 'drizzle-kit/payload/sqlite'
+  const api = (await importKitModule(specifier)) as {
+    pushSchema: PushSchema
   }
-  const api = await import('drizzle-kit/payload/sqlite')
-  return api.pushSchema as PushSchema
+  return api.pushSchema
 }
 
 type MaybePromise<T> = T | Promise<T>
