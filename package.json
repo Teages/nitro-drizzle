@@ -32,7 +32,8 @@
       "types": "./dist/devtool.d.mts",
       "import": "./dist/devtool.mjs",
       "default": "./dist/devtool.mjs"
-    }
+    },
+    "./runtime/*": "./dist/runtime/*.mjs"
   },
   "module": "./dist/index.mjs",
   "typesVersions": {
@@ -65,8 +66,8 @@
     "dev:prepare": "pnpm -F './playgrounds/*' prepare",
     "dev": "pnpm -C playgrounds/nitro dev",
     "dev:nuxt": "pnpm -C playgrounds/nuxt dev",
-    "lint": "eslint --cache .",
-    "lint:fix": "eslint --cache --fix .",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "prepack": "pnpm build",
     "test": "pnpm lint && pnpm typecheck && vitest run --coverage --project unit",
     "test:integration": "vitest run --project integration",
@@ -103,6 +104,7 @@
     "@nuxt/schema": "npm:@nuxt/schema-nightly@5.0.0-29809985.0842efa1",
     "@tsconfig/node24": "^24.0.5",
     "@types/better-sqlite3": "^9.6.0",
+    "@types/bun": "^1.4.2",
     "@types/node": "^24.12.4",
     "@typescript/native": "npm:typescript@^7.0.2",
     "@vitejs/devtools-kit": "^0.6.2",

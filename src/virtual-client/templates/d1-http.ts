@@ -1,12 +1,12 @@
 import type { SourceImports } from './helpers'
-import { lazyUseDrizzleSource, USE_CONNECTION_IMPORT } from './helpers'
+import { lazyClientSource, USE_CONNECTION_IMPORT } from './helpers'
 
 /**
  * d1-http talks to the Cloudflare API over HTTP, so credentials come from
  * runtime config and are validated on first use instead of module load.
  */
 export function d1HttpSource(imports: SourceImports): string {
-  return lazyUseDrizzleSource(
+  return lazyClientSource(
     { ...imports, extras: [USE_CONNECTION_IMPORT] },
     `  const { accountId, apiToken, databaseId } = useDrizzleConnection()
   if (!accountId || !apiToken || !databaseId) {

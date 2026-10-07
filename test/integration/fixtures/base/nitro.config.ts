@@ -5,6 +5,7 @@ export default defineConfig({
   modules: [NitroDrizzle],
   serverDir: './server',
   buildDir: './.nitro',
+  // %RUNTIME_ALIAS%
 
   // use createNitro to config it
   // drizzle: {},

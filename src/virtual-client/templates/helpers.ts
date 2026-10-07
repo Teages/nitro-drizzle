@@ -60,17 +60,55 @@ export function sourceHeader(imports: SourceImports): string {
 
 /**
  * Process-level lazy singleton: `initDrizzle` runs on the first
- * `useDrizzle()` call so credentials resolve from runtime config and
- * environment variables at request time, not at module evaluation.
+ * `useDrizzle()` call.
  *
- * `mock` marks the dev-baked variant — the module only exists in a session
- * that activated the dev database, so `mockDb` carries the same instance as
- * `db`. Runtime-resolved sources pass nothing and expose `mockDb: undefined`.
+ * `mock` marks the dev-baked variant: `mockDb` carries the same instance as
+ * `db`; runtime-resolved sources expose `mockDb: undefined`.
+ *
+ * Both variants construct through a memoized `drizzleConfig()` — the body is
+ * the drizzle config object literal for dev sources, statements returning it
+ * for runtime sources — so the runtime plugin can run the single config
+ * object through the `drizzle:config` hook before the first construction.
  */
 export function lazyUseDrizzleSource(
   imports: SourceImports,
-  initBody: string,
+  body: string,
   mock?: boolean,
+): string {
+  const built = mock === true
+    ? `return _config ??= ${body}`
+    : `return _config ??= (() => {
+${body}
+  })()`
+  return `${sourceHeader(imports)}
+
+let _db = null
+
+let _config
+
+/** Internal to the runtime plugin. */
+export function drizzleConfig() {
+  ${built}
+}
+
+function initDrizzle() {
+  return drizzle(drizzleConfig())
+}
+
+export function useDrizzle() {
+  _db ??= initDrizzle()
+  return { db: _db, schema, relations, mockDb: ${mock === true ? '_db' : 'undefined'} }
+}
+`
+}
+
+/**
+ * Lazy singleton for sources that construct from a client instead of a
+ * config object: no config hook applies.
+ */
+export function lazyClientSource(
+  imports: SourceImports,
+  initBody: string,
 ): string {
   return `${sourceHeader(imports)}
 
@@ -82,7 +120,7 @@ ${initBody}
 
 export function useDrizzle() {
   _db ??= initDrizzle()
-  return { db: _db, schema, relations, mockDb: ${mock === true ? '_db' : 'undefined'} }
+  return { db: _db, schema, relations, mockDb: undefined }
 }
 `
 }

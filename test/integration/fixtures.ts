@@ -5,9 +5,8 @@ import type { MySql2Database } from 'drizzle-orm/mysql2'
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite'
 import type { PgliteDatabase } from 'drizzle-orm/pglite'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
-import type { ResolvedDrizzleConfig } from '../../src/configuration/resolve'
-import type { OpaqueDrizzleDatabase } from '../../src/database/drizzle'
 import type { DrizzleDriver } from '../../src/types'
+import type { OpaqueDrizzleDatabase } from './generated-client'
 import { cp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,15 +16,20 @@ import { migrate as migrateMysql2 } from 'drizzle-orm/mysql2/migrator'
 import { migrate as migrateNodeSqlite } from 'drizzle-orm/node-sqlite/migrator'
 import { migrate as migratePglite } from 'drizzle-orm/pglite/migrator'
 import { migrate as migratePostgresJs } from 'drizzle-orm/postgres-js/migrator'
-import { createDrizzleClient } from '../../src/database/client'
 
 export type IntegrationDialect = 'sqlite' | 'postgresql' | 'mysql'
 
 /** The committed Nitro app every integration test migrates, builds, or runs. */
 const fixtureRoot = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'base')
 
+/** Repository root, for source-mode redirects into the package source tree. */
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../..')
+
 /** How the fixture config imports the module from the repository source. */
 const FIXTURE_MODULE_IMPORT = `'../../../../src/index'`
+
+/** Fixture-config placeholder replaced with the source-mode runtime redirect. */
+const FIXTURE_RUNTIME_ALIAS = '  // %RUNTIME_ALIAS%'
 
 /** Generated output that never belongs in a copy of the fixture app. */
 const generatedEntries = new Set(['.nitro', '.data', '.output', 'dist', 'node_modules'])
@@ -60,15 +64,22 @@ export async function copyFixture(
     recursive: true,
     filter: source => !generatedEntries.has(basename(source)),
   })
-  if (options.moduleSpecifier === undefined) {
-    return
-  }
   const configFile = join(rootDir, 'nitro.config.ts')
-  const config = await readFile(configFile, 'utf8')
-  await writeFile(
-    configFile,
-    config.replace(FIXTURE_MODULE_IMPORT, JSON.stringify(options.moduleSpecifier)),
-  )
+  let config = await readFile(configFile, 'utf8')
+  if (options.moduleSpecifier !== undefined) {
+    config = config.replace(FIXTURE_MODULE_IMPORT, JSON.stringify(options.moduleSpecifier))
+  }
+  // Bare runtime specifiers cannot self-reference from virtual-module
+  // importers: source-mode copies redirect the package prefix into the
+  // repository tree, while the installed-package tarball test keeps
+  // exports-map resolution.
+  if (options.moduleSpecifier !== '@teages/nitro-drizzle') {
+    config = config.replace(
+      FIXTURE_RUNTIME_ALIAS,
+      `  alias: { '@teages/nitro-drizzle/runtime': ${JSON.stringify(join(repoRoot, 'src/runtime'))} },`,
+    )
+  }
+  await writeFile(configFile, config)
 }
 
 /**
@@ -108,18 +119,21 @@ async function migrateForDriver(
   }
 }
 
-/** Applies the fixture's migrations for `dialect` through the client under test. */
+/** Absolute path of the fixture schema entry for `dialect`. */
+export function fixtureSchemaPath(dialect: IntegrationDialect): string {
+  return join(fixtureRoot, 'server/db', `schema.${dialect}.ts`)
+}
+
+/**
+ * Applies the fixture's migrations for `dialect` through the generated
+ * client's database. The caller owns the client lifecycle.
+ */
 export async function applyFixtureMigrations(
-  config: ResolvedDrizzleConfig,
+  db: OpaqueDrizzleDatabase,
+  driver: DrizzleDriver,
   dialect: IntegrationDialect,
 ): Promise<void> {
-  const client = await createDrizzleClient(config)
-  try {
-    await migrateForDriver(config.driver, client.db, {
-      migrationsFolder: fixtureMigrationsFolder(dialect),
-    })
-  }
-  finally {
-    await client.close()
-  }
+  await migrateForDriver(driver, db, {
+    migrationsFolder: fixtureMigrationsFolder(dialect),
+  })
 }

@@ -226,6 +226,11 @@ export default defineConfig({
   serverDir: './server',
   devServer: { port: ${httpPort} },
   modules: [NitroDrizzle],
+  // Bare runtime specifiers cannot self-reference from virtual-module
+  // importers; source checkouts redirect the package prefix to src
+  alias: {
+    '@teages/nitro-drizzle/runtime': ${JSON.stringify(resolve(repoRoot, 'src/runtime'))},
+  },
   drizzle: {
     dialect: 'sqlite',
     driver: 'libsql',

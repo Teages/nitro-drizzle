@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { promisify } from 'node:util'
+import Database from 'better-sqlite3'
 import { afterEach, describe, expect, it } from 'vitest'
 import { copyFixture } from './fixtures'
 import { packRepository } from './pack'
@@ -45,6 +46,25 @@ async function waitForJson(url: string, output: () => string): Promise<unknown> 
       const response = await fetch(url)
       if (response.ok) {
         return await response.json()
+      }
+      lastError = new Error(`${url} responded with HTTP ${response.status}`)
+    }
+    catch (error) {
+      lastError = error
+    }
+    await new Promise(resolve => setTimeout(resolve, 250))
+  }
+  throw new Error(`${String(lastError)}\n${output()}`)
+}
+
+async function waitForStatus(url: string, status: number, output: () => string): Promise<void> {
+  const deadline = Date.now() + 90_000
+  let lastError: unknown = new Error(`Timed out waiting for ${url} to answer HTTP ${status}`)
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url)
+      if (response.status === status) {
+        return
       }
       lastError = new Error(`${url} responded with HTTP ${response.status}`)
     }
@@ -112,10 +132,11 @@ describe('published runtime entries in Nitro dev', () => {
     for (const entry of [
       'index',
       'config',
-      'configuration/runtime/connection',
-      'dev-database/runtime/plugin',
-      'studio/runtime/middleware',
-      'studio/runtime/handler',
+      'runtime/utils/configuration/connection',
+      'runtime/utils/configuration/env',
+      'runtime/plugins/drizzle',
+      'runtime/middleware/studio-gate',
+      'runtime/routes/_drizzle/studio',
     ]) {
       await access(join(packageDir, 'dist', `${entry}.mjs`))
     }
@@ -142,9 +163,14 @@ describe('published runtime entries in Nitro dev', () => {
     // count proves the whole chain: installed runtime, dev database, schema
     // push, and the app's seed hook.
 
-    // When Nitro dev starts from the installed package
+    // When Nitro dev starts from the installed package, with the config hook
+    // redirecting the dev database at a probe file
     const devPort = await reservePort()
-    const dev = await startNitroDev(rootDir, devPort)
+    const probeFile = join(rootDir, 'config-hook.db')
+    const dev = await startNitroDev(rootDir, devPort, {
+      ...process.env,
+      DEV_MOCK_DATABASE_FILE: probeFile,
+    })
     await expect(
       waitForJson(`http://127.0.0.1:${devPort}/api/count`, dev.output),
     ).resolves.toEqual({ count: 1 })
@@ -153,6 +179,22 @@ describe('published runtime entries in Nitro dev', () => {
     await expect(
       waitForJson(`http://127.0.0.1:${devPort}/api/mock-db`, dev.output),
     ).resolves.toEqual({ mocked: true, same: true })
+    // And the setup hook ran against that same dev database before the push
+    await expect(
+      waitForJson(`http://127.0.0.1:${devPort}/api/setup`, dev.output),
+    ).resolves.toEqual({ userVersion: 42 })
+    // And the rewritten connection took effect: the probe file carries the
+    // pushed schema and the setup marker
+    const probe = new Database(probeFile)
+    try {
+      expect(
+        probe.prepare('SELECT name FROM sqlite_master WHERE type = \'table\' AND name = \'counts\'').all(),
+      ).toHaveLength(1)
+      expect(probe.prepare('PRAGMA user_version').get()).toEqual({ user_version: 42 })
+    }
+    finally {
+      probe.close()
+    }
 
     // Then #drizzle resolves inside the consumer graph
     const devBundle = await readFile(
@@ -161,5 +203,23 @@ describe('published runtime entries in Nitro dev', () => {
     )
     expect(devBundle).not.toMatch(/from\s+["']#drizzle["']/)
     await stop(dev.child)
+
+    // And a failed config hook fails requests instead of routing into
+    // handlers with an uninitialized client: Nitro swallows request-hook
+    // rejections, so the ready-gate middleware is what turns the failure
+    // into a 500
+    const failPort = await reservePort()
+    const failing = await startNitroDev(rootDir, failPort, {
+      ...process.env,
+      DEV_MOCK_CONFIG_FAIL: '1',
+    })
+    try {
+      await expect(
+        waitForStatus(`http://127.0.0.1:${failPort}/api/count`, 500, failing.output),
+      ).resolves.toBeUndefined()
+    }
+    finally {
+      await stop(failing.child)
+    }
   })
 })

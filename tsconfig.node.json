@@ -3,8 +3,9 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "types": ["node"],
     "noEmit": true
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "*.ts"],
-  "exclude": ["src/*/runtime/**/*.ts", "test/integration/fixtures"]
+  "exclude": ["src/runtime/**/*.ts", "test/integration/fixtures"]
 }

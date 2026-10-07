@@ -1,7 +1,7 @@
 import type { ResolvedDrizzleConfig } from '../configuration/resolve'
 import type { DrizzleDriver } from '../types'
 import type { DevClientConnection, SourceImports } from './templates/helpers'
-import { resolveDriverAdapterPath } from '../database/registry'
+import { resolveDriverAdapterPath } from './registry'
 import { d1Source } from './templates/d1'
 import { d1HttpSource } from './templates/d1-http'
 import { libsqlSource } from './templates/libsql'

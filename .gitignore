@@ -4,8 +4,8 @@ dist
 .nitro
 .output
 .DS_Store
-.eslintcache
 *.log*
 *.env*
 *.db
 *.tsbuildinfo
+/.test-*
