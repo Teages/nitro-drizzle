@@ -128,10 +128,12 @@ describe('@teages/nitro-drizzle/nuxt', () => {
     const { hooks, alias, templates, buildDir } = await setupModule(VALID_DRIZZLE, false)
     const typesDir = join(buildDir, 'drizzle')
 
-    // Then — the browser alias resolves to the gate template on disk, whose
-    // only export is a useDrizzle that throws
-    expect(alias['#drizzle']).toBe(`${buildDir}/app-drizzle-gate.mjs`)
-    const gate = templates.find(template => template.filename === 'app-drizzle-gate.mjs')
+    // Then — the browser alias resolves to the gate DIRECTORY on disk, whose
+    // only export is a useDrizzle that throws. A directory target (not a
+    // file) keeps `#drizzle/*` subpath resolution a plain ENOENT for nitro's
+    // server import-graph scanner instead of an ENOTDIR crash.
+    expect(alias['#drizzle']).toBe(`${buildDir}/app-drizzle-gate`)
+    const gate = templates.find(template => template.filename === 'app-drizzle-gate/index.mjs')
     expect(gate?.getContents).toBeTypeOf('function')
     expect(await gate?.getContents?.({} as never)).toContain('throw new Error')
 

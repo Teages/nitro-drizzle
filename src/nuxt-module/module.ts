@@ -96,11 +96,19 @@ export default defineNuxtModule<DrizzleOptions>({
     // Nitro's real virtual before this alias (resolve order "pre"). The alias
     // must be the template's absolute `dst` — a `#build/...` value would land
     // verbatim in the app tsconfig paths, which rejects non-relative paths.
-    const appGate = addTemplate({
-      filename: 'app-drizzle-gate.mjs',
+    //
+    // The target is a DIRECTORY (`app-drizzle-gate/index.mjs`), not a file:
+    // Nitro's server import-graph scanner resolves `#drizzle/*` specifiers
+    // through this alias before nitro virtuals, so with a file target a
+    // subpath like `#drizzle/config` becomes `<file>/config`, and lstat
+    // throws ENOTDIR — a crash `try: true` does not swallow. With a
+    // directory target every subpath either resolves or fails with plain
+    // ENOENT, which resolvers treat as "unavailable in client".
+    addTemplate({
+      filename: 'app-drizzle-gate/index.mjs',
       write: true,
       getContents: () => 'export function useDrizzle() { throw new Error(\'Drizzle is not available in client\') }',
     })
-    nuxt.options.alias['#drizzle'] = appGate.dst
+    nuxt.options.alias['#drizzle'] = join(nuxt.options.buildDir, 'app-drizzle-gate')
   },
 })
