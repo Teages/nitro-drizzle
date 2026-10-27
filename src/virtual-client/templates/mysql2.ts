@@ -30,7 +30,7 @@ export function mysql2Source(options: Mysql2SourceOptions): string {
 ${requestBindingHelpers()}
 
 function createDb(binding) {
-  return drizzle({ connection: binding.connectionString, schema, relations })
+  return drizzle({ connection: binding.connectionString, relations })
 }
 
 export function useDrizzle() {
@@ -46,7 +46,6 @@ export function useDrizzle() {
         `  ${CONNECTION_OPTIONS_DESTRUCTURE}
   return {
     connection: url || connectionString || clientOptions,
-    schema,
     relations,
   }`,
       )

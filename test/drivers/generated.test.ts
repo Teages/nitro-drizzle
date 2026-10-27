@@ -18,12 +18,17 @@ const endpoint = `https://api.cloudflare.com/client/v4/accounts/${credentials.ac
 interface ProxyDatabase {
   readonly run: (query: unknown) => Promise<unknown>
   readonly get: (query: unknown) => Promise<unknown>
+  readonly all: (query: unknown) => Promise<unknown>
 }
 
-function d1Response(rows: readonly unknown[]): Response {
+/**
+ * The Cloudflare D1 raw endpoint answers with positional rows plus a
+ * separate column-name list (see the D1 HTTP API reference).
+ */
+function d1Response(columns: readonly string[], rows: readonly unknown[][]): Response {
   return Response.json({
     success: true,
-    result: [{ success: true, results: { rows } }],
+    result: [{ success: true, results: { columns, rows } }],
   })
 }
 
@@ -129,14 +134,16 @@ describe('generated d1-http client', () => {
       config: { dialect: 'sqlite', driver: 'd1-http', connection: credentials },
       schemaPath: fixtureSchemaPath('sqlite'),
     })
-    const fetchStub = stubFetch(() => d1Response([{ id: 'driver-row', title: 'integration' }]))
+    const fetchStub = stubFetch(() => d1Response(['id', 'title'], [['driver-row', 'integration']]))
     vi.stubGlobal('fetch', fetchStub)
     const { db } = client.useDrizzle()
 
     // When
     const row = await (db as unknown as ProxyDatabase).get(sql.raw('SELECT id, title FROM counts'))
 
-    // Then — the query reached the per-account, per-database raw endpoint
+    // Then — the query reached the per-account, per-database raw endpoint,
+    // and the positional D1 rows were zipped into an object for the
+    // object rowMode a raw get() requests
     expect(fetchStub.calls).toHaveLength(1)
     expect(fetchStub.calls[0].input).toBe(endpoint)
     expect(fetchStub.calls[0].init?.headers).toMatchObject({
@@ -148,6 +155,35 @@ describe('generated d1-http client', () => {
       params: [],
     })
     expect(row).toEqual({ id: 'driver-row', title: 'integration' })
+    await client.dispose()
+  })
+
+  it('maps positional D1 rows onto the schema for a table select', async () => {
+    // Given the d1-http client and a stubbed API answering one row
+    const client = await loadGeneratedClient({
+      config: { dialect: 'sqlite', driver: 'd1-http', connection: credentials },
+      schemaPath: fixtureSchemaPath('sqlite'),
+    })
+    const fetchStub = stubFetch(() => d1Response(['id', 'title'], [['mapped-row', 'mapped title']]))
+    vi.stubGlobal('fetch', fetchStub)
+    // The test loader types the client opaquely; the select goes through the
+    // real drizzle database methods
+    const { db, schema } = client.useDrizzle() as unknown as {
+      db: {
+        select: () => {
+          from: (table: unknown) => Promise<Array<Record<string, unknown>>>
+        }
+      }
+      schema: { counts: unknown }
+    }
+
+    // When — a table select runs through drizzle's positional mapper
+    const rows = await db.select().from(schema.counts)
+
+    // Then — the executor passed the raw row arrays through (array rowMode)
+    // and drizzle rebuilt the records by column position
+    expect(fetchStub.calls).toHaveLength(1)
+    expect(rows).toEqual([{ id: 'mapped-row', title: 'mapped title' }])
     await client.dispose()
   })
 

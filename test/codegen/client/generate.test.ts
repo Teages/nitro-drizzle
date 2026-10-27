@@ -305,7 +305,7 @@ describe('generateVirtualClientSource dev database', () => {
 
     // Then — the baked config omits the connection entirely, and init
     // builds from whatever the memoized config carries
-    expect(source).toContain('_config ??= {\n    schema,\n    relations,\n  }')
+    expect(source).toContain('_config ??= {\n    relations,\n  }')
     expect(source).toContain('drizzle(drizzleConfig())')
     expect(source).not.toContain('useRuntimeConfig')
   })

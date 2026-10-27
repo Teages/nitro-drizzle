@@ -6,7 +6,6 @@ export function libsqlSource(imports: SourceImports, dev?: DevClientConnection):
     dev: (imports, dev) =>
       lazyUseDrizzleSource(imports, `{
     connection: { url: ${quote(dev.connection ?? ':memory:')} },
-    schema,
     relations,
   }`, true),
     runtime: imports =>
@@ -16,7 +15,6 @@ export function libsqlSource(imports: SourceImports, dev?: DevClientConnection):
       url: connection.url,
       ...(connection.authToken ? { authToken: connection.authToken } : {}),
     },
-    schema,
     relations,
   }`),
   })

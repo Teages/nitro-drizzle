@@ -9,15 +9,13 @@ export function pgliteSource(imports: SourceImports, dev?: DevClientConnection):
 ${dev.connection === undefined
   ? ''
   : `    connection: ${quote(dev.connection)},
-`}    schema,
-    relations,
+`}    relations,
   }`, true)
     },
     runtime: imports =>
       lazyUseDrizzleSource(imports, `  const connection = useDrizzleConnection()
   return {
     connection: connection.dataDir || connection.url || connection.connectionString,
-    schema,
     relations,
   }`),
   })
