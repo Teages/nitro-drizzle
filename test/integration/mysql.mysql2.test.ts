@@ -30,13 +30,13 @@ const mysql = process.env.TEST_MYSQL_URL !== undefined
   : undefined
 
 describe.skipIf(mysql === undefined)('mysql2 driver integration', () => {
-  // Expected to fail: drizzle-orm 1.0.0-rc.4's mysql2 driver reads
-  // `client.config.supportBigNumbers` from the pool created via
+  // Was a known-red canary for drizzle-orm 1.0.0-rc.4: the mysql2 driver
+  // read `client.config.supportBigNumbers` from the pool created via
   // `drizzle({ connection })`, but mysql2's PromisePool exposes no `config`
-  // (https://github.com/drizzle-team/drizzle-orm/issues/5972). Passing a
-  // callback-style pool as `client` works; until that lands in create.ts and
-  // the mysql2 template, this stays a known-red canary.
-  it.fails('applies the fixture migrations, stays idempotent, and smoke-checks queries', async () => {
+  // (https://github.com/drizzle-team/drizzle-orm/issues/5972). rc.5 fixed
+  // the mistyped config read, so the connection-style construction works
+  // and this runs as a regular test.
+  it('applies the fixture migrations, stays idempotent, and smoke-checks queries', async () => {
     // Given the base fixture's MySQL migrations and a running MySQL server
     const config = {
       dialect: 'mysql',
