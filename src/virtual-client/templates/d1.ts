@@ -13,7 +13,7 @@ ${requestBindingHelpers()}
 export function useDrizzle() {
   const request = useRequestContext('DB')
   const binding = requireBinding(request.runtime.cloudflare.env.DB, 'DB')
-  request.context.__nitroDrizzleD1Db ??= drizzle(binding, { schema, relations })
+  request.context.__nitroDrizzleD1Db ??= drizzle(binding, { relations })
   return { db: request.context.__nitroDrizzleD1Db, schema, relations, mockDb: undefined }
 }
 `

@@ -37,7 +37,6 @@ function createDb(binding) {
   ${CONNECTION_OPTIONS_DESTRUCTURE}
   return drizzle({
     client: postgres(binding.connectionString, { ...options, prepare: options.prepare ?? false }),
-    schema,
     relations,
   })
 }
@@ -58,7 +57,6 @@ export function useDrizzle() {
       ...(url || connectionString ? { url: url || connectionString } : {}),
       ...options,
     },
-    schema,
     relations,
   }`,
       )

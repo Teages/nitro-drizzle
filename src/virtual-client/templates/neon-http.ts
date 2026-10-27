@@ -7,7 +7,6 @@ export function neonHttpSource(imports: SourceImports): string {
     `  const connection = useDrizzleConnection()
   return {
     connection: connection.url || connection.connectionString,
-    schema,
     relations,
   }`,
   )
