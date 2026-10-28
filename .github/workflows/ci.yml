@@ -25,9 +25,9 @@ jobs:
           --health-timeout=5s
           --health-retries=12
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: npm i -g corepack@latest && corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -38,7 +38,7 @@ jobs:
       - run: pnpm vitest run --project unit --coverage
       - uses: oven-sh/setup-bun@v2
       - run: pnpm test:bun
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v7
       - name: Integration tests (real databases)
         run: pnpm test:integration
         env:
