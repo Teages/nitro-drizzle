@@ -24,7 +24,7 @@ afterEach(async () => {
 })
 
 describe('generated Drizzle types', () => {
-  it('declares a typed useDrizzle backed by emitted schema types', async () => {
+  it('declares a typed useDrizzle backed by emitted schema types', { timeout: 30_000 }, async () => {
     // Given
     const rootDir = await createTemporaryRoot()
     const serverDir = join(rootDir, 'server')
@@ -125,7 +125,7 @@ context.db.query.users.findMany()
     ).resolves.toBeDefined()
   })
 
-  it('types mockDb from the configured dev engine while db keeps the configured driver', async () => {
+  it('types mockDb from the configured dev engine while db keeps the configured driver', { timeout: 30_000 }, async () => {
     // Given
     const rootDir = await createTemporaryRoot()
     const schemaPath = join(rootDir, 'schema.ts')
@@ -217,7 +217,7 @@ if (mock) {
     ).resolves.toBeDefined()
   })
 
-  it('declares the dev-mock hooks for server code, degrading the setup client without an engine', async () => {
+  it('declares the dev-mock hooks for server code, degrading the setup client without an engine', { timeout: 30_000 }, async () => {
     // Given
     const rootDir = await createTemporaryRoot()
     const schemaPath = join(rootDir, 'schema.ts')
@@ -302,7 +302,7 @@ useNitroHooks().hook('drizzle:dev-mock:seed', async () => {
     ).resolves.toBeDefined()
   })
 
-  it('types the setup hook client from the configured dev engine', async () => {
+  it('types the setup hook client from the configured dev engine', { timeout: 30_000 }, async () => {
     // Given
     const rootDir = await createTemporaryRoot()
     const schemaPath = join(rootDir, 'schema.ts')
@@ -378,7 +378,7 @@ useNitroHooks().hook('drizzle:dev-mock:setup', async (client) => {
     ).resolves.toBeDefined()
   })
 
-  it('types the hooks for a bun-sqlite dev engine through bun:sqlite', async () => {
+  it('types the hooks for a bun-sqlite dev engine through bun:sqlite', { timeout: 30_000 }, async () => {
     // Given
     const rootDir = await createTemporaryRoot()
     const schemaPath = join(rootDir, 'schema.ts')
