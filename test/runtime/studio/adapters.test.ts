@@ -37,9 +37,18 @@ async function seedPgUsers(executor: StudioExecutor): Promise<void> {
 }
 
 describe.each([
-  ['better-sqlite3', () => betterSqlite3Drizzle({ connection: ':memory:' })],
-  ['node-sqlite', () => nodeSqliteDrizzle({ connection: ':memory:' })],
-  ['libsql', () => libsqlDrizzle({ connection: ':memory:' })],
+  [
+    'better-sqlite3',
+    () => betterSqlite3Drizzle({ connection: ':memory:' }),
+  ],
+  [
+    'node-sqlite',
+    () => nodeSqliteDrizzle({ connection: ':memory:' }),
+  ],
+  [
+    'libsql',
+    () => libsqlDrizzle({ connection: ':memory:' }),
+  ],
 ] as const)('sqlite studio executor (%s)', (engine, createDb) => {
   it('runs queries, reads rows in both modes, and shares params', async () => {
     // Given
@@ -60,8 +69,13 @@ describe.each([
       { id: 1, name: 'alice' },
       { id: 2, name: 'bob' },
     ])
-    expect(arrays).toEqual([[1, 'alice'], [2, 'bob']])
-    expect(named).toEqual([{ name: 'bob' }])
+    expect(arrays).toEqual([
+      [1, 'alice'],
+      [2, 'bob'],
+    ])
+    expect(named).toEqual([
+      { name: 'bob' },
+    ])
   })
 
   it('commits transactions and reports failures inside the results', async () => {
@@ -82,10 +96,16 @@ describe.each([
     const afterRollback = await executor.query({ sql: 'SELECT name FROM users WHERE id = 2', method: 'all' })
 
     // Then
-    expect(committed.at(-1)).toEqual([{ name: 'carol' }])
-    expect(afterCommit).toEqual([{ name: 'carol' }])
+    expect(committed.at(-1)).toEqual([
+      { name: 'carol' },
+    ])
+    expect(afterCommit).toEqual([
+      { name: 'carol' },
+    ])
     expect(rolled.at(-1)).toBeInstanceOf(Error)
-    expect(afterRollback).toEqual([{ name: 'bob' }])
+    expect(afterRollback).toEqual([
+      { name: 'bob' },
+    ])
   })
 
   it('converts binary params to buffers', async () => {
@@ -99,7 +119,10 @@ describe.each([
     // When
     await executor.query({
       sql: 'INSERT INTO blobs (id, data) VALUES (?, ?)',
-      params: [1, { type: 'binary', value: 'aGVsbG8=' }],
+      params: [
+        1,
+        { type: 'binary', value: 'aGVsbG8=' },
+      ],
       method: 'run',
     })
     const rows = await executor.query({ sql: 'SELECT data FROM blobs WHERE id = 1', method: 'all' })
@@ -118,7 +141,9 @@ describe.each([
     const rows = await executor.query({ sql: 'SELECT 1 AS x, 2 AS x', method: 'values', mode: 'array' })
 
     // Then
-    expect(rows).toEqual([[1, 2]])
+    expect(rows).toEqual([
+      [1, 2],
+    ])
   })
 })
 
@@ -140,8 +165,15 @@ describe('pglite studio executor', () => {
       { id: 1, name: 'alice' },
       { id: 2, name: 'bob' },
     ])
-    expect(arrays).toEqual([[1, 'alice'], [2, 'bob']])
-    expect(committed).toEqual([[{ total: 2 }]])
+    expect(arrays).toEqual([
+      [1, 'alice'],
+      [2, 'bob'],
+    ])
+    expect(committed).toEqual([
+      [
+        { total: 2 },
+      ],
+    ])
   })
 
   it('keeps date columns as raw strings instead of re-serialized Dates', async () => {
@@ -158,7 +190,9 @@ describe('pglite studio executor', () => {
     const rows = await executor.query({ sql: 'SELECT at FROM events', method: 'all' })
 
     // Then
-    expect(rows).toEqual([{ at: '2026-08-25 12:00:00' }])
+    expect(rows).toEqual([
+      { at: '2026-08-25 12:00:00' },
+    ])
   })
 })
 
@@ -178,7 +212,9 @@ describe('sqliteSyncExecutor node-sqlite fallback', () => {
     // exists and silently reshaping would return wrong data
     const executor = sqliteSyncExecutor({
       prepare: () => ({
-        all: () => [{ x: 2 }],
+        all: () => [
+          { x: 2 },
+        ],
         get: () => undefined,
         run: () => undefined,
       }),
@@ -195,6 +231,8 @@ describe('sqliteSyncExecutor node-sqlite fallback', () => {
     // And object-mode queries on the same statement still work
     await expect(executor.query({ sql: 'SELECT 2 AS x', method: 'all' }))
       .resolves
-      .toEqual([{ x: 2 }])
+      .toEqual([
+        { x: 2 },
+      ])
   })
 })

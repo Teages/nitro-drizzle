@@ -32,7 +32,13 @@ const FIXTURE_MODULE_IMPORT = `'../../../../src/index'`
 const FIXTURE_RUNTIME_ALIAS = '  // %RUNTIME_ALIAS%'
 
 /** Generated output that never belongs in a copy of the fixture app. */
-const generatedEntries = new Set(['.nitro', '.data', '.output', 'dist', 'node_modules'])
+const generatedEntries = new Set([
+  '.nitro',
+  '.data',
+  '.output',
+  'dist',
+  'node_modules',
+])
 
 export function fixtureMigrationsFolder(dialect: IntegrationDialect): string {
   return join(fixtureRoot, 'server/db/migrations', dialect)

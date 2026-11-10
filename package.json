@@ -59,7 +59,7 @@
     "dist"
   ],
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=26"
   },
   "scripts": {
     "build": "obuild",
@@ -77,7 +77,7 @@
   "peerDependencies": {
     "drizzle-kit": "1.0.0-rc.5",
     "drizzle-orm": "1.0.0-rc.5",
-    "nitro": ">=3.0.260903-beta <4",
+    "nitro": ">=3.0.261103-rc <4",
     "nuxt": ">=5.0.0",
     "vite": ">=5.0.0"
   },
@@ -93,35 +93,35 @@
     }
   },
   "dependencies": {
-    "@nuxt/kit": "npm:@nuxt/kit-nightly@5.0.0-29809985.0842efa1"
+    "@nuxt/kit": "npm:@nuxt/kit-nightly@5.0.0-2611092254-8b7f263"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^9.3.0",
-    "@electric-sql/pglite": "^0.5.12",
-    "@electric-sql/pglite-socket": "^0.2.15",
+    "@antfu/eslint-config": "^10.0.0",
+    "@electric-sql/pglite": "^0.5.16",
+    "@electric-sql/pglite-socket": "^0.2.19",
     "@libsql/client": "^0.18.0",
-    "@nuxt/nitro-server": "npm:@nuxt/nitro-server-nightly@5.0.0-29809985.0842efa1",
-    "@nuxt/schema": "npm:@nuxt/schema-nightly@5.0.0-29809985.0842efa1",
-    "@tsconfig/node24": "^24.0.5",
+    "@nuxt/nitro-server": "npm:@nuxt/nitro-server-nightly@5.0.0-2611092254-8b7f263",
+    "@nuxt/schema": "npm:@nuxt/schema-nightly@5.0.0-2611092254-8b7f263",
+    "@tsconfig/node26": "^26.0.1",
     "@types/better-sqlite3": "^9.6.0",
     "@types/bun": "^1.4.4",
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.6",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "@vitejs/devtools-kit": "^0.8.0",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitejs/devtools-kit": "^0.8.2",
+    "@vitest/coverage-v8": "^4.1.12",
     "better-sqlite3": "^13.0.3",
     "drizzle-kit": "1.0.0-rc.5",
     "drizzle-orm": "1.0.0-rc.5",
-    "eslint": "^10.13.0",
+    "eslint": "^10.14.0",
     "mysql2": "^3.24.6",
-    "nitro": "^3.0.260903-beta",
-    "nuxt": "npm:nuxt-nightly@5.0.0-29809985.0842efa1",
+    "nitro": "^3.0.261103-rc",
+    "nuxt": "npm:nuxt-nightly@5.0.0-2611092254-8b7f263",
     "obuild": "^0.4.45",
-    "pkg-pr-new": "^0.0.92",
+    "pkg-pr-new": "^0.0.93",
     "postgres": "^3.4.9",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vite": "^8.3.5",
-    "vitest": "^4.1.10"
+    "vite": "^8.3.7",
+    "vitest": "^4.1.12"
   },
   "publishConfig": {
     "access": "public",

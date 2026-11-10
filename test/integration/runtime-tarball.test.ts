@@ -105,13 +105,26 @@ async function startNitroDev(
   let logs = ''
   const child = spawn(
     nitroBin,
-    ['dev', '--host', '127.0.0.1', '--port', String(port)],
-    { cwd: rootDir, env, stdio: ['ignore', 'pipe', 'pipe'] },
+    [
+      'dev',
+      '--host',
+      '127.0.0.1',
+      '--port',
+      String(port),
+    ],
+    {
+      cwd: rootDir,
+      env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
   )
   childProcesses.push(child)
   child.stdout?.on('data', chunk => logs += String(chunk))
   child.stderr?.on('data', chunk => logs += String(chunk))
-  return { child, output: () => logs }
+  return {
+    child,
+    output: () => logs,
+  }
 }
 
 describe('published runtime entries in Nitro dev', () => {
@@ -125,7 +138,13 @@ describe('published runtime entries in Nitro dev', () => {
     await mkdir(packageDir, { recursive: true })
     await execFileAsync(
       'tar',
-      ['-xzf', tarball, '-C', packageDir, '--strip-components=1'],
+      [
+        '-xzf',
+        tarball,
+        '-C',
+        packageDir,
+        '--strip-components=1',
+      ],
     )
     // Every obuild entry ships a file: obuild mirrors src/ paths into dist/,
     // so an entry pointing at a moved-away source silently drops its output.

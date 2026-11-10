@@ -86,7 +86,9 @@ export async function loadGeneratedClient(options: {
   const module = await import(pathToFileURL(join(directory, 'client.mjs')).href) as GeneratedClientModule
 
   const method = (database: OpaqueDrizzleDatabase) =>
-    options.config.dialect === 'sqlite' ? database.run : database.execute
+    options.config.dialect === 'sqlite'
+      ? database.run
+      : database.execute
   return {
     useDrizzle: module.useDrizzle,
     execute: async (query) => {
@@ -94,7 +96,9 @@ export async function loadGeneratedClient(options: {
       const run = method(db)
       if (run === undefined) {
         throw new TypeError(
-          `Drizzle database does not expose ${options.config.dialect === 'sqlite' ? 'run' : 'execute'}().`,
+          `Drizzle database does not expose ${options.config.dialect === 'sqlite'
+            ? 'run'
+            : 'execute'}().`,
         )
       }
       await run.call(db, sql.raw(query))

@@ -66,7 +66,9 @@ export async function resolveDrizzleModuleContext(
   const config = resolveDrizzleConfig(
     {
       ...drizzleOptions,
-      ...(Object.keys(userConnection).length > 0 ? { connection: userConnection } : {}),
+      ...(Object.keys(userConnection).length > 0
+        ? { connection: userConnection }
+        : {}),
     },
     { serverDir: host.serverDir },
   )
@@ -106,7 +108,9 @@ export async function resolveDrizzleModuleContext(
   const devStudio = devDb === undefined
     ? undefined
     : resolveDevStudio(
-        devOptions === true || devOptions === undefined ? undefined : devOptions.studio,
+        devOptions === true || devOptions === undefined
+          ? undefined
+          : devOptions.studio,
       )
   return {
     config,

@@ -307,7 +307,9 @@ import { vector } from '@electric-sql/pglite-vector'
 export default definePlugin((nitro) => {
   nitro.hooks.hook('drizzle:config', (config) => {
     // in-memory PGlite with the vector extension registered at construction
-    config.connection = { extensions: { vector } }
+    config.connection = {
+      extensions: { vector }
+    }
     // applies to the dev database and the real one symmetrically
     config.casing = 'snake_case'
   })
@@ -452,7 +454,10 @@ import drizzleDevtool from '@teages/nitro-drizzle/devtool'
 import { nitro } from 'nitro/vite'
 
 export default defineConfig({
-  plugins: [nitro(), drizzleDevtool()],
+  plugins: [
+    nitro(),
+    drizzleDevtool()
+  ],
 })
 ```
 

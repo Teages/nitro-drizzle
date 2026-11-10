@@ -42,7 +42,9 @@ describe('pglite driver integration', () => {
       const counts = await verify.query<{ id: string, title: string }>(
         'SELECT id, title FROM counts',
       )
-      expect(counts.rows).toEqual([{ id: 'driver-row', title: 'integration' }])
+      expect(counts.rows).toEqual([
+        { id: 'driver-row', title: 'integration' },
+      ])
       const applied = await verify.query<{ name: string }>(
         'SELECT name FROM drizzle.__drizzle_migrations ORDER BY id',
       )

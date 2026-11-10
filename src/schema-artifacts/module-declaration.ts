@@ -29,7 +29,9 @@ ${mockSection}
     readonly db: DrizzleDatabase
     readonly schema: NitroDrizzleGeneratedSchema['schema']
     readonly relations: NitroDrizzleGeneratedSchema['relations']
-    readonly mockDb: ${mockSection === '' ? 'undefined' : 'MockDatabase | undefined'}
+    readonly mockDb: ${mockSection === ''
+      ? 'undefined'
+      : 'MockDatabase | undefined'}
   }
 
   export function useDrizzle(): DrizzleContext

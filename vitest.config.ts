@@ -10,7 +10,12 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['test/**/*.test.ts'],
-          exclude: ['test/integration/**', '**/node_modules/**', '**/dist/**', 'test/**/*.bun.test.ts'],
+          exclude: [
+            'test/integration/**',
+            '**/node_modules/**',
+            '**/dist/**',
+            'test/**/*.bun.test.ts',
+          ],
         },
       },
       {

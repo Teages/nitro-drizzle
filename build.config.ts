@@ -11,7 +11,9 @@ export default defineBuildConfig({
         './src/config.ts',
         './src/devtool.ts',
       ],
-      rolldown: { external: ['@nuxt/schema'] },
+      rolldown: {
+        external: ['@nuxt/schema'],
+      },
       dts: { build: true },
     },
     {

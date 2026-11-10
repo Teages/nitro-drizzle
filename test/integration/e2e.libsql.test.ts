@@ -59,7 +59,9 @@ describe('@teages/nitro-drizzle end-to-end build', () => {
     // resolve against the workspace install, built for a libSQL database
     const rootDir = await mkdtemp(join(repoRoot, '.test-drizzle-e2e-'))
     temporaryDirectories.push(rootDir)
-    await copyFixture(rootDir, { moduleSpecifier: resolve(repoRoot, 'src/index') })
+    await copyFixture(rootDir, {
+      moduleSpecifier: resolve(repoRoot, 'src/index'),
+    })
     const databaseFile = join(rootDir, 'app.db')
     // The fixture config enables devMock; a production build resolves no dev
     // database, so the inline drizzle block only retargets the driver and
@@ -107,9 +109,15 @@ describe('@teages/nitro-drizzle end-to-end build', () => {
 
     // And the built server serves queries routed through the virtual #drizzle client
     const port = await reservePort()
-    const serverProcess = spawn('node', [join(rootDir, '.output/server/index.mjs')], {
+    const serverProcess = spawn('node', [
+      join(rootDir, '.output/server/index.mjs'),
+    ], {
       cwd: rootDir,
-      env: { ...process.env, HOST: '127.0.0.1', PORT: String(port) },
+      env: {
+        ...process.env,
+        HOST: '127.0.0.1',
+        PORT: String(port),
+      },
       stdio: ['ignore', 'ignore', 'pipe'],
     })
     childProcesses.push(serverProcess)

@@ -84,7 +84,13 @@ describe('package surface', () => {
       './devtool',
       './runtime/*',
     ])
-    for (const [entry, distFile] of [['.', 'index'], ['./nuxt', 'nuxt'], ['./config', 'config'], ['./types', 'types'], ['./devtool', 'devtool']] as const) {
+    for (const [entry, distFile] of [
+      ['.', 'index'],
+      ['./nuxt', 'nuxt'],
+      ['./config', 'config'],
+      ['./types', 'types'],
+      ['./devtool', 'devtool'],
+    ] as const) {
       expect(packageJson.exports[entry]).toEqual({
         types: `./dist/${distFile}.d.mts`,
         import: `./dist/${distFile}.mjs`,
@@ -117,8 +123,12 @@ describe('package surface', () => {
     // Given — obuild mirrors src/ paths into dist/, so an entry pointing at
     // a moved file ships nothing and breaks the published runtime
     const entries = (buildConfig.entries ?? []).flatMap((entry) => {
-      const input = typeof entry === 'string' ? entry : entry.input
-      return typeof input === 'string' ? [input] : input
+      const input = typeof entry === 'string'
+        ? entry
+        : entry.input
+      return typeof input === 'string'
+        ? [input]
+        : input
     })
 
     // Then — the exact entry set: the five ABI facades at their
@@ -164,7 +174,9 @@ describe('package surface', () => {
         if (/^\s*import\s+type\b/.test(line)) {
           continue
         }
-        for (const specifier of [...line.matchAll(/['"](\.[^'"]+)['"]/g)].map(match => match[1])) {
+        for (const specifier of [
+          ...line.matchAll(/['"](\.[^'"]+)['"]/g),
+        ].map(match => match[1])) {
           const resolved = join(dirname(file), specifier)
           expect(
             resolved.startsWith('src/runtime/'),
@@ -280,7 +292,13 @@ describe('dev-database lifecycle hooks', () => {
     const setupCall = plugin.indexOf(`callHook('${SETUP_HOOK}',`)
     const pushCall = plugin.indexOf('pushDevSchema({')
     const seedCall = plugin.indexOf(`callHook('${SEED_HOOK}')`)
-    for (const call of [configCall, constructCall, setupCall, pushCall, seedCall]) {
+    for (const call of [
+      configCall,
+      constructCall,
+      setupCall,
+      pushCall,
+      seedCall,
+    ]) {
       expect(call).toBeGreaterThan(-1)
     }
     expect(configCall).toBeLessThan(constructCall)

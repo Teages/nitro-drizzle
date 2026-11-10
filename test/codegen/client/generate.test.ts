@@ -353,7 +353,9 @@ describe('generateVirtualClientSource full output', () => {
   for (const driver of [...localEngines, 'pglite'] as const) {
     const dialect: DrizzleOptions['dialect'] = engineDialects[driver]
     const connection
-      = driver === 'pglite' ? '.data/pglite' : 'file:.data/dev.db'
+      = driver === 'pglite'
+        ? '.data/pglite'
+        : 'file:.data/dev.db'
 
     it(`snapshots the runtime-resolved source for ${driver}`, () => {
       // Given

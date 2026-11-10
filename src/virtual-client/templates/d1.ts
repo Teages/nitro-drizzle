@@ -6,7 +6,10 @@ import { requestBindingHelpers, sourceHeader, USE_REQUEST_IMPORT } from './helpe
  * per request and cached on the request context.
  */
 export function d1Source(imports: SourceImports): string {
-  return `${sourceHeader({ ...imports, extras: [USE_REQUEST_IMPORT] })}
+  return `${sourceHeader({
+    ...imports,
+    extras: [USE_REQUEST_IMPORT],
+  })}
 
 ${requestBindingHelpers()}
 

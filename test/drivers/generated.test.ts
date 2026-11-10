@@ -28,7 +28,12 @@ interface ProxyDatabase {
 function d1Response(columns: readonly string[], rows: readonly unknown[][]): Response {
   return Response.json({
     success: true,
-    result: [{ success: true, results: { columns, rows } }],
+    result: [
+      {
+        success: true,
+        results: { columns, rows },
+      },
+    ],
   })
 }
 
@@ -114,7 +119,11 @@ describe('generated client construction errors', () => {
   it('requires explicit D1 HTTP credentials on first use', async () => {
     // Given the d1-http client without credentials
     const client = await loadGeneratedClient({
-      config: { dialect: 'sqlite', driver: 'd1-http', connection: { databaseId: 'database-id' } },
+      config: {
+        dialect: 'sqlite',
+        driver: 'd1-http',
+        connection: { databaseId: 'database-id' },
+      },
       schemaPath: fixtureSchemaPath('sqlite'),
     })
 
@@ -134,7 +143,9 @@ describe('generated d1-http client', () => {
       config: { dialect: 'sqlite', driver: 'd1-http', connection: credentials },
       schemaPath: fixtureSchemaPath('sqlite'),
     })
-    const fetchStub = stubFetch(() => d1Response(['id', 'title'], [['driver-row', 'integration']]))
+    const fetchStub = stubFetch(() => d1Response(['id', 'title'], [
+      ['driver-row', 'integration'],
+    ]))
     vi.stubGlobal('fetch', fetchStub)
     const { db } = client.useDrizzle()
 
@@ -164,7 +175,9 @@ describe('generated d1-http client', () => {
       config: { dialect: 'sqlite', driver: 'd1-http', connection: credentials },
       schemaPath: fixtureSchemaPath('sqlite'),
     })
-    const fetchStub = stubFetch(() => d1Response(['id', 'title'], [['mapped-row', 'mapped title']]))
+    const fetchStub = stubFetch(() => d1Response(['id', 'title'], [
+      ['mapped-row', 'mapped title'],
+    ]))
     vi.stubGlobal('fetch', fetchStub)
     // The test loader types the client opaquely; the select goes through the
     // real drizzle database methods
@@ -183,7 +196,9 @@ describe('generated d1-http client', () => {
     // Then — the executor passed the raw row arrays through (array rowMode)
     // and drizzle rebuilt the records by column position
     expect(fetchStub.calls).toHaveLength(1)
-    expect(rows).toEqual([{ id: 'mapped-row', title: 'mapped title' }])
+    expect(rows).toEqual([
+      { id: 'mapped-row', title: 'mapped title' },
+    ])
     await client.dispose()
   })
 
@@ -193,7 +208,12 @@ describe('generated d1-http client', () => {
       config: { dialect: 'sqlite', driver: 'd1-http', connection: credentials },
       schemaPath: fixtureSchemaPath('sqlite'),
     })
-    vi.stubGlobal('fetch', async () => Response.json({ success: false, errors: [{ code: 7003 }] }))
+    vi.stubGlobal('fetch', async () => Response.json({
+      success: false,
+      errors: [
+        { code: 7003 },
+      ],
+    }))
     const { db } = client.useDrizzle()
 
     // When

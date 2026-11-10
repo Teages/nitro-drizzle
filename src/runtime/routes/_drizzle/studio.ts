@@ -10,7 +10,9 @@ export default defineHandler(async (event) => {
   // behind the nuxt/vite dev proxy. The default ports cover fronting setups
   // that strip the explicit port from the host.
   const requestUrl = getRequestURL(event, { xForwardedHost: true, xForwardedProto: true })
-  const requestPort = requestUrl.port || (requestUrl.protocol === 'https:' ? '443' : '80')
+  const requestPort = requestUrl.port || (requestUrl.protocol === 'https:'
+    ? '443'
+    : '80')
 
   // The devtools iframe navigates here without credentials, so its keyed GET
   // is settled before the bearer gate that governs the Studio traffic.

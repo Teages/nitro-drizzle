@@ -48,7 +48,13 @@ export const notes = sqliteTable('notes', {})
       hooks.push({ event, handler })
     },
   }
-  return { nuxt: nuxt as unknown as Nuxt, hooks, alias, templates, buildDir }
+  return {
+    nuxt: nuxt as unknown as Nuxt,
+    hooks,
+    alias,
+    templates,
+    buildDir,
+  }
 }
 
 async function setupModule(options: Record<string, unknown>, dev: boolean) {
@@ -112,7 +118,9 @@ describe('@teages/nitro-drizzle/nuxt', () => {
     const sessions = [
       await setupModule({ devMock: true }, false),
       await setupModule({}, true),
-      await setupModule({ devMock: { studio: false } }, true),
+      await setupModule({
+        devMock: { studio: false },
+      }, true),
       await setupModule({ devMock: true }, true),
     ]
 
@@ -144,9 +152,15 @@ describe('@teages/nitro-drizzle/nuxt', () => {
     const payload = { references: [] }
     await typesHook?.handler(payload as never)
     expect(payload.references).toEqual([
-      { path: join(typesDir, 'hooks.d.ts') },
-      { path: join(typesDir, 'modules.d.ts') },
-      { path: join(typesDir, 'schema.d.ts') },
+      {
+        path: join(typesDir, 'hooks.d.ts'),
+      },
+      {
+        path: join(typesDir, 'modules.d.ts'),
+      },
+      {
+        path: join(typesDir, 'schema.d.ts'),
+      },
     ])
     const modules = await readFile(join(typesDir, 'modules.d.ts'), 'utf8')
     expect(modules).toContain(`declare module '#drizzle'`)

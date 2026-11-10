@@ -50,7 +50,10 @@ export function useDrizzle() {
 `
     default:
       return lazyUseDrizzleSource(
-        { ...options.imports, extras: [USE_CONNECTION_IMPORT] },
+        {
+          ...options.imports,
+          extras: [USE_CONNECTION_IMPORT],
+        },
         `  ${CONNECTION_OPTIONS_DESTRUCTURE}
   return {
     connection: {

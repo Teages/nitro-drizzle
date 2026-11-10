@@ -9,7 +9,12 @@ export const DEV_ENV_FILE = 'NITRO_DRIZZLE_DEV_MOCK_FILE'
 
 const LOCAL_DRIVERS_BY_DIALECT: Readonly<Record<DrizzleDialect, readonly DrizzleLocalDriver[]>> = {
   postgresql: ['pglite'],
-  sqlite: ['better-sqlite3', 'libsql', 'bun-sqlite', 'node-sqlite'],
+  sqlite: [
+    'better-sqlite3',
+    'libsql',
+    'bun-sqlite',
+    'node-sqlite',
+  ],
   mysql: [],
 }
 
@@ -83,7 +88,9 @@ export function resolveDevDatabase(
     )
   }
 
-  const requested = dev === true ? undefined : dev.driver
+  const requested = dev === true
+    ? undefined
+    : dev.driver
   let engine: DrizzleLocalDriver
   if (requested !== undefined) {
     if (!localDrivers.includes(requested)) {
@@ -113,12 +120,17 @@ export function resolveDevDatabase(
     )
   }
 
-  const configuredFile = dev === true ? undefined : dev.file
+  const configuredFile = dev === true
+    ? undefined
+    : dev.file
   const file = env[DEV_ENV_FILE] !== undefined && env[DEV_ENV_FILE] !== ''
     ? env[DEV_ENV_FILE]
     : configuredFile
 
-  return { engine, connection: resolveDevConnection(engine, file) }
+  return {
+    engine,
+    connection: resolveDevConnection(engine, file),
+  }
 }
 
 function resolveDevConnection(
@@ -126,7 +138,9 @@ function resolveDevConnection(
   file: string | undefined,
 ): string | undefined {
   if (file === undefined || file === '') {
-    return engine === 'pglite' ? undefined : ':memory:'
+    return engine === 'pglite'
+      ? undefined
+      : ':memory:'
   }
   if (engine === 'libsql' && !/^(?:file:|:memory:|libsql:|https?:)/.test(file)) {
     return `file:${file}`

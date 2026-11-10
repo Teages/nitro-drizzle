@@ -12,7 +12,10 @@ import { lazyClientSource, USE_CONNECTION_IMPORT } from './helpers'
  */
 export function d1HttpSource(imports: SourceImports): string {
   return lazyClientSource(
-    { ...imports, extras: [USE_CONNECTION_IMPORT] },
+    {
+      ...imports,
+      extras: [USE_CONNECTION_IMPORT],
+    },
     `  const { accountId, apiToken, databaseId } = useDrizzleConnection()
   if (!accountId || !apiToken || !databaseId) {
     throw new Error('d1-http requires connection.accountId, apiToken, and databaseId.')

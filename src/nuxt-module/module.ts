@@ -71,8 +71,12 @@ export default defineNuxtModule<DrizzleOptions>({
         directory: typesDir,
         config: ctx.config,
         schemaPath: ctx.schemaPath,
-        ...(ctx.relationsExport === undefined ? {} : { relationsExport: ctx.relationsExport }),
-        ...(ctx.mockEngine === undefined ? {} : { mockEngine: ctx.mockEngine }),
+        ...(ctx.relationsExport === undefined
+          ? {}
+          : { relationsExport: ctx.relationsExport }),
+        ...(ctx.mockEngine === undefined
+          ? {}
+          : { mockEngine: ctx.mockEngine }),
       })
       return true
     }
@@ -81,14 +85,18 @@ export default defineNuxtModule<DrizzleOptions>({
         return
       }
       DRIZZLE_TYPE_ARTIFACTS.forEach(path =>
-        ctx.references.push({ path: join(typesDir, path) }))
+        ctx.references.push({
+          path: join(typesDir, path),
+        }))
     })
     nuxt.hook('prepare:types', async (ctx) => {
       if (!await generateTypes()) {
         return
       }
       DRIZZLE_TYPE_ARTIFACTS.forEach(path =>
-        ctx.references.push({ path: join(typesDir, path) }))
+        ctx.references.push({
+          path: join(typesDir, path),
+        }))
     })
 
     // In the browser `#drizzle` resolves to a stub: importing `useDrizzle`

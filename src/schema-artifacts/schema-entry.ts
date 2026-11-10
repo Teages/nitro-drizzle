@@ -2,7 +2,9 @@ import { dirname, relative } from 'node:path'
 
 function relativeModuleSpecifier(fromFile: string, toFile: string): string {
   const path = relative(dirname(fromFile), toFile).replaceAll('\\', '/')
-  return path.startsWith('.') ? path : `./${path}`
+  return path.startsWith('.')
+    ? path
+    : `./${path}`
 }
 
 function typeModuleSpecifier(fromFile: string, toFile: string): string {

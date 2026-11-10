@@ -131,7 +131,13 @@ function isStudioProxyData(value: unknown): value is StudioProxyData {
     return false
   }
   return value.method === undefined
-    || ['values', 'get', 'all', 'run', 'execute'].includes(String(value.method))
+    || [
+      'values',
+      'get',
+      'all',
+      'run',
+      'execute',
+    ].includes(String(value.method))
 }
 
 function isStudioRequest(value: unknown): value is StudioRequest {
@@ -200,7 +206,9 @@ function studioRowsResponse(rows: unknown): Response {
 }
 
 function studioError(error: unknown, status: number): Response {
-  const message = error instanceof Error ? error.message : String(error)
+  const message = error instanceof Error
+    ? error.message
+    : String(error)
   return Response.json({
     status: 'error',
     error: message,

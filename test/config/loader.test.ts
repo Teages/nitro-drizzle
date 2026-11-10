@@ -51,12 +51,19 @@ async function createFixture(
 export default defineConfig({
   serverDir: './server',
   drizzle: ${drizzleWithConnection},
-  ${options.experimental === undefined ? '' : `experimental: ${options.experimental},`}
+  ${options.experimental === undefined
+    ? ''
+    : `experimental: ${options.experimental},`}
 })
 `,
     ),
   ])
-  return { rootDir, serverDir, schemaPath, relationsPath }
+  return {
+    rootDir,
+    serverDir,
+    schemaPath,
+    relationsPath,
+  }
 }
 
 /** Same layout as `createFixture`, but the `drizzle` block sits in a Nuxt config. */
@@ -87,12 +94,19 @@ async function createNuxtFixture(
       `export default {
   compatibilityDate: '2025-07-15',
   drizzle: ${drizzleWithConnection},
-  ${options.experimental === undefined ? '' : `nitro: { experimental: ${options.experimental} },`}
+  ${options.experimental === undefined
+    ? ''
+    : `nitro: { experimental: ${options.experimental} },`}
 }
 `,
     ),
   ])
-  return { rootDir, serverDir, schemaPath, relationsPath }
+  return {
+    rootDir,
+    serverDir,
+    schemaPath,
+    relationsPath,
+  }
 }
 
 afterEach(async () => {
@@ -112,7 +126,9 @@ describe('loadDrizzleConfig', () => {
     expect(config.dialect).toBe('turso')
     expect(config.schema).toEqual([fixture.schemaPath])
     expect(config.out).toBe(join(fixture.serverDir, 'db/migrations'))
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       url: 'file:./test.db',
     })
   })
@@ -123,7 +139,9 @@ describe('loadDrizzleConfig', () => {
     process.env.NITRO_DRIZZLE_CONNECTION_URL = 'file:./override.db'
     try {
       const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
-      expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+      expect('dbCredentials' in config
+        ? config.dbCredentials
+        : undefined).toEqual({
         url: 'file:./test.db',
       })
     }
@@ -144,7 +162,9 @@ describe('loadDrizzleConfig', () => {
 
     const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
 
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       url: 'libsql://database.turso.io',
       authToken: 'secret',
     })
@@ -159,7 +179,9 @@ describe('loadDrizzleConfig', () => {
     process.env.TEST_LOADER_DATABASE_URL = 'libsql://expanded'
     try {
       const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
-      expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+      expect('dbCredentials' in config
+        ? config.dbCredentials
+        : undefined).toEqual({
         url: 'libsql://expanded',
       })
     }
@@ -181,7 +203,9 @@ describe('loadDrizzleConfig', () => {
     process.env.TEST_LOADER_DATABASE_URL = 'libsql://expanded'
     try {
       const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
-      expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+      expect('dbCredentials' in config
+        ? config.dbCredentials
+        : undefined).toEqual({
         url: '{{TEST_LOADER_DATABASE_URL}}',
       })
     }
@@ -205,7 +229,9 @@ describe('loadDrizzleConfig', () => {
     process.env.TEST_LOADER_DB_PORT = '5432'
     try {
       const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
-      expect('dbCredentials' in config ? config.dbCredentials : undefined).toMatchObject({
+      expect('dbCredentials' in config
+        ? config.dbCredentials
+        : undefined).toMatchObject({
         port: 5432,
       })
     }
@@ -286,9 +312,13 @@ export default defineConfig({
 
     expect(config.dialect).toBe('postgresql')
     expect(config.schema).toEqual([fixture.schemaPath])
-    expect('driver' in config ? config.driver : undefined).toBe('pglite')
+    expect('driver' in config
+      ? config.driver
+      : undefined).toBe('pglite')
     expect(config.out).toBe(join(fixture.serverDir, 'db/migrations'))
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       url: '/tmp/pg-data',
     })
   })
@@ -302,8 +332,12 @@ export default defineConfig({
     const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
 
     expect(config.dialect).toBe('sqlite')
-    expect('driver' in config ? config.driver : undefined).toBe('d1-http')
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('driver' in config
+      ? config.driver
+      : undefined).toBe('d1-http')
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       accountId: 'account',
       databaseId: 'database',
       token: 'token',
@@ -318,8 +352,12 @@ export default defineConfig({
 
     const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
 
-    expect('driver' in config ? config.driver : undefined).toBe('d1-http')
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('driver' in config
+      ? config.driver
+      : undefined).toBe('d1-http')
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       accountId: 'account',
       databaseId: 'database',
       token: 'token',
@@ -336,7 +374,9 @@ export default defineConfig({
 
     expect(config.dialect).toBe('postgresql')
     expect('driver' in config).toBe(false)
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       host: 'db.local',
       port: 5432,
       user: 'app',
@@ -353,7 +393,9 @@ export default defineConfig({
     expect(config.dialect).toBe('turso')
     expect(config.schema).toEqual([fixture.schemaPath])
     expect(config.out).toBe(join(fixture.serverDir, 'db/migrations'))
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       url: 'file:./test.db',
     })
   })
@@ -375,7 +417,9 @@ export default defineConfig({
 
     const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
 
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       url: 'file:./from-nuxt.db',
     })
   })
@@ -400,7 +444,9 @@ export default defineConfig({
       framework: 'nitro',
     })
 
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       url: 'file:./from-nitro.db',
     })
   })
@@ -414,7 +460,9 @@ export default defineConfig({
     process.env.TEST_LOADER_DATABASE_URL = 'libsql://expanded'
     try {
       const config = await loadDrizzleConfig({ cwd: fixture.rootDir })
-      expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+      expect('dbCredentials' in config
+        ? config.dbCredentials
+        : undefined).toEqual({
         url: 'libsql://expanded',
       })
     }

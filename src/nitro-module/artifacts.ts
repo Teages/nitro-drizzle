@@ -27,8 +27,12 @@ export async function createDrizzleArtifactsLifecycle(
       directory: ctx.typesDir,
       config: ctx.config,
       schemaPath: ctx.schemaPath,
-      ...(ctx.relationsExport === undefined ? {} : { relationsExport: ctx.relationsExport }),
-      ...(ctx.mockEngine === undefined ? {} : { mockEngine: ctx.mockEngine }),
+      ...(ctx.relationsExport === undefined
+        ? {}
+        : { relationsExport: ctx.relationsExport }),
+      ...(ctx.mockEngine === undefined
+        ? {}
+        : { mockEngine: ctx.mockEngine }),
     })
   }
 
@@ -43,7 +47,9 @@ export async function createDrizzleArtifactsLifecycle(
       ...(ctx.devDb === undefined
         ? {}
         : { devEngine: ctx.devDb.engine, devConnection: ctx.devDb.connection ?? ':memory:' }),
-      ...(ctx.devStudio === undefined ? {} : { devStudio: ctx.devStudio }),
+      ...(ctx.devStudio === undefined
+        ? {}
+        : { devStudio: ctx.devStudio }),
       connection: ctx.userConnection,
     })
     nitro.options.virtual['#drizzle/schema'] = createSchemaEntry(
@@ -60,7 +66,11 @@ export async function createDrizzleArtifactsLifecycle(
           },
       schemaImport: '#drizzle/schema',
       relationsImport: '#drizzle/schema',
-      ...(ctx.devDb === undefined ? {} : { dev: { connection: ctx.devDb.connection } }),
+      ...(ctx.devDb === undefined
+        ? {}
+        : {
+            dev: { connection: ctx.devDb.connection },
+          }),
     })
   }
 
