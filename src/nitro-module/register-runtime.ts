@@ -1,16 +1,52 @@
 import type { Nitro } from 'nitro/types'
 import { randomUUID } from 'node:crypto'
+import { existsSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../studio/contracts'
 import { readDevtoolsKey } from '../studio/devtools-key'
 
 /**
- * Vite dev tests `resolve.noExternal` against the npm package name only, and
- * Nitro's externals plugin tests it against the resolved file path. The
- * `./runtime/*` export is `dist/runtime/*.mjs`, so a `/runtime` suffix matches
- * neither `@teages/nitro-drizzle` nor `.../nitro-drizzle/dist/runtime/...`.
- * The file is then loaded by Node, whose package imports reject `#drizzle`.
+ * Directory of the shipped runtime. Source tests sit in `src/nitro-module`
+ * beside `src/runtime`; the published bundle sits in `dist` beside
+ * `dist/runtime`.
  */
-export const RUNTIME_NO_EXTERNAL = /@teages\/nitro-drizzle(?=\/|$)/
+function runtimeDirectory(): string {
+  const here = dirname(fileURLToPath(import.meta.url))
+  const candidates = [
+    join(here, 'runtime'),
+    join(here, '../runtime'),
+  ]
+  return candidates.find(dir =>
+    existsSync(join(dir, 'plugins/drizzle.mjs'))
+    || existsSync(join(dir, 'plugins/drizzle.ts')),
+  ) ?? candidates[0]
+}
+
+const runtimeRoot = runtimeDirectory()
+
+export function runtimeEntry(subpath: string): string {
+  const base = join(runtimeRoot, subpath)
+  if (existsSync(`${base}.ts`))
+    return `${base}.ts`
+  return `${base}.mjs`
+}
+
+/**
+ * Nitro matches `noExternals` against the resolved path. Anchoring that
+ * pattern on this directory keeps the runtime in the server graph and leaves
+ * nested dependencies external. Vite never externalizes an absolute id, so
+ * the registered entries do not need a package-name rule.
+ */
+function runtimeNoExternal(directory: string): RegExp {
+  const escaped = directory
+    .replaceAll('\\', '/')
+    .replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&')
+    .replaceAll('/', '[\\\\/]')
+  return new RegExp(`^${escaped}(?!.*[\\\\/]node_modules[\\\\/])`)
+}
+
+export const RUNTIME_NO_EXTERNAL = runtimeNoExternal(runtimeRoot)
 
 export function configureRuntime(nitro: Nitro): void {
   // These runtime entries import app-scoped virtual modules and Nitro context
@@ -29,14 +65,14 @@ export function configureRuntime(nitro: Nitro): void {
   if (!nitro.options.traceDeps.includes('drizzle-orm*')) {
     nitro.options.traceDeps.push('drizzle-orm*')
   }
-  nitro.options.plugins.push('@teages/nitro-drizzle/runtime/plugins/drizzle')
+  nitro.options.plugins.push(runtimeEntry('plugins/drizzle'))
   // Nitro swallows request-hook rejections: this middleware is what turns a
   // failed drizzle initialization into failed requests instead of routing
   // into handlers with an uninitialized client.
   nitro.options.handlers.push({
     route: '/**',
     middleware: true,
-    handler: '@teages/nitro-drizzle/runtime/middleware/drizzle-gate',
+    handler: runtimeEntry('middleware/drizzle-gate'),
   })
 }
 
@@ -59,9 +95,9 @@ export function configureStudioRuntime(nitro: Nitro): void {
   nitro.options.handlers.push({
     route: '/**',
     middleware: true,
-    handler: '@teages/nitro-drizzle/runtime/middleware/studio-gate',
+    handler: runtimeEntry('middleware/studio-gate'),
   })
   nitro.options.routes[STUDIO_ROUTE] = {
-    handler: '@teages/nitro-drizzle/runtime/routes/_drizzle/studio',
+    handler: runtimeEntry('routes/_drizzle/studio'),
   }
 }

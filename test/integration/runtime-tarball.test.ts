@@ -151,7 +151,6 @@ describe('published runtime entries in Nitro dev', () => {
     for (const entry of [
       'index',
       'config',
-      'runtime/utils/configuration/connection',
       'runtime/utils/configuration/env',
       'runtime/plugins/drizzle',
       'runtime/middleware/studio-gate',

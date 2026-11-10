@@ -1,7 +1,7 @@
 import type { SQLWrapper } from 'drizzle-orm'
 import type { ResolvedDrizzleConfig } from '../../src/configuration/resolve'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { sql } from 'drizzle-orm'
 import { createSchemaEntry } from '../../src/schema-artifacts/schema-entry'
@@ -39,8 +39,6 @@ export interface GeneratedClientHandle extends GeneratedClientModule {
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../..')
 
-const RUNTIME_CONNECTION_EXPORT = '@teages/nitro-drizzle/runtime/utils/configuration/connection'
-
 /**
  * Loads the production client for a config: the exact sources
  * createDrizzleArtifactsLifecycle installs as the `#drizzle`,
@@ -49,9 +47,8 @@ const RUNTIME_CONNECTION_EXPORT = '@teages/nitro-drizzle/runtime/utils/configura
  * and imported in-process. This is the code users run — as opposed to a
  * re-implementation of it.
  *
- * The runtime-config module's frozen package import is redirected into
- * `src/runtime` because the `@teages/nitro-drizzle` self-reference resolves
- * against `dist/`, which test runs never build.
+ * Connection resolution is copied into the config module, so the in-process
+ * import has no dependency on this package's runtime tree.
  */
 export async function loadGeneratedClient(options: {
   readonly config: ResolvedDrizzleConfig
@@ -71,12 +68,8 @@ export async function loadGeneratedClient(options: {
   })
 
   const directory = await mkdtemp(join(repoRoot, '.test-generated-client-'))
-  const runtimeConnection = relative(directory, join(repoRoot, 'src/runtime/utils/configuration/connection'))
   await writeFile(join(directory, 'schema.mjs'), schemaSource)
-  await writeFile(
-    join(directory, 'config.mjs'),
-    configSource.replaceAll(`'${RUNTIME_CONNECTION_EXPORT}'`, `'${runtimeConnection.replaceAll('\\', '/')}'`),
-  )
+  await writeFile(join(directory, 'config.mjs'), configSource)
   await writeFile(
     join(directory, 'client.mjs'),
     clientSource

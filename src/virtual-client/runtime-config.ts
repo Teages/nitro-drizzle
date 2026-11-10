@@ -4,7 +4,8 @@ import type { DatabaseConnection, DrizzleDialect, DrizzleDriver, DrizzleLocalDri
  * Shape of the generated `#drizzle/config` virtual module: the module-owned
  * runtime configuration. Connection values are the raw user input (env
  * templates included); env semantics apply when the connection is resolved,
- * never at build time.
+ * never at build time. The resolver is copied into the module so the
+ * consumer bundle does not import this package's runtime.
  */
 export interface RuntimeDrizzleConfig {
   readonly dialect: DrizzleDialect
@@ -24,7 +25,38 @@ export interface RuntimeDrizzleConfig {
 }
 
 export function createRuntimeConfigModule(config: RuntimeDrizzleConfig): string {
-  return `import { resolveDrizzleConnection } from '@teages/nitro-drizzle/runtime/utils/configuration/connection'
+  return `import { env } from 'node:process'
+import { useRuntimeConfig } from 'nitro/runtime-config'
+
+const resolvedConnections = new WeakMap()
+const ENV_EXPANSION_PATTERN = /\\{\\{([^{}]*)\\}\\}/g
+
+function expandConnection(connection, envExpansion) {
+  if (!envExpansion)
+    return connection
+  const walk = (obj) => {
+    for (const key in obj) {
+      const value = obj[key]
+      if (value !== null && typeof value === 'object' && !Array.isArray(value))
+        walk(value)
+      else if (typeof value === 'string')
+        obj[key] = value.replace(ENV_EXPANSION_PATTERN, (match, name) => env[name] || match)
+    }
+  }
+  const result = { ...connection }
+  walk(result)
+  return result
+}
+
+function resolveDrizzleConnection(connection) {
+  const cached = resolvedConnections.get(connection)
+  if (cached !== undefined)
+    return cached
+  const nitro = useRuntimeConfig().nitro ?? {}
+  const result = expandConnection(connection, Boolean(nitro.envExpansion ?? env.NITRO_ENV_EXPANSION))
+  resolvedConnections.set(connection, result)
+  return result
+}
 
 export const drizzleConfig = ${JSON.stringify(config, null, 2)}
 
