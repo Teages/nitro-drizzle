@@ -5,6 +5,7 @@ import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
+import { RUNTIME_NO_EXTERNAL } from '../src/nitro-module/register-runtime'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
 
@@ -253,8 +254,14 @@ describe('runtime wiring', () => {
     expect(studioRoute.handler.replaceAll('\\', '/')).toMatch(/runtime\/routes\/_drizzle\/studio$/)
     expect(runtimeSpecifierShips(studioRoute.handler)).toBe(true)
 
-    // And — the externalization escape covers exactly the runtime tree
-    expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle/runtime')
+    // And — the externalization escape matches the package name Vite checks
+    // and the published dist/runtime path Nitro checks
+    expect(nitro.options.noExternals).toContain(RUNTIME_NO_EXTERNAL)
+    expect(RUNTIME_NO_EXTERNAL.test('@teages/nitro-drizzle')).toBe(true)
+    expect(RUNTIME_NO_EXTERNAL.test(
+      '/node_modules/@teages/nitro-drizzle/dist/runtime/plugins/drizzle.mjs',
+    )).toBe(true)
+    expect(RUNTIME_NO_EXTERNAL.test('@teages/nitro-drizzle-extra')).toBe(false)
     expect(nitro.options.traceDeps).toContain('drizzle-orm*')
     expect(nitro.options.replace[STUDIO_AUTH_KEY_MARKER]).toBeTypeOf('string')
     // And — without the `devtool` Vite plugin in this process, the keyed GET

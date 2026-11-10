@@ -3,19 +3,25 @@ import { randomUUID } from 'node:crypto'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../studio/contracts'
 import { readDevtoolsKey } from '../studio/devtools-key'
 
-export function configureRuntime(nitro: Nitro): void {
-  const runtimeDir = '@teages/nitro-drizzle/runtime'
+/**
+ * Vite dev tests `resolve.noExternal` against the npm package name only, and
+ * Nitro's externals plugin tests it against the resolved file path. The
+ * `./runtime/*` export is `dist/runtime/*.mjs`, so a `/runtime` suffix matches
+ * neither `@teages/nitro-drizzle` nor `.../nitro-drizzle/dist/runtime/...`.
+ * The file is then loaded by Node, whose package imports reject `#drizzle`.
+ */
+export const RUNTIME_NO_EXTERNAL = /@teages\/nitro-drizzle(?=\/|$)/
 
-  // Nitro externalizes dependencies during `nitro dev`. These runtime entries
-  // import app-scoped virtual modules and Nitro context APIs, so they must be
-  // compiled inside the consumer's server graph instead of loaded directly
-  // from this package's node_modules scope.
+export function configureRuntime(nitro: Nitro): void {
+  // These runtime entries import app-scoped virtual modules and Nitro context
+  // APIs, so they must be compiled inside the consumer's server graph instead
+  // of loaded directly from this package's node_modules scope.
   if (nitro.options.noExternals !== true) {
     const noExternals = Array.isArray(nitro.options.noExternals)
       ? nitro.options.noExternals
       : []
-    if (!noExternals.includes(runtimeDir)) {
-      noExternals.push(runtimeDir)
+    if (!noExternals.includes(RUNTIME_NO_EXTERNAL)) {
+      noExternals.push(RUNTIME_NO_EXTERNAL)
     }
     nitro.options.noExternals = noExternals
   }

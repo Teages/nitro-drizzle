@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import NitroDrizzle from '../../src'
+import { RUNTIME_NO_EXTERNAL } from '../../src/nitro-module/register-runtime'
 import { DEVTOOLS_KEY_MARKER } from '../../src/studio/contracts'
 import { provideDevtoolsKey } from '../../src/studio/devtools-key'
 
@@ -273,7 +274,7 @@ describe('@teages/nitro-drizzle', () => {
     expect(nitro.options.plugins).toContainEqual(
       expect.stringContaining('runtime/plugins/drizzle'),
     )
-    expect(nitro.options.noExternals).toContain('@teages/nitro-drizzle/runtime')
+    expect(nitro.options.noExternals).toContain(RUNTIME_NO_EXTERNAL)
     await nitro.close()
   })
 
@@ -352,7 +353,7 @@ describe('@teages/nitro-drizzle', () => {
     // Then
     expect(nitro.options.noExternals).toEqual([
       'user-runtime',
-      '@teages/nitro-drizzle/runtime',
+      RUNTIME_NO_EXTERNAL,
     ])
     await nitro.close()
   })
