@@ -1,36 +1,38 @@
 import type { Nitro } from 'nitro/types'
 import { randomUUID } from 'node:crypto'
-import { existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
+import { dirname } from 'node:path'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../studio/contracts'
 import { readDevtoolsKey } from '../studio/devtools-key'
 
+const require = createRequire(import.meta.url)
+
 /**
- * Directory of the shipped runtime. Source tests sit in `src/nitro-module`
- * beside `src/runtime`; the published bundle sits in `dist` beside
- * `dist/runtime`.
+ * `./runtime/*` resolves to `dist/runtime/*.mjs`. A checkout with no build
+ * falls through the `source` condition to `src/runtime/*.ts`.
  */
-function runtimeDirectory(): string {
-  const here = dirname(fileURLToPath(import.meta.url))
-  const candidates = [
-    join(here, 'runtime'),
-    join(here, '../runtime'),
-  ]
-  return candidates.find(dir =>
-    existsSync(join(dir, 'plugins/drizzle.mjs'))
-    || existsSync(join(dir, 'plugins/drizzle.ts')),
-  ) ?? candidates[0]
+function runtimeEntry(subpath: string): string {
+  const specifier = `@teages/nitro-drizzle/runtime/${subpath}`
+  try {
+    return require.resolve(specifier)
+  }
+  catch (error) {
+    if (!isUnbuiltRuntime(error))
+      throw error
+    // Node resolves this Set, but @types/node only types `paths`.
+    return require.resolve(specifier, {
+      conditions: new Set(['source']),
+    } as NodeJS.RequireResolveOptions)
+  }
 }
 
-const runtimeRoot = runtimeDirectory()
-
-export function runtimeEntry(subpath: string): string {
-  const base = join(runtimeRoot, subpath)
-  if (existsSync(`${base}.ts`))
-    return `${base}.ts`
-  return `${base}.mjs`
+function isUnbuiltRuntime(error: unknown): boolean {
+  return error instanceof Error
+    && 'code' in error
+    && (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED')
 }
+
+const runtimeRoot = dirname(dirname(runtimeEntry('plugins/drizzle')))
 
 /**
  * Nitro matches `noExternals` against the resolved path. Anchoring that

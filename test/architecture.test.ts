@@ -98,9 +98,12 @@ describe('package surface', () => {
         `./dist/${distFile}.d.mts`,
       ])
     }
-    // And — the wildcard hands every registered runtime specifier straight
-    // to the transform output, no per-entry exports maintenance
-    expect(packageJson.exports['./runtime/*']).toBe('./dist/runtime/*.mjs')
+    // And — the wildcard resolves built files, and redirects to source when
+    // the build output is absent
+    expect(packageJson.exports['./runtime/*']).toEqual({
+      source: './src/runtime/*.ts',
+      default: './dist/runtime/*.mjs',
+    })
   })
 
   it('keeps @nuxt/kit as a runtime dependency, not a dev toolchain entry', async () => {
