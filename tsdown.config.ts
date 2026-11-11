@@ -2,8 +2,8 @@ import { defineConfig } from 'tsdown'
 
 export default defineConfig([
   {
-    // Public ABI facades: each entry becomes `dist/<name>.mjs` + `.d.mts`,
-    // the files the package exports map points at.
+    // Public ABI facades: entry names are the `exports` subpaths, so each one
+    // lands at `dist/<name>.mjs` + `.d.mts`.
     entry: {
       index: 'src/index.ts',
       nuxt: 'src/nuxt.ts',
@@ -11,15 +11,10 @@ export default defineConfig([
       config: 'src/config.ts',
       devtool: 'src/devtool.ts',
     },
-    format: ['esm'],
-    platform: 'node',
-    outDir: 'dist',
-    // Keep shared chunks out of the entry namespace, with stable names.
-    hash: false,
-    outputOptions: {
-      chunkFileNames: '_chunks/[name].mjs',
-    },
     deps: {
+      // Load-bearing for the declaration build: without it the dts plugin
+      // tries to bundle @nuxt/schema's transitive types and fails on their
+      // CommonJS declaration syntax.
       neverBundle: ['@nuxt/schema'],
     },
     // The root tsconfig only holds project references, which the declaration
@@ -30,23 +25,19 @@ export default defineConfig([
     // the packed tarball is exactly what gets published.
     publint: 'ci-only',
     attw: { enabled: 'ci-only', level: 'error', profile: 'esm-only' },
-    clean: true,
   },
   {
-    // Runtime tree: Nitro loads these files individually (`./runtime/*`
-    // export), so they ship one-to-one, mirroring src/runtime.
+    // Runtime tree: Nitro loads these files individually through the
+    // `./runtime/*` export, so they ship one-to-one, mirroring src/runtime.
     entry: ['src/runtime/**/*.ts', '!src/runtime/**/*.d.ts'],
-    root: 'src/runtime',
     unbundle: true,
-    format: ['esm'],
-    platform: 'node',
     outDir: 'dist/runtime',
     deps: {
       // Virtual modules provided by the Nitro module at app build time.
-      neverBundle: ['#drizzle', '#drizzle/config'],
+      neverBundle: [/^#drizzle/],
     },
+    // Declarations are auto-enabled by the `types` conditions in `exports`;
+    // the runtime tree ships as source-typed JS only.
     dts: false,
-    treeshake: false,
-    clean: false,
   },
 ])
