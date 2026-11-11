@@ -52,7 +52,8 @@
     "test": "pnpm lint && pnpm typecheck && vitest run --coverage --project unit",
     "test:integration": "vitest run --project integration",
     "typecheck": "pnpm tsc --build --noEmit",
-    "test:bun": "bun test test/runtime/studio/adapters.bun.test.ts"
+    "test:bun": "bun test test/runtime/studio/adapters.bun.test.ts",
+    "skills:install": "pnpx skills@latest experimental_install --agent universal"
   },
   "peerDependencies": {
     "drizzle-kit": "1.0.0-rc.5",
