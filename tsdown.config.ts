@@ -14,7 +14,6 @@ export default defineConfig([
     format: ['esm'],
     platform: 'node',
     outDir: 'dist',
-    outExtensions: () => ({ js: '.mjs', dts: '.d.mts' }),
     // Keep shared chunks out of the entry namespace, with stable names.
     hash: false,
     outputOptions: {
@@ -27,6 +26,10 @@ export default defineConfig([
     // build cannot use; tsconfig.node.json is the emit-ready module config and
     // already excludes the runtime tree.
     dts: { tsconfig: './tsconfig.node.json' },
+    // Package-level validation runs after the build, so keep it in CI where
+    // the packed tarball is exactly what gets published.
+    publint: 'ci-only',
+    attw: { enabled: 'ci-only', level: 'error', profile: 'esm-only' },
     clean: true,
   },
   {
@@ -38,7 +41,6 @@ export default defineConfig([
     format: ['esm'],
     platform: 'node',
     outDir: 'dist/runtime',
-    outExtensions: () => ({ js: '.mjs' }),
     deps: {
       // Virtual modules provided by the Nitro module at app build time.
       neverBundle: ['#drizzle', '#drizzle/config'],

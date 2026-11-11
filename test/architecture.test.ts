@@ -161,6 +161,27 @@ describe('package surface', () => {
     }
   })
 
+  it('gates the packed package through publint and attw in CI', () => {
+    // Given — the tarball is what npm serves, and only tsdown's post-build
+    // check reads it: a resolver-matrix regression here fails the release
+    // build instead of the consumer. Publint/attw are CI-only so a local
+    // build stays fast, and the profile drops the node10 and CJS-require
+    // rows `engines` (Node 26, ESM only) already rules out.
+    const configs = Array.isArray(buildConfig)
+      ? buildConfig
+      : [buildConfig]
+    const gated = configs.filter(config => config.publint || config.attw)
+
+    // Then
+    expect(gated).toHaveLength(1)
+    expect(gated[0].publint).toBe('ci-only')
+    expect(gated[0].attw).toMatchObject({
+      enabled: 'ci-only',
+      level: 'error',
+      profile: 'esm-only',
+    })
+  })
+
   it('keeps the runtime tree self-contained for the unbundled pass', async () => {
     // Given — the unbundled pass ships src/runtime file-for-file and keeps
     // relative imports as-is: a specifier escaping the tree points into

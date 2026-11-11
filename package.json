@@ -100,6 +100,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^10.0.0",
+    "@arethetypeswrong/core": "^0.18.5",
     "@electric-sql/pglite": "^0.5.16",
     "@electric-sql/pglite-socket": "^0.2.19",
     "@libsql/client": "^0.18.0",
@@ -121,6 +122,7 @@
     "nuxt": "npm:nuxt-nightly@5.0.0-2611092254-8b7f263",
     "pkg-pr-new": "^0.0.93",
     "postgres": "^3.4.9",
+    "publint": "^0.3.25",
     "tsdown": "0.23.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite": "^8.3.7",
