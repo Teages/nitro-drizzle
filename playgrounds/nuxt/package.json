@@ -11,15 +11,15 @@
     "drizzle:check": "drizzle-kit check"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.4",
+    "@libsql/client": "^0.18.0",
     "@teages/nitro-drizzle": "workspace:*",
     "drizzle-orm": "1.0.0-rc.4",
-    "vue": "^3.5.41",
-    "vue-router": "^5.2.0"
+    "vue": "^3.5.45",
+    "vue-router": "^5.4.0"
   },
   "devDependencies": {
     "drizzle-kit": "1.0.0-rc.4",
-    "nitro": "^3.0.260610-beta",
-    "nuxt": "npm:nuxt-nightly@5.0.0-29801588.e458891d"
+    "nitro": "^3.0.261103-rc",
+    "nuxt": "npm:nuxt-nightly@5.0.0-2611092254-8b7f263"
   }
 }

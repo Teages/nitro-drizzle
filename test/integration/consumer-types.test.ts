@@ -43,7 +43,13 @@ describe('published package consumer types', () => {
     const tarballPath = await packRepository(rootDir)
     const packageDir = join(rootDir, 'node_modules', '@teages', 'nitro-drizzle')
     await mkdir(packageDir, { recursive: true })
-    await execFileAsync('tar', ['-xzf', tarballPath, '-C', packageDir, '--strip-components=1'])
+    await execFileAsync('tar', [
+      '-xzf',
+      tarballPath,
+      '-C',
+      packageDir,
+      '--strip-components=1',
+    ])
     const shipped = await readdir(packageDir)
     expect(shipped).toContain('dist')
 
@@ -76,7 +82,9 @@ export const users = sqliteTable('users', {
         driver: 'libsql',
         connection: { url: 'file:database.db' },
       },
-      { serverDir: join(rootDir, 'server') },
+      {
+        serverDir: join(rootDir, 'server'),
+      },
     )
     expect(config).toBeDefined()
     if (config === undefined) {

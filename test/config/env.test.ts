@@ -5,7 +5,10 @@ describe('expandNitroEnv', () => {
   it('expands {{VAR}} templates in string values when enabled', () => {
     const connection = expandNitroEnv(
       { url: '{{DATABASE_URL}}', host: '{{DB_HOST}}:5432' },
-      { env: { DATABASE_URL: 'postgres://db', DB_HOST: 'db.internal' }, envExpansion: true },
+      {
+        env: { DATABASE_URL: 'postgres://db', DB_HOST: 'db.internal' },
+        envExpansion: true,
+      },
     )
     expect(connection.url).toBe('postgres://db')
     expect(connection.host).toBe('db.internal:5432')
@@ -14,7 +17,10 @@ describe('expandNitroEnv', () => {
   it('keeps literal {{VAR}} when the variable is missing or empty', () => {
     const connection = expandNitroEnv(
       { url: '{{DATABASE_URL}}', host: '{{DB_HOST}}' },
-      { env: { DB_HOST: '' }, envExpansion: true },
+      {
+        env: { DB_HOST: '' },
+        envExpansion: true,
+      },
     )
     expect(connection.url).toBe('{{DATABASE_URL}}')
     expect(connection.host).toBe('{{DB_HOST}}')
@@ -23,7 +29,10 @@ describe('expandNitroEnv', () => {
   it('does not expand templates when envExpansion is disabled', () => {
     const connection = expandNitroEnv(
       { url: '{{DATABASE_URL}}' },
-      { env: { DATABASE_URL: 'postgres://db' }, envExpansion: false },
+      {
+        env: { DATABASE_URL: 'postgres://db' },
+        envExpansion: false,
+      },
     )
     expect(connection.url).toBe('{{DATABASE_URL}}')
   })
@@ -36,7 +45,10 @@ describe('expandNitroEnv', () => {
   it('ignores NITRO_DRIZZLE_CONNECTION_* environment variables', () => {
     const connection = expandNitroEnv(
       { url: 'file:default.db' },
-      { env: { NITRO_DRIZZLE_CONNECTION_URL: 'libsql://override' }, envExpansion: true },
+      {
+        env: { NITRO_DRIZZLE_CONNECTION_URL: 'libsql://override' },
+        envExpansion: true,
+      },
     )
     expect(connection.url).toBe('file:default.db')
   })
@@ -44,15 +56,24 @@ describe('expandNitroEnv', () => {
   it('expands a templated port to its string value', () => {
     const connection = expandNitroEnv(
       { port: '{{DB_PORT}}' },
-      { env: { DB_PORT: '5432' }, envExpansion: true },
+      {
+        env: { DB_PORT: '5432' },
+        envExpansion: true,
+      },
     )
     expect(connection.port).toBe('5432')
   })
 
   it('expands templates inside nested object values', () => {
     const connection = expandNitroEnv(
-      { options: { url: '{{DATABASE_URL}}' }, port: 5432 },
-      { env: { DATABASE_URL: 'postgres://db' }, envExpansion: true },
+      {
+        options: { url: '{{DATABASE_URL}}' },
+        port: 5432,
+      },
+      {
+        env: { DATABASE_URL: 'postgres://db' },
+        envExpansion: true,
+      },
     )
     expect(connection.options).toEqual({ url: 'postgres://db' })
     expect(connection.port).toBe(5432)
@@ -60,7 +81,10 @@ describe('expandNitroEnv', () => {
 
   it('does not mutate the input connection', () => {
     const input = { url: '{{DATABASE_URL}}' }
-    expandNitroEnv(input, { env: { DATABASE_URL: 'postgres://db' }, envExpansion: true })
+    expandNitroEnv(input, {
+      env: { DATABASE_URL: 'postgres://db' },
+      envExpansion: true,
+    })
     expect(input.url).toBe('{{DATABASE_URL}}')
   })
 })

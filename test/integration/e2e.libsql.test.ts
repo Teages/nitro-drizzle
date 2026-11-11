@@ -9,6 +9,7 @@ import { createClient } from '@libsql/client'
 import { build, createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
 import { copyFixture, fixtureMigrationNames, fixtureMigrationsFolder } from './fixtures'
+import { acquireDistLock } from './pack'
 
 const repoRoot = process.cwd()
 const temporaryDirectories: string[] = []
@@ -59,23 +60,37 @@ describe('@teages/nitro-drizzle end-to-end build', () => {
     // resolve against the workspace install, built for a libSQL database
     const rootDir = await mkdtemp(join(repoRoot, '.test-drizzle-e2e-'))
     temporaryDirectories.push(rootDir)
-    await copyFixture(rootDir, { moduleSpecifier: resolve(repoRoot, 'src/index') })
+    await copyFixture(rootDir, {
+      moduleSpecifier: resolve(repoRoot, 'src/index'),
+    })
     const databaseFile = join(rootDir, 'app.db')
     // The fixture config enables devMock; a production build resolves no dev
     // database, so the inline drizzle block only retargets the driver and
-    // connection at the throwaway database.
-    const nitro = await createNitro({
-      rootDir,
-      drizzle: {
-        dialect: 'sqlite',
-        driver: 'libsql',
-        schemaPath: './server/db/schema.sqlite.ts',
-        migrationsDir: './server/db/migrations/sqlite',
-        connection: { url: `file:${databaseFile}` },
-      },
-    })
-    await build(nitro)
-    await nitro.close()
+    // connection at the throwaway database. The build resolves the runtime
+    // entries from the shared dist/ tree, so the dist lock spans it: a
+    // concurrent pack's cleanup would fail the build with UNRESOLVED_IMPORT.
+    const releaseDistLock = await acquireDistLock()
+    try {
+      const nitro = await createNitro({
+        rootDir,
+        drizzle: {
+          dialect: 'sqlite',
+          driver: 'libsql',
+          schemaPath: './server/db/schema.sqlite.ts',
+          migrationsDir: './server/db/migrations/sqlite',
+          connection: { url: `file:${databaseFile}` },
+        },
+      })
+      try {
+        await build(nitro)
+      }
+      finally {
+        await nitro.close()
+      }
+    }
+    finally {
+      await releaseDistLock()
+    }
 
     // Then the build leaves the database untouched
     const verify = createClient({ url: `file:${databaseFile}` })
@@ -107,9 +122,15 @@ describe('@teages/nitro-drizzle end-to-end build', () => {
 
     // And the built server serves queries routed through the virtual #drizzle client
     const port = await reservePort()
-    const serverProcess = spawn('node', [join(rootDir, '.output/server/index.mjs')], {
+    const serverProcess = spawn('node', [
+      join(rootDir, '.output/server/index.mjs'),
+    ], {
       cwd: rootDir,
-      env: { ...process.env, HOST: '127.0.0.1', PORT: String(port) },
+      env: {
+        ...process.env,
+        HOST: '127.0.0.1',
+        PORT: String(port),
+      },
       stdio: ['ignore', 'ignore', 'pipe'],
     })
     childProcesses.push(serverProcess)

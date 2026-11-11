@@ -174,7 +174,9 @@ describe('resolveDevDatabase', () => {
 describe('detectDevRuntimeEngines', () => {
   it('reads bun availability from the host process and probes node:sqlite', () => {
     // Given / When / Then
-    expect(detectDevRuntimeEngines({ versions: { bun: '1.1.0' } }).bun)
+    expect(detectDevRuntimeEngines({
+      versions: { bun: '1.1.0' },
+    }).bun)
       .toBe(true)
     expect(detectDevRuntimeEngines({}).bun).toBe(false)
     expect(detectDevRuntimeEngines({}).nodeSqlite).toBeTypeOf('boolean')

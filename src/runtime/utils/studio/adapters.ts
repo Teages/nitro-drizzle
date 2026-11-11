@@ -75,7 +75,9 @@ function binaryToRaw(params: readonly unknown[]): unknown[] {
     if (!isBinaryParam(param)) {
       return param
     }
-    return typeof param.value === 'object' ? JSON.stringify(param.value) : param.value
+    return typeof param.value === 'object'
+      ? JSON.stringify(param.value)
+      : param.value
   })
 }
 
@@ -235,7 +237,9 @@ export function pgliteExecutor(client: PgliteClient): StudioExecutor {
   return {
     async query(data) {
       const result = await client.query(data.sql, binaryToRaw(data.params ?? []), {
-        rowMode: data.mode === 'array' ? 'array' : 'object',
+        rowMode: data.mode === 'array'
+          ? 'array'
+          : 'object',
         parsers,
       })
       return result.rows

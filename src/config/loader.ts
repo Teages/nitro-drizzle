@@ -30,7 +30,20 @@ export class DrizzleConfigError extends Error {
 
 /** The `nuxt.config` extensions Nuxt's config loader accepts, in c12's order. */
 const NUXT_CONFIG_EXTENSIONS
-  = ['.ts', '.mts', '.cts', '.js', '.mjs', '.cjs', '.json', '.jsonc', '.json5', '.yaml', '.yml', '.toml']
+  = [
+    '.ts',
+    '.mts',
+    '.cts',
+    '.js',
+    '.mjs',
+    '.cjs',
+    '.json',
+    '.jsonc',
+    '.json5',
+    '.yaml',
+    '.yml',
+    '.toml',
+  ]
 
 /** The Nitro-config fields the drizzle-kit loader consumes, per framework. */
 interface DrizzleConfigSource {
@@ -53,7 +66,9 @@ function hasNuxtConfig(rootDir: string): boolean {
 async function loadNitroSource(cwd: string | undefined): Promise<DrizzleConfigSource> {
   const { loadOptions } = await import('nitro/builder')
   const nitroOptions = await loadOptions(
-    cwd === undefined ? undefined : { rootDir: cwd },
+    cwd === undefined
+      ? undefined
+      : { rootDir: cwd },
   )
   return {
     framework: 'nitro',
@@ -73,7 +88,9 @@ interface NuxtNitroOptions {
 
 async function loadNuxtSource(cwd: string | undefined): Promise<DrizzleConfigSource> {
   const { loadNuxtConfig } = await import('@nuxt/kit')
-  const nuxtOptions = await loadNuxtConfig(cwd === undefined ? {} : { cwd })
+  const nuxtOptions = await loadNuxtConfig(cwd === undefined
+    ? {}
+    : { cwd })
   const nitro = (nuxtOptions.nitro ?? {}) as NuxtNitroOptions
   return {
     framework: 'nuxt',
@@ -87,7 +104,9 @@ async function loadNuxtSource(cwd: string | undefined): Promise<DrizzleConfigSou
     // from the project root.
     serverDir: typeof nitro.serverDir === 'string'
       ? resolve(nuxtOptions.rootDir, nuxtOptions.srcDir, nitro.serverDir)
-      : nitro.serverDir === false ? false : nuxtOptions.serverDir,
+      : nitro.serverDir === false
+        ? false
+        : nuxtOptions.serverDir,
     envExpansion: nitro.experimental?.envExpansion === true,
     configLabel: 'the Nuxt config',
   }
@@ -110,9 +129,15 @@ function hostCredentials(credentials: DatabaseConnection): {
     // `{{VAR}}` templates — coerce here, everything unset-shaped stays out.
     ...(credentials.port === undefined || credentials.port === 0 || credentials.port === ''
       ? {}
-      : { port: Number(credentials.port) }),
-    ...(credentials.user === undefined ? {} : { user: credentials.user }),
-    ...(credentials.password === undefined ? {} : { password: credentials.password }),
+      : {
+          port: Number(credentials.port),
+        }),
+    ...(credentials.user === undefined
+      ? {}
+      : { user: credentials.user }),
+    ...(credentials.password === undefined
+      ? {}
+      : { password: credentials.password }),
     database: credentials.database ?? '',
   }
 }
@@ -226,7 +251,9 @@ export async function loadDrizzleConfig(
   options: LoadDrizzleConfigOptions = {},
 ): Promise<DrizzleKitConfig> {
   const framework = options.framework
-    ?? (hasNuxtConfig(options.cwd ?? process.cwd()) ? 'nuxt' : 'nitro')
+    ?? (hasNuxtConfig(options.cwd ?? process.cwd())
+      ? 'nuxt'
+      : 'nitro')
   const source = framework === 'nuxt'
     ? await loadNuxtSource(options.cwd)
     : await loadNitroSource(options.cwd)
@@ -248,7 +275,9 @@ export async function loadDrizzleConfig(
   const config = resolveDrizzleConfig(
     {
       ...drizzle,
-      ...(Object.keys(connection).length > 0 ? { connection } : {}),
+      ...(Object.keys(connection).length > 0
+        ? { connection }
+        : {}),
     },
     { serverDir: source.serverDir },
   )
@@ -268,7 +297,9 @@ export async function loadDrizzleConfig(
   }
   catch (error) {
     throw new DrizzleConfigError(
-      error instanceof Error ? error.message : String(error),
+      error instanceof Error
+        ? error.message
+        : String(error),
     )
   }
 

@@ -17,7 +17,11 @@ function captureDocks() {
   const entries: DockEntry[] = []
   return {
     entries,
-    context: { docks: { register: (entry: DockEntry) => entries.push(entry) } },
+    context: {
+      docks: {
+        register: (entry: DockEntry) => entries.push(entry),
+      },
+    },
   }
 }
 
@@ -45,16 +49,18 @@ describe('@teages/nitro-drizzle/devtool', () => {
     // the dock hands rendering to the plugin's renderer module; the data URL
     // sidesteps module-graph resolution entirely, which dodged cross-origin
     // trouble with the host's dynamic import
-    expect(entries).toEqual([{
-      id: 'drizzle-studio',
-      title: 'Drizzle Studio',
-      icon: 'simple-icons:drizzle',
-      type: 'custom-render',
-      renderer: {
-        importFrom: expect.stringMatching(/^data:text\/javascript;base64,[A-Za-z0-9+/=]+$/),
-        importName: 'default',
+    expect(entries).toEqual([
+      {
+        id: 'drizzle-studio',
+        title: 'Drizzle Studio',
+        icon: 'simple-icons:drizzle',
+        type: 'custom-render',
+        renderer: {
+          importFrom: expect.stringMatching(/^data:text\/javascript;base64,[A-Za-z0-9+/=]+$/),
+          importName: 'default',
+        },
       },
-    }])
+    ])
   })
 
   it('renders the keyed studio route with LNA delegation', () => {

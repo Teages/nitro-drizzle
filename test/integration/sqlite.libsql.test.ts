@@ -40,7 +40,9 @@ describe('libsql driver integration', () => {
     const verify = createClient({ url: `file:${databasePath}` })
     try {
       const counts = await verify.execute('SELECT id, title FROM counts')
-      expect(counts.rows).toEqual([{ id: 'driver-row', title: 'integration' }])
+      expect(counts.rows).toEqual([
+        { id: 'driver-row', title: 'integration' },
+      ])
       const applied = await verify.execute(
         'SELECT name FROM __drizzle_migrations ORDER BY id',
       )

@@ -3,7 +3,10 @@ import { lazyUseDrizzleSource, USE_CONNECTION_IMPORT } from './helpers'
 
 export function neonHttpSource(imports: SourceImports): string {
   return lazyUseDrizzleSource(
-    { ...imports, extras: [USE_CONNECTION_IMPORT] },
+    {
+      ...imports,
+      extras: [USE_CONNECTION_IMPORT],
+    },
     `  const connection = useDrizzleConnection()
   return {
     connection: connection.url || connection.connectionString,

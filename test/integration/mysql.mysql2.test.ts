@@ -65,7 +65,9 @@ describe.skipIf(mysql === undefined)('mysql2 driver integration', () => {
     const verify = await createConnection(mysql!.url)
     try {
       const [counts] = await verify.query('SELECT id, title FROM counts')
-      expect(counts).toEqual([{ id: 'driver-row', title: 'integration' }])
+      expect(counts).toEqual([
+        { id: 'driver-row', title: 'integration' },
+      ])
       const [applied] = await verify.query(
         'SELECT name FROM __drizzle_migrations ORDER BY id',
       )

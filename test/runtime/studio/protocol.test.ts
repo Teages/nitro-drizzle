@@ -46,7 +46,12 @@ describe('studioDevtoolsRedirect', () => {
   })
 
   it('stays closed without a key, a studio session, or a matching query', () => {
-    const input = { method: 'GET', open: 'secret', requestPort: '3000', studio } as const
+    const input = {
+      method: 'GET',
+      open: 'secret',
+      requestPort: '3000',
+      studio,
+    } as const
     expect(studioDevtoolsRedirect({ key: undefined, ...input })).toBeUndefined()
     expect(studioDevtoolsRedirect({ key: 'secret', ...input, studio: undefined })).toBeUndefined()
     expect(studioDevtoolsRedirect({ key: 'secret', ...input, method: 'POST' })).toBeUndefined()
@@ -88,14 +93,23 @@ describe('handleStudioProtocol', () => {
 
   it('forwards proxy queries to the executor', async () => {
     const executor = fakeExecutor({
-      query: async data => [{ echo: data.sql, params: data.params }],
+      query: async data => [
+        { echo: data.sql, params: data.params },
+      ],
     })
     const response = await handleStudioProtocol(executor, initContext, {
       type: 'proxy',
-      data: { sql: 'SELECT 1', params: [1], method: 'all' },
+      data: {
+        sql: 'SELECT 1',
+        params: [1],
+        method: 'all',
+      },
     })
     await expect(response.json()).resolves.toEqual([
-      { echo: 'SELECT 1', params: [1] },
+      {
+        echo: 'SELECT 1',
+        params: [1],
+      },
     ])
   })
 
@@ -106,7 +120,9 @@ describe('handleStudioProtocol', () => {
           when: new Date('2026-08-25T00:00:00.000Z'),
           big: 9007199254740993n,
           blob: Buffer.from('hello'),
-          nested: { error: new Error('boom') },
+          nested: {
+            error: new Error('boom'),
+          },
         },
       ],
     })
@@ -119,16 +135,23 @@ describe('handleStudioProtocol', () => {
         when: '2026-08-25T00:00:00.000Z',
         big: '9007199254740993',
         blob: Buffer.from('hello').toString('base64'),
-        nested: { error: { error: 'boom' } },
+        nested: {
+          error: { error: 'boom' },
+        },
       },
     ])
   })
 
   it('runs bproxy benchmarks and reports timings per repeat', async () => {
-    const executor = fakeExecutor({ query: async () => [] })
+    const executor = fakeExecutor({
+      query: async () => [],
+    })
     const response = await handleStudioProtocol(executor, initContext, {
       type: 'bproxy',
-      data: { query: { sql: 'SELECT 1' }, repeats: 3 },
+      data: {
+        query: { sql: 'SELECT 1' },
+        repeats: 3,
+      },
     })
     const timings = (await response.json()) as number[]
     expect(timings).toHaveLength(3)
@@ -138,11 +161,16 @@ describe('handleStudioProtocol', () => {
   })
 
   it('rejects bproxy repeats that are not bounded positive integers', async () => {
-    const executor = fakeExecutor({ query: async () => [] })
+    const executor = fakeExecutor({
+      query: async () => [],
+    })
     for (const repeats of [0, -1, 1.5, 101, 1e9]) {
       const response = await handleStudioProtocol(executor, initContext, {
         type: 'bproxy',
-        data: { query: { sql: 'SELECT 1' }, repeats },
+        data: {
+          query: { sql: 'SELECT 1' },
+          repeats,
+        },
       })
       expect(response.status).toBe(400)
       await expect(response.json()).resolves.toMatchObject({
@@ -155,7 +183,9 @@ describe('handleStudioProtocol', () => {
   it('reports custom defaults as unsupported', async () => {
     const response = await handleStudioProtocol(fakeExecutor(), initContext, {
       type: 'defaults',
-      data: [{ schema: 'main', table: 'users', column: 'id' }],
+      data: [
+        { schema: 'main', table: 'users', column: 'id' },
+      ],
     })
     expect(response.status).toBe(500)
     await expect(response.json()).resolves.toMatchObject({

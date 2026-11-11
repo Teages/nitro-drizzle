@@ -95,5 +95,8 @@ export async function pushDevSchema(context: {
     console.warn(hint.hint)
   }
   await apply()
-  return { statements: sqlStatements.length, hints: hints.map(h => h.hint) }
+  return {
+    statements: sqlStatements.length,
+    hints: hints.map(h => h.hint),
+  }
 }

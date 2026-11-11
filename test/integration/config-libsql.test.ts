@@ -46,7 +46,9 @@ export default defineConfig({
 
     // When the public loader output is passed to the real drizzle-kit CLI
     const config = await loadDrizzleConfig({ cwd: rootDir })
-    expect('dbCredentials' in config ? config.dbCredentials : undefined).toEqual({
+    expect('dbCredentials' in config
+      ? config.dbCredentials
+      : undefined).toEqual({
       url: `file:${databaseFile}`,
     })
     const drizzleConfig = join(rootDir, 'drizzle.config.mjs')

@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rename, rm, symlink, unlink, writeFile } from 'node:fs/
 import { createServer } from 'node:net'
 import { join, resolve } from 'node:path'
 import { afterEach, describe, it } from 'vitest'
+import { acquireDistLock } from './pack'
 
 const repoRoot = process.cwd()
 const temporaryDirectories: string[] = []
@@ -125,8 +126,18 @@ export default defineConfig({
     )
     const port = await reservePort()
 
+    // The dev server resolves the runtime entries from the shared dist/
+    // tree on every build and HMR rebuild, so the dist lock spans spawn
+    // through shutdown: a concurrent pack's cleanup would fail the build
+    // with UNRESOLVED_IMPORT and every request would answer 500.
+    const releaseDistLock = await acquireDistLock()
+
     // When the dev server boots with the dev database disabled
-    const child = spawn(nitroBin, ['dev', '--port', String(port)], {
+    const child = spawn(nitroBin, [
+      'dev',
+      '--port',
+      String(port),
+    ], {
       cwd: rootDir,
       env: { ...process.env, NITRO_DRIZZLE_DEV_MOCK: 'false' },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -217,6 +228,7 @@ export const users = sqliteTable('users', {
         }
       })
       await exited.catch(() => {})
+      await releaseDistLock()
     }
   })
 })

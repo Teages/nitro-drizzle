@@ -55,7 +55,9 @@ describe('postgres-js driver integration', () => {
       const counts = await verify<{ id: string, title: string }[]>`
         SELECT id, title FROM counts
       `
-      expect(counts).toEqual([{ id: 'driver-row', title: 'integration' }])
+      expect(counts).toEqual([
+        { id: 'driver-row', title: 'integration' },
+      ])
       const applied = await verify<{ name: string }[]>`
         SELECT name FROM drizzle.__drizzle_migrations ORDER BY id
       `

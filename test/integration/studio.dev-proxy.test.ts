@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { connect, createServer } from 'node:net'
 import { join, resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
+import { acquireDistLock } from './pack'
 
 const repoRoot = process.cwd()
 const temporaryDirectories: string[] = []
@@ -79,7 +80,9 @@ async function postStudio(url: string, body: unknown, origin?: string, signal?: 
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      ...(origin === undefined ? {} : { origin }),
+      ...(origin === undefined
+        ? {}
+        : { origin }),
     },
     body: JSON.stringify(body),
     signal,
@@ -111,7 +114,9 @@ function rawStudioRequest(
         socket.write([
           `${method} ${path} HTTP/1.0`,
           `Host: ${host}`,
-          ...(origin === undefined ? [] : [`Origin: ${origin}`]),
+          ...(origin === undefined
+            ? []
+            : [`Origin: ${origin}`]),
           'Content-Type: application/json',
           `Content-Length: ${Buffer.byteLength(body)}`,
           'Connection: close',
@@ -125,7 +130,11 @@ function rawStudioRequest(
       .on('end', () => {
         const headerBlock = raw.slice(0, raw.indexOf('\r\n\r\n'))
         const status = Number((headerBlock.split('\r\n')[0] ?? '').split(' ')[1])
-        resolvePromise({ status, body: raw.slice(headerBlock.length + 4), headers: headerBlock })
+        resolvePromise({
+          status,
+          body: raw.slice(headerBlock.length + 4),
+          headers: headerBlock,
+        })
       })
       .on('timeout', () => socket.destroy(new Error(`Studio proxy request to ${host} timed out`)))
       .on('error', rejectPromise)
@@ -150,7 +159,10 @@ async function pollProxyQuery(
       const { status, body } = await rawStudioRequest(
         port,
         `${localhostDomain}:${port}`,
-        JSON.stringify({ type: 'proxy', data: { sql, method: 'values', mode: 'array' } }),
+        JSON.stringify({
+          type: 'proxy',
+          data: { sql, method: 'values', mode: 'array' },
+        }),
         'https://local.drizzle.studio',
       )
       if (status === 200) {
@@ -244,6 +256,11 @@ export default defineConfig({
 })
 `)
 
+    // The dev server resolves the runtime entries from the shared dist/
+    // tree on every build and HMR rebuild, so the dist lock spans spawn
+    // through shutdown: a concurrent pack's cleanup would fail the build
+    // with UNRESOLVED_IMPORT and every request would answer 500.
+    const releaseDistLock = await acquireDistLock()
     const { child, waitForOutput } = spawnDevServer(rootDir)
     try {
       const proxyHost = (domain: string): string => `${domain}:${httpPort}`
@@ -339,10 +356,15 @@ export default defineConfig({
       const probe = await rawStudioRequest(
         httpPort,
         proxyHost(localhostDomain),
-        JSON.stringify({ type: 'proxy', data: { sql: 'SELECT 1 AS x, 2 AS x', method: 'values', mode: 'array' } }),
+        JSON.stringify({
+          type: 'proxy',
+          data: { sql: 'SELECT 1 AS x, 2 AS x', method: 'values', mode: 'array' },
+        }),
         'https://local.drizzle.studio',
       )
-      expect(JSON.parse(probe.body)).toEqual([[1, 2]])
+      expect(JSON.parse(probe.body)).toEqual([
+        [1, 2],
+      ])
 
       // And a worker reload keeps serving the studio on the same route
       await writeFile(schemaFile, `import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
@@ -358,7 +380,9 @@ export const reloadMarkers = sqliteTable('reload_markers', {
 `)
       // The reload itself is observed through the gated route: only the new
       // generation pushes and serves the new table.
-      await pollProxyQuery(httpPort, localhostDomain, 'SELECT count(*) AS n FROM reload_markers', [[0]], 90_000)
+      await pollProxyQuery(httpPort, localhostDomain, 'SELECT count(*) AS n FROM reload_markers', [
+        [0],
+      ], 90_000)
       const afterReload = await rawStudioRequest(
         httpPort,
         proxyHost(localhostDomain),
@@ -392,6 +416,7 @@ export const reloadMarkers = sqliteTable('reload_markers', {
       if (child.exitCode === null && child.signalCode === null) {
         child.kill('SIGKILL')
       }
+      await releaseDistLock()
     }
   })
 })

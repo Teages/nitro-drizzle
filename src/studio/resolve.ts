@@ -28,7 +28,9 @@ export function resolveDevStudio(
   if (options === false) {
     return undefined
   }
-  const config: DrizzleDevStudioOptions = options === true || options === undefined ? {} : options
+  const config: DrizzleDevStudioOptions = options === true || options === undefined
+    ? {}
+    : options
 
   const studioUrl = config.studioUrl ?? DEFAULT_STUDIO_URL
   let parsed: URL

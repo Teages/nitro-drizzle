@@ -35,7 +35,10 @@ export function connectionAwareSource(
   variants: ConnectionSourceVariants,
 ): string {
   if (dev === undefined) {
-    return variants.runtime({ ...imports, extras: [USE_CONNECTION_IMPORT] })
+    return variants.runtime({
+      ...imports,
+      extras: [USE_CONNECTION_IMPORT],
+    })
   }
   return variants.dev(imports, dev)
 }
@@ -97,7 +100,9 @@ function initDrizzle() {
 
 export function useDrizzle() {
   _db ??= initDrizzle()
-  return { db: _db, schema, relations, mockDb: ${mock === true ? '_db' : 'undefined'} }
+  return { db: _db, schema, relations, mockDb: ${mock === true
+    ? '_db'
+    : 'undefined'} }
 }
 `
 }

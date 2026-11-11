@@ -148,7 +148,9 @@ export const relations = defineRelations({ users })
         driver: 'postgres-js',
         connection: { connectionString: 'postgres://localhost/database' },
       },
-      { serverDir: join(rootDir, 'server') },
+      {
+        serverDir: join(rootDir, 'server'),
+      },
     )
     expect(config).toBeDefined()
     if (config === undefined) {
@@ -228,7 +230,9 @@ if (mock) {
         driver: 'libsql',
         connection: { url: 'file:database.db' },
       },
-      { serverDir: join(rootDir, 'server') },
+      {
+        serverDir: join(rootDir, 'server'),
+      },
     )
     expect(config).toBeDefined()
     if (config === undefined) {
@@ -313,7 +317,9 @@ useNitroHooks().hook('drizzle:dev-mock:seed', async () => {
         driver: 'postgres-js',
         connection: { connectionString: 'postgres://localhost/database' },
       },
-      { serverDir: join(rootDir, 'server') },
+      {
+        serverDir: join(rootDir, 'server'),
+      },
     )
     expect(config).toBeDefined()
     if (config === undefined) {
@@ -389,7 +395,9 @@ useNitroHooks().hook('drizzle:dev-mock:setup', async (client) => {
         driver: 'bun-sqlite',
         connection: { url: 'file:.data/dev.db' },
       },
-      { serverDir: join(rootDir, 'server') },
+      {
+        serverDir: join(rootDir, 'server'),
+      },
     )
     expect(config).toBeDefined()
     if (config === undefined) {

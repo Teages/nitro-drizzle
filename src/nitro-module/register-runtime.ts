@@ -1,21 +1,65 @@
 import type { Nitro } from 'nitro/types'
 import { randomUUID } from 'node:crypto'
+import { createRequire } from 'node:module'
+import { dirname } from 'node:path'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../studio/contracts'
 import { readDevtoolsKey } from '../studio/devtools-key'
 
-export function configureRuntime(nitro: Nitro): void {
-  const runtimeDir = '@teages/nitro-drizzle/runtime'
+const require = createRequire(import.meta.url)
 
-  // Nitro externalizes dependencies during `nitro dev`. These runtime entries
-  // import app-scoped virtual modules and Nitro context APIs, so they must be
-  // compiled inside the consumer's server graph instead of loaded directly
-  // from this package's node_modules scope.
+/**
+ * `./runtime/*` resolves to `dist/runtime/*.mjs`. A checkout with no build
+ * falls through the `source` condition to `src/runtime/*.ts`.
+ */
+function runtimeEntry(subpath: string): string {
+  const specifier = `@teages/nitro-drizzle/runtime/${subpath}`
+  try {
+    return require.resolve(specifier)
+  }
+  catch (error) {
+    if (!isUnbuiltRuntime(error))
+      throw error
+    // Node resolves this Set, but @types/node only types `paths`.
+    return require.resolve(specifier, {
+      conditions: new Set(['source']),
+    } as NodeJS.RequireResolveOptions)
+  }
+}
+
+function isUnbuiltRuntime(error: unknown): boolean {
+  return error instanceof Error
+    && 'code' in error
+    && (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED')
+}
+
+const runtimeRoot = dirname(dirname(runtimeEntry('plugins/drizzle')))
+
+/**
+ * Nitro matches `noExternals` against the resolved path. Anchoring that
+ * pattern on this directory keeps the runtime in the server graph and leaves
+ * nested dependencies external. Vite never externalizes an absolute id, so
+ * the registered entries do not need a package-name rule.
+ */
+function runtimeNoExternal(directory: string): RegExp {
+  const escaped = directory
+    .replaceAll('\\', '/')
+    .replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&')
+    .replaceAll('/', '[\\\\/]')
+  return new RegExp(`^${escaped}(?!.*[\\\\/]node_modules[\\\\/])`)
+}
+
+export const RUNTIME_NO_EXTERNAL = runtimeNoExternal(runtimeRoot)
+
+export function configureRuntime(nitro: Nitro): void {
+  // These runtime entries import app-scoped virtual modules and Nitro context
+  // APIs, so they must be compiled inside the consumer's server graph instead
+  // of loaded directly from this package's node_modules scope.
   if (nitro.options.noExternals !== true) {
     const noExternals = Array.isArray(nitro.options.noExternals)
       ? nitro.options.noExternals
       : []
-    if (!noExternals.includes(runtimeDir)) {
-      noExternals.push(runtimeDir)
+    if (!noExternals.includes(RUNTIME_NO_EXTERNAL)) {
+      noExternals.push(RUNTIME_NO_EXTERNAL)
     }
     nitro.options.noExternals = noExternals
   }
@@ -23,14 +67,14 @@ export function configureRuntime(nitro: Nitro): void {
   if (!nitro.options.traceDeps.includes('drizzle-orm*')) {
     nitro.options.traceDeps.push('drizzle-orm*')
   }
-  nitro.options.plugins.push('@teages/nitro-drizzle/runtime/plugins/drizzle')
+  nitro.options.plugins.push(runtimeEntry('plugins/drizzle'))
   // Nitro swallows request-hook rejections: this middleware is what turns a
   // failed drizzle initialization into failed requests instead of routing
   // into handlers with an uninitialized client.
   nitro.options.handlers.push({
     route: '/**',
     middleware: true,
-    handler: '@teages/nitro-drizzle/runtime/middleware/drizzle-gate',
+    handler: runtimeEntry('middleware/drizzle-gate'),
   })
 }
 
@@ -53,9 +97,9 @@ export function configureStudioRuntime(nitro: Nitro): void {
   nitro.options.handlers.push({
     route: '/**',
     middleware: true,
-    handler: '@teages/nitro-drizzle/runtime/middleware/studio-gate',
+    handler: runtimeEntry('middleware/studio-gate'),
   })
   nitro.options.routes[STUDIO_ROUTE] = {
-    handler: '@teages/nitro-drizzle/runtime/routes/_drizzle/studio',
+    handler: runtimeEntry('routes/_drizzle/studio'),
   }
 }
