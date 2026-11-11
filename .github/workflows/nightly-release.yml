@@ -22,4 +22,4 @@ jobs:
           cache: pnpm
       - run: pnpm install
       - run: pnpm build
-      - run: pnpm exec pkg-pr-new publish --previewVersion
+      - run: pnpm exec pkg-pr-new publish --previewVersion --pnpm

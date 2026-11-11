@@ -8,28 +8,11 @@ import { readDevtoolsKey } from '../studio/devtools-key'
 const require = createRequire(import.meta.url)
 
 /**
- * `./runtime/*` resolves to `dist/runtime/*.mjs`. A checkout with no build
- * falls through the `source` condition to `src/runtime/*.ts`.
+ * `./runtime/*` resolves to `src/runtime/*.ts` in this repository and to
+ * `dist/runtime/*.mjs` in the published package, so one lookup covers both.
  */
 function runtimeEntry(subpath: string): string {
-  const specifier = `@teages/nitro-drizzle/runtime/${subpath}`
-  try {
-    return require.resolve(specifier)
-  }
-  catch (error) {
-    if (!isUnbuiltRuntime(error))
-      throw error
-    // Node resolves this Set, but @types/node only types `paths`.
-    return require.resolve(specifier, {
-      conditions: new Set(['source']),
-    } as NodeJS.RequireResolveOptions)
-  }
-}
-
-function isUnbuiltRuntime(error: unknown): boolean {
-  return error instanceof Error
-    && 'code' in error
-    && (error.code === 'MODULE_NOT_FOUND' || error.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED')
+  return require.resolve(`@teages/nitro-drizzle/runtime/${subpath}`)
 }
 
 const runtimeRoot = dirname(dirname(runtimeEntry('plugins/drizzle')))

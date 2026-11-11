@@ -8,37 +8,14 @@
   "repository": "Teages/nitro-drizzle",
   "sideEffects": false,
   "exports": {
-    ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
-    },
-    "./nuxt": {
-      "types": "./dist/nuxt.d.mts",
-      "import": "./dist/nuxt.mjs",
-      "default": "./dist/nuxt.mjs"
-    },
-    "./config": {
-      "types": "./dist/config.d.mts",
-      "import": "./dist/config.mjs",
-      "default": "./dist/config.mjs"
-    },
-    "./types": {
-      "types": "./dist/types.d.mts",
-      "import": "./dist/types.mjs",
-      "default": "./dist/types.mjs"
-    },
-    "./devtool": {
-      "types": "./dist/devtool.d.mts",
-      "import": "./dist/devtool.mjs",
-      "default": "./dist/devtool.mjs"
-    },
-    "./runtime/*": {
-      "source": "./src/runtime/*.ts",
-      "default": "./dist/runtime/*.mjs"
-    }
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./devtool": "./src/devtool.ts",
+    "./nuxt": "./src/nuxt.ts",
+    "./types": "./src/types.ts",
+    "./package.json": "./package.json",
+    "./runtime/*": "./src/runtime/*.ts"
   },
-  "module": "./dist/index.mjs",
   "typesVersions": {
     "*": {
       ".": [
@@ -130,6 +107,15 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./config": "./dist/config.mjs",
+      "./devtool": "./dist/devtool.mjs",
+      "./nuxt": "./dist/nuxt.mjs",
+      "./types": "./dist/types.mjs",
+      "./package.json": "./package.json",
+      "./runtime/*": "./dist/runtime/*.mjs"
+    }
   }
 }

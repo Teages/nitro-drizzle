@@ -65,45 +65,53 @@ afterEach(async () => {
 })
 
 describe('package surface', () => {
-  it('exposes exactly the five public entries with a default condition', async () => {
-    // Given — the published contract consumed by nitro.config.ts loading
+  it('maps the five public entries to types and runtime files', async () => {
+    // Given — tsdown writes both halves of the contract: `exports` serves this
+    // repository and points at sources, while `publishConfig.exports` replaces
+    // it with the built files when a publishConfig-aware pack runs
     const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as {
-      exports: Record<string, Record<string, string>>
+      exports: Record<string, string | Record<string, string>>
+      publishConfig: { exports: Record<string, string | Record<string, string>> }
       typesVersions: { '*': Record<string, string[]> }
     }
 
-    // Then — jiti reloads nitro.config.ts through CJS require.resolve, which
-    // throws ERR_PACKAGE_PATH_NOT_EXPORTED without the default condition
+    // Then — every facade and the runtime wildcard exist in both worlds, and
+    // the dev half never needs a build
     expect(Object.keys(packageJson.exports)).toEqual([
       '.',
-      './nuxt',
       './config',
-      './types',
       './devtool',
+      './nuxt',
+      './types',
+      './package.json',
       './runtime/*',
     ])
-    for (const [entry, distFile] of [
+    expect(Object.keys(packageJson.publishConfig.exports)).toEqual([
+      '.',
+      './config',
+      './devtool',
+      './nuxt',
+      './types',
+      './package.json',
+      './runtime/*',
+    ])
+    for (const [entry, file] of [
       ['.', 'index'],
       ['./nuxt', 'nuxt'],
       ['./config', 'config'],
       ['./types', 'types'],
       ['./devtool', 'devtool'],
     ] as const) {
-      expect(packageJson.exports[entry]).toEqual({
-        types: `./dist/${distFile}.d.mts`,
-        import: `./dist/${distFile}.mjs`,
-        default: `./dist/${distFile}.mjs`,
-      })
+      expect(packageJson.exports[entry]).toBe(`./src/${file}.ts`)
+      expect(packageJson.publishConfig.exports[entry]).toBe(`./dist/${file}.mjs`)
       expect(packageJson.typesVersions['*'][entry]).toEqual([
-        `./dist/${distFile}.d.mts`,
+        `./dist/${file}.d.mts`,
       ])
     }
-    // And — the wildcard resolves built files, and redirects to source when
-    // the build output is absent
-    expect(packageJson.exports['./runtime/*']).toEqual({
-      source: './src/runtime/*.ts',
-      default: './dist/runtime/*.mjs',
-    })
+    // And — Nitro resolves runtime entries one by one, from source here and
+    // from the bundled tree once installed
+    expect(packageJson.exports['./runtime/*']).toBe('./src/runtime/*.ts')
+    expect(packageJson.publishConfig.exports['./runtime/*']).toBe('./dist/runtime/*.mjs')
   })
 
   it('keeps @nuxt/kit as a runtime dependency, not a dev toolchain entry', async () => {
