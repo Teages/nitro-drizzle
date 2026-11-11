@@ -8,37 +8,14 @@
   "repository": "Teages/nitro-drizzle",
   "sideEffects": false,
   "exports": {
-    ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
-    },
-    "./nuxt": {
-      "types": "./dist/nuxt.d.mts",
-      "import": "./dist/nuxt.mjs",
-      "default": "./dist/nuxt.mjs"
-    },
-    "./config": {
-      "types": "./dist/config.d.mts",
-      "import": "./dist/config.mjs",
-      "default": "./dist/config.mjs"
-    },
-    "./types": {
-      "types": "./dist/types.d.mts",
-      "import": "./dist/types.mjs",
-      "default": "./dist/types.mjs"
-    },
-    "./devtool": {
-      "types": "./dist/devtool.d.mts",
-      "import": "./dist/devtool.mjs",
-      "default": "./dist/devtool.mjs"
-    },
-    "./runtime/*": {
-      "source": "./src/runtime/*.ts",
-      "default": "./dist/runtime/*.mjs"
-    }
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./devtool": "./src/devtool.ts",
+    "./nuxt": "./src/nuxt.ts",
+    "./types": "./src/types.ts",
+    "./package.json": "./package.json",
+    "./runtime/*": "./src/runtime/*.ts"
   },
-  "module": "./dist/index.mjs",
   "typesVersions": {
     "*": {
       ".": [
@@ -65,7 +42,7 @@
     "node": ">=26"
   },
   "scripts": {
-    "build": "obuild",
+    "build": "tsdown",
     "dev:prepare": "pnpm -F './playgrounds/*' prepare",
     "dev": "pnpm -C playgrounds/nitro dev",
     "dev:nuxt": "pnpm -C playgrounds/nuxt dev",
@@ -100,6 +77,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^10.0.0",
+    "@arethetypeswrong/core": "^0.18.5",
     "@electric-sql/pglite": "^0.5.16",
     "@electric-sql/pglite-socket": "^0.2.19",
     "@libsql/client": "^0.18.0",
@@ -119,15 +97,25 @@
     "mysql2": "^3.24.6",
     "nitro": "^3.0.261103-rc",
     "nuxt": "npm:nuxt-nightly@5.0.0-2611092254-8b7f263",
-    "obuild": "^0.4.45",
     "pkg-pr-new": "^0.0.93",
     "postgres": "^3.4.9",
+    "publint": "^0.3.25",
+    "tsdown": "0.23.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite": "^8.3.7",
     "vitest": "^4.1.12"
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./config": "./dist/config.mjs",
+      "./devtool": "./dist/devtool.mjs",
+      "./nuxt": "./dist/nuxt.mjs",
+      "./types": "./dist/types.mjs",
+      "./package.json": "./package.json",
+      "./runtime/*": "./dist/runtime/*.mjs"
+    }
   }
 }

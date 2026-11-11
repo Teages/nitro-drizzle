@@ -3,11 +3,11 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { dirname, join } from 'node:path'
 import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
-import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
 import { RUNTIME_NO_EXTERNAL } from '../src/nitro-module/register-runtime'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
+import buildConfig from '../tsdown.config'
 
 const CONFIG_HOOK = 'drizzle:config'
 const SETUP_HOOK = 'drizzle:dev-mock:setup'
@@ -65,45 +65,53 @@ afterEach(async () => {
 })
 
 describe('package surface', () => {
-  it('exposes exactly the five public entries with a default condition', async () => {
-    // Given — the published contract consumed by nitro.config.ts loading
+  it('maps the five public entries to types and runtime files', async () => {
+    // Given — tsdown writes both halves of the contract: `exports` serves this
+    // repository and points at sources, while `publishConfig.exports` replaces
+    // it with the built files when a publishConfig-aware pack runs
     const packageJson = JSON.parse(await readFile('package.json', 'utf8')) as {
-      exports: Record<string, Record<string, string>>
+      exports: Record<string, string | Record<string, string>>
+      publishConfig: { exports: Record<string, string | Record<string, string>> }
       typesVersions: { '*': Record<string, string[]> }
     }
 
-    // Then — jiti reloads nitro.config.ts through CJS require.resolve, which
-    // throws ERR_PACKAGE_PATH_NOT_EXPORTED without the default condition
+    // Then — every facade and the runtime wildcard exist in both worlds, and
+    // the dev half never needs a build
     expect(Object.keys(packageJson.exports)).toEqual([
       '.',
-      './nuxt',
       './config',
-      './types',
       './devtool',
+      './nuxt',
+      './types',
+      './package.json',
       './runtime/*',
     ])
-    for (const [entry, distFile] of [
+    expect(Object.keys(packageJson.publishConfig.exports)).toEqual([
+      '.',
+      './config',
+      './devtool',
+      './nuxt',
+      './types',
+      './package.json',
+      './runtime/*',
+    ])
+    for (const [entry, file] of [
       ['.', 'index'],
       ['./nuxt', 'nuxt'],
       ['./config', 'config'],
       ['./types', 'types'],
       ['./devtool', 'devtool'],
     ] as const) {
-      expect(packageJson.exports[entry]).toEqual({
-        types: `./dist/${distFile}.d.mts`,
-        import: `./dist/${distFile}.mjs`,
-        default: `./dist/${distFile}.mjs`,
-      })
+      expect(packageJson.exports[entry]).toBe(`./src/${file}.ts`)
+      expect(packageJson.publishConfig.exports[entry]).toBe(`./dist/${file}.mjs`)
       expect(packageJson.typesVersions['*'][entry]).toEqual([
-        `./dist/${distFile}.d.mts`,
+        `./dist/${file}.d.mts`,
       ])
     }
-    // And — the wildcard resolves built files, and redirects to source when
-    // the build output is absent
-    expect(packageJson.exports['./runtime/*']).toEqual({
-      source: './src/runtime/*.ts',
-      default: './dist/runtime/*.mjs',
-    })
+    // And — Nitro resolves runtime entries one by one, from source here and
+    // from the bundled tree once installed
+    expect(packageJson.exports['./runtime/*']).toBe('./src/runtime/*.ts')
+    expect(packageJson.publishConfig.exports['./runtime/*']).toBe('./dist/runtime/*.mjs')
   })
 
   it('keeps @nuxt/kit as a runtime dependency, not a dev toolchain entry', async () => {
@@ -120,36 +128,70 @@ describe('package surface', () => {
     expect(packageJson.devDependencies['@nuxt/kit']).toBeUndefined()
   })
 
-  it('builds every obuild entry from an existing source file', () => {
-    // Given — obuild mirrors src/ paths into dist/, so an entry pointing at
-    // a moved file ships nothing and breaks the published runtime
-    const entries = (buildConfig.entries ?? []).flatMap((entry) => {
-      const input = typeof entry === 'string'
-        ? entry
-        : entry.input
-      return typeof input === 'string'
-        ? [input]
-        : input
+  it('builds every tsdown entry from an existing source file', () => {
+    // Given — tsdown mirrors entry names into dist/, so an entry pointing at
+    // a moved file ships nothing and breaks the published package
+    const configs = Array.isArray(buildConfig)
+      ? buildConfig
+      : [buildConfig]
+    const entries: string[] = configs.flatMap((config) => {
+      // tsdown accepts a pattern, a pattern list, or a name-to-pattern record
+      const entry: unknown = config.entry
+      if (typeof entry === 'string') {
+        return [entry]
+      }
+      if (Array.isArray(entry)) {
+        return entry.map(String)
+      }
+      if (entry && typeof entry === 'object') {
+        return Object.values(entry).flat().map(String)
+      }
+      return []
     })
 
     // Then — the exact entry set: the five ABI facades at their
-    // dist-determining locations plus the runtime tree the transform
+    // dist-determining locations plus the runtime tree the unbundled
     // pass ships file-for-file
     expect([...entries].sort()).toEqual([
-      './src/config.ts',
-      './src/devtool.ts',
-      './src/index.ts',
-      './src/nuxt.ts',
-      './src/types.ts',
-      'src/runtime',
+      '!src/runtime/**/*.d.ts',
+      'src/config.ts',
+      'src/devtool.ts',
+      'src/index.ts',
+      'src/nuxt.ts',
+      'src/runtime/**/*.ts',
+      'src/types.ts',
     ])
     for (const input of entries) {
+      if (input.startsWith('!') || input.includes('*')) {
+        continue
+      }
       expect(existsSync(input), `${input} must exist`).toBe(true)
     }
   })
 
-  it('keeps the runtime tree self-contained for the transform pass', async () => {
-    // Given — the transform pass ships src/runtime file-for-file and keeps
+  it('gates the packed package through publint and attw in CI', () => {
+    // Given — the tarball is what npm serves, and only tsdown's post-build
+    // check reads it: a resolver-matrix regression here fails the release
+    // build instead of the consumer. Publint/attw are CI-only so a local
+    // build stays fast, and the profile drops the node10 and CJS-require
+    // rows `engines` (Node 26, ESM only) already rules out.
+    const configs = Array.isArray(buildConfig)
+      ? buildConfig
+      : [buildConfig]
+    const gated = configs.filter(config => config.publint || config.attw)
+
+    // Then
+    expect(gated).toHaveLength(1)
+    expect(gated[0].publint).toBe('ci-only')
+    expect(gated[0].attw).toMatchObject({
+      enabled: 'ci-only',
+      level: 'error',
+      profile: 'esm-only',
+    })
+  })
+
+  it('keeps the runtime tree self-contained for the unbundled pass', async () => {
+    // Given — the unbundled pass ships src/runtime file-for-file and keeps
     // relative imports as-is: a specifier escaping the tree points into
     // module-side source that exists only inside the bundled facades, so
     // the published runtime would import a file the package never contains

@@ -146,7 +146,7 @@ describe('published runtime entries in Nitro dev', () => {
         '--strip-components=1',
       ],
     )
-    // Every obuild entry ships a file: obuild mirrors src/ paths into dist/,
+    // Every tsdown entry ships a file: tsdown mirrors entry names into dist/,
     // so an entry pointing at a moved-away source silently drops its output.
     for (const entry of [
       'index',
