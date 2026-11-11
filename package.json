@@ -65,7 +65,7 @@
     "node": ">=26"
   },
   "scripts": {
-    "build": "obuild",
+    "build": "tsdown",
     "dev:prepare": "pnpm -F './playgrounds/*' prepare",
     "dev": "pnpm -C playgrounds/nitro dev",
     "dev:nuxt": "pnpm -C playgrounds/nuxt dev",
@@ -119,9 +119,9 @@
     "mysql2": "^3.24.6",
     "nitro": "^3.0.261103-rc",
     "nuxt": "npm:nuxt-nightly@5.0.0-2611092254-8b7f263",
-    "obuild": "^0.4.45",
     "pkg-pr-new": "^0.0.93",
     "postgres": "^3.4.9",
+    "tsdown": "0.23.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite": "^8.3.7",
     "vitest": "^4.1.12"

@@ -3,11 +3,11 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { dirname, join } from 'node:path'
 import { createNitro } from 'nitro/builder'
 import { afterEach, describe, expect, it } from 'vitest'
-import buildConfig from '../build.config'
 import NitroDrizzle from '../src'
 import { RUNTIME_NO_EXTERNAL } from '../src/nitro-module/register-runtime'
 import { createRuntimeHooksDeclaration } from '../src/schema-artifacts/runtime-hooks-declaration'
 import { DEVTOOLS_KEY_MARKER, STUDIO_AUTH_KEY_MARKER, STUDIO_ROUTE } from '../src/studio/contracts'
+import buildConfig from '../tsdown.config'
 
 const CONFIG_HOOK = 'drizzle:config'
 const SETUP_HOOK = 'drizzle:dev-mock:setup'
@@ -120,36 +120,49 @@ describe('package surface', () => {
     expect(packageJson.devDependencies['@nuxt/kit']).toBeUndefined()
   })
 
-  it('builds every obuild entry from an existing source file', () => {
-    // Given — obuild mirrors src/ paths into dist/, so an entry pointing at
-    // a moved file ships nothing and breaks the published runtime
-    const entries = (buildConfig.entries ?? []).flatMap((entry) => {
-      const input = typeof entry === 'string'
-        ? entry
-        : entry.input
-      return typeof input === 'string'
-        ? [input]
-        : input
+  it('builds every tsdown entry from an existing source file', () => {
+    // Given — tsdown mirrors entry names into dist/, so an entry pointing at
+    // a moved file ships nothing and breaks the published package
+    const configs = Array.isArray(buildConfig)
+      ? buildConfig
+      : [buildConfig]
+    const entries: string[] = configs.flatMap((config) => {
+      // tsdown accepts a pattern, a pattern list, or a name-to-pattern record
+      const entry: unknown = config.entry
+      if (typeof entry === 'string') {
+        return [entry]
+      }
+      if (Array.isArray(entry)) {
+        return entry.map(String)
+      }
+      if (entry && typeof entry === 'object') {
+        return Object.values(entry).flat().map(String)
+      }
+      return []
     })
 
     // Then — the exact entry set: the five ABI facades at their
-    // dist-determining locations plus the runtime tree the transform
+    // dist-determining locations plus the runtime tree the unbundled
     // pass ships file-for-file
     expect([...entries].sort()).toEqual([
-      './src/config.ts',
-      './src/devtool.ts',
-      './src/index.ts',
-      './src/nuxt.ts',
-      './src/types.ts',
-      'src/runtime',
+      '!src/runtime/**/*.d.ts',
+      'src/config.ts',
+      'src/devtool.ts',
+      'src/index.ts',
+      'src/nuxt.ts',
+      'src/runtime/**/*.ts',
+      'src/types.ts',
     ])
     for (const input of entries) {
+      if (input.startsWith('!') || input.includes('*')) {
+        continue
+      }
       expect(existsSync(input), `${input} must exist`).toBe(true)
     }
   })
 
-  it('keeps the runtime tree self-contained for the transform pass', async () => {
-    // Given — the transform pass ships src/runtime file-for-file and keeps
+  it('keeps the runtime tree self-contained for the unbundled pass', async () => {
+    // Given — the unbundled pass ships src/runtime file-for-file and keeps
     // relative imports as-is: a specifier escaping the tree points into
     // module-side source that exists only inside the bundled facades, so
     // the published runtime would import a file the package never contains
