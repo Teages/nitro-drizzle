@@ -11,12 +11,12 @@
   "dependencies": {
     "@libsql/client": "^0.18.0",
     "@teages/nitro-drizzle": "workspace:*",
-    "drizzle-orm": "1.0.0-rc.4"
+    "drizzle-orm": "1.0.0-rc.6"
   },
   "devDependencies": {
     "@teages/nitro-drizzle": "workspace:*",
     "@types/node": "^26.6.6",
-    "drizzle-kit": "1.0.0-rc.4",
+    "drizzle-kit": "1.0.0-rc.6",
     "nitro": "^3.0.261103-rc",
     "typescript": "^7.0.2",
     "vite": "^8.3.7"
